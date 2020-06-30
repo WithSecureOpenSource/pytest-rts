@@ -1,0 +1,3 @@
+[run]
+omit = venv/*, tests/*, /tmp/*, *__init__*
+dynamic_context = test_function
