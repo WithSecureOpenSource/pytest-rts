@@ -1,45 +1,20 @@
 # First implementation
 
-## Current state of implementation
+## Current state of implementation (folder 3)
 
- * Only using SQLite database created by Coverage.py and copying data from there to own database
+* Some code to try supporting git history data, builds database by looping through commits. No evaluation metric in place at the moment.
+
+* Another evaluation method tested: Removing random lines from source files and checking the exit codes of running specific tests and all tests, currently just stores the exit codes in database.
+
+* Test functions are now also mapped to lines of code. Testfile is parsed and function lines are extracted. If a testfile has changes, only the affected changes are considered.
  
- * Files considered are extracted from the file list that Coverage finds
- 
- * Specifying the files can be done with .coveragerc file (file to specify which files are checked by Coverage)
- 
- * Example .coveragerc -file found for "flask" project in current folder named "2" 
- 
- * Reads gits changes, finds tests, runs tests, adds git changes, updates database like demoed
- 
-## Problems
 
-* Mapping context to actual tests is a bit difficult and haven't gotten it working perfectly. Now I've commented out a function that was supposed to find all tests from changed test files but didn't get it working because of difficulties in guessing what contexts belong to a specific test file. 
- 
-Examples of problems:
-```
-Coverage contexts:
-7926|template_tests.filter_tests.test_default.FunctionTests.test_empty_string
-7929|template_tests.filter_tests.test_default_if_none.FunctionTests.test_empty_string
+## How I've used this
 
-pytest module finds:
-tests/template_tests/filter_tests/test_default.py::FunctionTests::test_empty_string
+* Copy all the files from folder 3
 
-== mappings get messed up in cases where there's no unique match
+* Clone some python project to the same folder, project should be a subfolder. I've had success with "flask" (around 4000 commits) and "rich" (around 700 commits) from github.
 
+* make a virtual environment and install projects depencies + "pip install pydriller" + "pip install coverage" + "pip install pytest".
 
-
-
-
-
-
-Coverage context:
-flask.app.Flask.test_request_context
-
-Not a test and pytest doesn't find anything similar
-
-
-+ many more related to different project structures and how contexts are generated
-```
-
-* Complicated test runners for big projects (ie. Django, Spark) cause errors with some global variables and have made testing this difficult
+* ```python start.py PROJECT_FOLDER``` starts the program. Example: ```python start.py rich``` for a project I used to test this.
