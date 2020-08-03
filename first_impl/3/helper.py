@@ -4,7 +4,7 @@ import subprocess
 import re
 
 def get_test_lines_and_update_lines(diff):
-    line_changes = re.findall(r'[@][@].{1,20}[@][@]',diff)
+    line_changes = re.findall(r'[@][@][^@]{1,40}[@][@]',diff) #previous matched something strange
     lines_to_query = []
     updates_to_lines = []
     cum_diff = 0
