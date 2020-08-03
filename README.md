@@ -18,3 +18,4 @@
 |Automating Root Cause Analysis via Machine Learning in Agile Software Testing Environments|2019|Machine learning to categorize causes of failed tests | [paper](https://acris.aalto.fi/ws/portalfiles/portal/35606292/SCI_Kahles_Torronen_Huuhtanen_Jung_Automating_Root_2019_RCA_ML_SW.pdf)|
 |Scalable Approaches for Test Suite Reduction|2019|Similarity based selection of regression tests compared | [paper](https://robertoverdecchia.github.io/papers/ICSE_2019.pdf)|
 |Improving Continuous Integration with Similarity-based Test Case Selection|2018|Selecting subsets of tests based on similarity|[paper](https://www.diva-portal.org/smash/get/diva2:1196682/FULLTEXT01.pdf)|
+|Obtaining Coverage per Test Case|2017|Obtaining per-test coverage in Java for regression testing|[paper](https://www.cqse.eu/fileadmin/content/news/publications/2017-obtaining-coverage-per-test-case.pdf)|
