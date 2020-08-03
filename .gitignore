@@ -1,0 +1,7 @@
+.idea
+*.iml
+*.egg-info
+.venv
+*.db
+*.pyc
+__pycache__
