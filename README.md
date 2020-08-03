@@ -1,6 +1,8 @@
-# Material found on regression test selection
+# Change based tests selection for Python
 
-## Tools
+## Material found on regression test selection
+
+### Tools
 
 | Name | What?| Last updated | Link to code  / website | Link to article / paper |
 |------|--------------|--------------|------------------------|-------------------------|
@@ -10,7 +12,8 @@
 |TestMon|Pytest plugin for selecting and running affected tests.|2019|[Github repo](https://github.com/tarpas/pytest-testmon)|-|
 |Jest | Facebook's testing framework Jest runs only affected tests by default. Considers changes on file-level with git diff.|2020|[Website](https://jestjs.io/)|-|
 
-## Articles/papers
+### Articles/papers
+
 | Title | Year | What? | Link |
 |-------|------|-------|------|
 |Predictive test selection | 2018 | Facebook's regression test selection with machine learning. Based on gradient boosted decision trees classifier (XGBoost) and historical data. |[paper](https://arxiv.org/pdf/1810.05286.pdf)|
@@ -19,3 +22,27 @@
 |Scalable Approaches for Test Suite Reduction|2019|Similarity based selection of regression tests compared | [paper](https://robertoverdecchia.github.io/papers/ICSE_2019.pdf)|
 |Improving Continuous Integration with Similarity-based Test Case Selection|2018|Selecting subsets of tests based on similarity|[paper](https://www.diva-portal.org/smash/get/diva2:1196682/FULLTEXT01.pdf)|
 |Obtaining Coverage per Test Case|2017|Obtaining per-test coverage in Java for regression testing|[paper](https://www.cqse.eu/fileadmin/content/news/publications/2017-obtaining-coverage-per-test-case.pdf)|
+
+
+## Current state of implementation
+
+* Some code to try supporting git history data, builds database by looping through commits. No evaluation metric in place at the moment.
+* Another evaluation method tested: Removing random lines from source files and checking the exit codes of running specific tests and all tests, currently just stores the exit codes in database.
+* Test functions are now also mapped to lines of code. Testfile is parsed and function lines are extracted. If a testfile has changes, only the affected changes are considered.
+* I've had success with "flask" (around 4000 commits) and "rich" (around 700 commits) from github.
+ 
+## Usage
+
+1. checkout the project
+2. in project directory run `make install` - that will:
+  * create virtual environment
+  * download all the dependencies
+  * install `tests_selector` as a tool
+3. switch to directory with target project
+4. install all the dependencies needed for testing (should be installed into the same tests_selector virtual environment)
+5. go back to `tests_selector` directory
+6. execute `tests_selector path/to/target_project`
+
+# Development
+
+* Don't forget to run `make install` before you are going to try the latest changes

@@ -1,2 +1,0 @@
-[run]
-omit = */venv/*, tests/*, /tmp/*, *__init__*

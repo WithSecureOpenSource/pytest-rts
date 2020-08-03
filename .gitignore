@@ -1,0 +1,5 @@
+.idea
+*.iml
+*.egg-info
+.venv
+*.db
