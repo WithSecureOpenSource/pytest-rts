@@ -15,34 +15,17 @@ from tests_selector.helper import (
     delete_ran_lines,
     update_db_from_src_mapping,
     update_db_from_test_mapping,
+    read_newly_added_tests,
+    get_testfiles_and_srcfiles,
+    file_diff_data_between_hashes,
+    split_changes,
+    file_changes_between_commits,
+    run_tests_and_update_db
 )
 
 PIPE = subprocess.PIPE
 
 PROJECT_FOLDER = sys.argv[1]
-
-
-def git_diff_data(filename, commithash1, commithash2):
-    git_dir = "./" + PROJECT_FOLDER + "/.git"
-    git_data = str(
-        subprocess.run(
-            [
-                "git",
-                "--git-dir",
-                git_dir,
-                "diff",
-                "-U0",
-                commithash1,
-                commithash2,
-                "--",
-                filename,
-            ],
-            stdout=PIPE,
-            stderr=PIPE,
-        ).stdout
-    )
-    return git_data
-
 
 def tests_from_changed_testfiles(files, commithash1, commithash2):
     test_set = set()
@@ -51,7 +34,7 @@ def tests_from_changed_testfiles(files, commithash1, commithash2):
     for f in files:
         file_id = f[0]
         filename = f[1]
-        git_data = git_diff_data(filename, commithash1, commithash2)
+        git_data = file_diff_data_between_hashes(filename, commithash1, commithash2)
         changed_lines, updates_to_lines = get_test_lines_and_update_lines(git_data)
         line_map = line_mapping(updates_to_lines, filename)
 
@@ -72,7 +55,7 @@ def tests_from_changed_sourcefiles(files, commithash1, commithash2):
     for f in files:
         file_id = f[0]
         filename = f[1]
-        git_data = git_diff_data(filename, commithash1, commithash2)
+        git_data = file_diff_data_between_hashes(filename, commithash1, commithash2)
         changed_lines, updates_to_lines = get_test_lines_and_update_lines(git_data)
         line_map = line_mapping(updates_to_lines, filename)
 
@@ -109,76 +92,9 @@ def tests_from_changes(commithash1, commithash2):
     return test_set, update_tuple
 
 
-def read_newly_added_tests():
-    conn = sqlite3.connect("example.db")
-    c = conn.cursor()
-    new_tests = set()
-    for t in [x[0] for x in c.execute("SELECT context FROM new_tests").fetchall()]:
-        new_tests.add(t)
-    conn.close()
-
-    return new_tests
-
-
-def get_testfiles_and_srcfiles():
-    conn = sqlite3.connect("example.db")
-    c = conn.cursor()
-    test_files = [
-        (x[0], x[1]) for x in c.execute("SELECT id,path FROM test_file").fetchall()
-    ]
-    src_files = [
-        (x[0], x[1]) for x in c.execute("SELECT id,path FROM src_file").fetchall()
-    ]
-    conn.close()
-    return test_files, src_files
-
-
-def split_changes(commit1, commit2):
-    changed_tests = []
-    changed_sources = []
-    db_test_files, db_src_files = get_testfiles_and_srcfiles()
-
-    for changed_file in file_changes_between_commits(commit1, commit2):
-        for sf in db_src_files:
-            path_to_file = sf[1]
-            if changed_file == path_to_file:
-                changed_sources.append(sf)
-        for tf in db_test_files:
-            path_to_file = tf[1]
-            if changed_file == path_to_file:
-                changed_tests.append(tf)
-
-    return changed_tests, changed_sources
-
-
-def file_changes_between_commits(commit1, commit2):
-    git_dir = "./" + PROJECT_FOLDER + "/.git"
-    git_data = subprocess.run(
-        ["git", "--git-dir", git_dir, "diff", "--name-only", commit1, commit2],
-        stdout=PIPE,
-        stderr=PIPE,
-    ).stdout
-    changed_files = str(git_data, "utf-8").strip().split()
-    return changed_files
-
-
-def run_tests_and_update(test_set, update_tuple):
-    changed_lines_test = update_tuple[0]
-    line_map_test = update_tuple[1]
-    changed_lines_src = update_tuple[2]
-    line_map_src = update_tuple[3]
-
-    for t in line_map_test.keys():
-        update_db_from_test_mapping(line_map_test[t], t)
-
-    for f in changed_lines_src.keys():
-        delete_ran_lines(changed_lines_src[f], f)
-        update_db_from_src_mapping(line_map_src[f], f)
-
-    start_normal_phase(PROJECT_FOLDER, test_set)
-
-
 def commits_test():
+
+    # this is now most likely broken
     repo = GitRepository("./" + PROJECT_FOLDER)
     git_commits = list(repo.get_list_commits())
 
@@ -209,6 +125,8 @@ def commits_test():
 
 
 def random_remove_test(iterations):
+
+    # this is now most likely broken
     ans = input("init db? [y/n]: ")
     if ans == "y":
         start_test_init(PROJECT_FOLDER)
