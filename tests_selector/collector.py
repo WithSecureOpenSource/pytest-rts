@@ -1,7 +1,8 @@
 import os
 import sys
 import pytest
-import sqlite3
+
+from tests_selector.helper import get_cursor
 
 PROJECT_FOLDER = sys.argv[1]
 
@@ -28,8 +29,7 @@ def newly_added_tests(existing_tests):
 
 
 def main():
-    conn = sqlite3.connect("example.db")
-    c = conn.cursor()
+    c, conn = get_cursor()
     existing_tests = set()
     for t in [x[0] for x in c.execute("SELECT context FROM test_function").fetchall()]:
         existing_tests.add(t)

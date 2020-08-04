@@ -1,4 +1,3 @@
-import sqlite3
 import pytest
 import os
 import coverage
@@ -6,6 +5,8 @@ import sys
 import ast
 
 from _pytest.python import Function
+
+from tests_selector.helper import get_cursor
 
 
 def function_lines(node, end):
@@ -46,8 +47,7 @@ def run():
             self.cov._warn_no_data = True
             self._should_write_debug = False
 
-            self.conn = sqlite3.connect("example.db")
-            self.cursor = self.conn.cursor()
+            self.cursor, self.conn = get_cursor()
 
             self.init_db()
 

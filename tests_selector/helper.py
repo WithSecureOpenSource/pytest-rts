@@ -141,8 +141,7 @@ def file_diff_data_current(filename, PROJECT_FOLDER):
 
 
 def get_testfiles_and_srcfiles():
-    conn = sqlite3.connect("example.db")
-    c = conn.cursor()
+    c, conn = get_cursor()
     test_files = [
         (x[0], x[1]) for x in c.execute("SELECT id,path FROM test_file").fetchall()
     ]
@@ -153,10 +152,15 @@ def get_testfiles_and_srcfiles():
     return test_files, src_files
 
 
+def get_cursor():
+    conn = sqlite3.connect("mapping.db")
+    c = conn.cursor()
+    return c, conn
+
+
 def read_newly_added_tests(PROJECT_FOLDER):
     subprocess.run(["tests_collector", PROJECT_FOLDER])
-    conn = sqlite3.connect("example.db")
-    c = conn.cursor()
+    c, conn = get_cursor()
     new_tests = set()
     for t in [x[0] for x in c.execute("SELECT context FROM new_tests").fetchall()]:
         new_tests.add(t)
@@ -198,8 +202,7 @@ def get_test_lines_and_update_lines(diff):
 
 
 def query_tests_testfile(lines_to_query, file_id):
-    conn = sqlite3.connect("example.db")
-    cursor = conn.cursor()
+    cursor, conn = get_cursor()
     tests = []
     for line_id in lines_to_query:
         data = cursor.execute(
@@ -218,8 +221,7 @@ def query_tests_testfile(lines_to_query, file_id):
 
 
 def query_tests_sourcefile(lines_to_query, file_id):
-    conn = sqlite3.connect("example.db")
-    cursor = conn.cursor()
+    cursor, conn = get_cursor()
     tests = []
     for line_id in lines_to_query:
         data = cursor.execute(
@@ -261,8 +263,7 @@ def line_mapping(updates_to_lines, filename):
 
 
 def delete_ran_lines(line_ids, file_id):
-    conn = sqlite3.connect("example.db")
-    cursor = conn.cursor()
+    cursor, conn = get_cursor()
     for line in line_ids:
         cursor.execute(
             "DELETE FROM test_map WHERE line_id == ? AND file_id == ?", (line, file_id)
@@ -271,8 +272,7 @@ def delete_ran_lines(line_ids, file_id):
 
 
 def update_db_from_src_mapping(line_map, file_id):
-    conn = sqlite3.connect("example.db")
-    cursor = conn.cursor()
+    cursor, conn = get_cursor()
     tests_to_update = []
     for line_id in line_map.keys():
         db_data = cursor.execute(
@@ -296,8 +296,7 @@ def update_db_from_src_mapping(line_map, file_id):
 
 
 def update_db_from_test_mapping(line_map, file_id):
-    conn = sqlite3.connect("example.db")
-    cursor = conn.cursor()
+    cursor, conn = get_cursor()
     tests_to_update = []
     for line_id in line_map.keys():
         db_data = cursor.execute(
@@ -325,8 +324,8 @@ def update_db_from_test_mapping(line_map, file_id):
 
 
 def start_test_init(PROJECT_FOLDER):
-    if os.path.exists("example.db"):
-        os.remove("example.db")
+    if os.path.exists("mapping.db"):
+        os.remove("mapping.db")
 
     if os.path.exists("./" + PROJECT_FOLDER + "/.coveragerc"):
         os.remove("./" + PROJECT_FOLDER + "/.coveragerc")
@@ -337,7 +336,7 @@ def start_test_init(PROJECT_FOLDER):
     )
     subprocess.run(["tests_selector_init", PROJECT_FOLDER])
     os.rename(
-        os.getcwd() + "/" + PROJECT_FOLDER + "/example.db", os.getcwd() + "/example.db"
+        os.getcwd() + "/" + PROJECT_FOLDER + "/mapping.db", os.getcwd() + "/mapping.db"
     )
     os.rename(
         os.getcwd() + "/" + PROJECT_FOLDER + "/.coveragerc",
@@ -347,7 +346,7 @@ def start_test_init(PROJECT_FOLDER):
 
 def start_normal_phase(PROJECT_FOLDER, test_set):
     os.rename(
-        os.getcwd() + "/example.db", os.getcwd() + "/" + PROJECT_FOLDER + "/example.db"
+        os.getcwd() + "/mapping.db", os.getcwd() + "/" + PROJECT_FOLDER + "/mapping.db"
     )
     if os.path.exists("./" + PROJECT_FOLDER + "/.coveragerc"):
         os.remove("./" + PROJECT_FOLDER + "/.coveragerc")
@@ -356,5 +355,5 @@ def start_normal_phase(PROJECT_FOLDER, test_set):
         os.getcwd() + "/" + PROJECT_FOLDER + "/.coveragerc",
     )
     subprocess.run(["tests_selector_run", PROJECT_FOLDER] + list(test_set))
-    os.rename(os.getcwd() + "/" + PROJECT_FOLDER + "/example.db", "./example.db")
+    os.rename(os.getcwd() + "/" + PROJECT_FOLDER + "/mapping.db", "./mapping.db")
     os.rename(os.getcwd() + "/" + PROJECT_FOLDER + "/.coveragerc", "./.coveragerc")

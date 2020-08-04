@@ -1,11 +1,12 @@
 import os
-import sqlite3
 import pytest
 import sys
 import coverage
 import ast
 
 from _pytest.python import Function
+
+from tests_selector.helper import get_cursor
 
 
 def function_lines(node, end):
@@ -46,8 +47,7 @@ def run(test_set):
             self.cov._warn_no_data = True
             self._should_write_debug = False
 
-            self.conn = sqlite3.connect("example.db")
-            self.cursor = self.conn.cursor()
+            self.cursor, self.conn = get_cursor()
 
         def start(self):
             self.cov.erase()
@@ -156,8 +156,7 @@ def run(test_set):
 
 
 def main():
-    PROJECT_FOLDER = sys.argv[1]
-    os.chdir(os.getcwd() + "/" + PROJECT_FOLDER)
+    os.chdir(os.getcwd() + "/" + sys.argv[1])
     tests = set(sys.argv[2:])
     run(tests)
 
