@@ -60,6 +60,7 @@ def query_tests_sourcefile(lines_to_query, file_id):
     conn = sqlite3.connect("example.db")
     cursor = conn.cursor()
     tests = []
+    # looks like the following loop doesn't use `line_id`, does that loop needed at all?
     for line_id in lines_to_query:
         data = cursor.execute(
             """ SELECT DISTINCT context
