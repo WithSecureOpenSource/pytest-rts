@@ -12,9 +12,6 @@ from tests_selector.helper import (
 PROJECT_FOLDER = sys.argv[1]
 
 def get_tests_from_current_changes(changed_test_files,changed_src_files):
-    changed_files = changed_files_current(PROJECT_FOLDER)
-    changed_test_files,changed_src_files = split_changes(changed_files)
-
     (
         src_test_set,
         src_changed_lines_dict,
