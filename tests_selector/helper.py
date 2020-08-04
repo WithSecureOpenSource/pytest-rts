@@ -5,6 +5,7 @@ import re
 
 PIPE = subprocess.PIPE
 
+
 def run_tests_and_update_db(test_set, update_tuple, PROJECT_FOLDER):
     changed_lines_test = update_tuple[0]
     line_map_test = update_tuple[1]
@@ -20,7 +21,8 @@ def run_tests_and_update_db(test_set, update_tuple, PROJECT_FOLDER):
 
     start_normal_phase(PROJECT_FOLDER, test_set)
 
-def tests_from_changed_sourcefiles_current(files,PROJECT_FOLDER):
+
+def tests_from_changed_sourcefiles_current(files, PROJECT_FOLDER):
     test_set = set()
     changed_lines_dict = {}
     new_line_map_dict = {}
@@ -39,6 +41,7 @@ def tests_from_changed_sourcefiles_current(files,PROJECT_FOLDER):
             test_set.add(t)
     return test_set, changed_lines_dict, new_line_map_dict
 
+
 def tests_from_changed_testfiles_current(files, PROJECT_FOLDER):
     test_set = set()
     changed_lines_dict = {}
@@ -46,7 +49,7 @@ def tests_from_changed_testfiles_current(files, PROJECT_FOLDER):
     for f in files:
         file_id = f[0]
         filename = f[1]
-        file_diff = file_diff_data_current(filename,PROJECT_FOLDER)
+        file_diff = file_diff_data_current(filename, PROJECT_FOLDER)
         changed_lines, updates_to_lines = get_test_lines_and_update_lines(file_diff)
         line_map = line_mapping(updates_to_lines, filename)
 
@@ -59,6 +62,7 @@ def tests_from_changed_testfiles_current(files, PROJECT_FOLDER):
 
     return test_set, changed_lines_dict, new_line_map_dict
 
+
 def file_changes_between_commits(commit1, commit2):
     git_dir = "./" + PROJECT_FOLDER + "/.git"
     git_data = subprocess.run(
@@ -68,6 +72,7 @@ def file_changes_between_commits(commit1, commit2):
     ).stdout
     changed_files = str(git_data, "utf-8").strip().split()
     return changed_files
+
 
 def split_changes(changed_files):
     changed_tests = []
@@ -86,6 +91,7 @@ def split_changes(changed_files):
 
     return changed_tests, changed_sources
 
+
 def changed_files_current(PROJECT_FOLDER):
     # specifying git dir to this returns strange files so this changes the working directory now
     current_dir = os.getcwd()
@@ -98,7 +104,8 @@ def changed_files_current(PROJECT_FOLDER):
     os.chdir(current_dir)
     return changed_files
 
-def file_diff_data_between_hashes(filename, commithash1, commithash2,PROJECT_FOLDER):
+
+def file_diff_data_between_hashes(filename, commithash1, commithash2, PROJECT_FOLDER):
     git_dir = "./" + PROJECT_FOLDER + "/.git"
     git_data = str(
         subprocess.run(
@@ -119,7 +126,8 @@ def file_diff_data_between_hashes(filename, commithash1, commithash2,PROJECT_FOL
     )
     return git_data
 
-def file_diff_data_current(filename,PROJECT_FOLDER):
+
+def file_diff_data_current(filename, PROJECT_FOLDER):
     current_dir = os.getcwd()
     project_dir = "./" + PROJECT_FOLDER
     os.chdir(project_dir)
@@ -130,6 +138,7 @@ def file_diff_data_current(filename,PROJECT_FOLDER):
     )
     os.chdir(current_dir)
     return git_data
+
 
 def get_testfiles_and_srcfiles():
     conn = sqlite3.connect("example.db")
@@ -143,6 +152,7 @@ def get_testfiles_and_srcfiles():
     conn.close()
     return test_files, src_files
 
+
 def read_newly_added_tests(PROJECT_FOLDER):
     subprocess.run(["tests_collector", PROJECT_FOLDER])
     conn = sqlite3.connect("example.db")
@@ -153,6 +163,7 @@ def read_newly_added_tests(PROJECT_FOLDER):
     conn.close()
 
     return new_tests
+
 
 def get_test_lines_and_update_lines(diff):
     line_changes = re.findall(r"[@][@][^@]+[@][@]", diff)

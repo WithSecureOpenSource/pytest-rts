@@ -20,12 +20,13 @@ from tests_selector.helper import (
     file_diff_data_between_hashes,
     split_changes,
     file_changes_between_commits,
-    run_tests_and_update_db
+    run_tests_and_update_db,
 )
 
 PIPE = subprocess.PIPE
 
 PROJECT_FOLDER = sys.argv[1]
+
 
 def tests_from_changed_testfiles(files, commithash1, commithash2):
     test_set = set()
