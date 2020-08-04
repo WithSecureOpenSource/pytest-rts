@@ -3,7 +3,10 @@ import pytest
 import sys
 
 
-def run():
+def main():
+    PROJECT_FOLDER = sys.argv[1]
+    os.chdir(os.getcwd() + "/" + PROJECT_FOLDER)
+
     class NormalPhasePlugin:
         def __init__(self):
             pass
@@ -13,12 +16,6 @@ def run():
 
     my_plugin = NormalPhasePlugin()
     pytest.main(["-p", "no:terminal"], plugins=[my_plugin])
-
-
-def main():
-    PROJECT_FOLDER = sys.argv[1]
-    os.chdir(os.getcwd() + "/" + PROJECT_FOLDER)
-    run()
 
 
 if __name__ == "__main__":

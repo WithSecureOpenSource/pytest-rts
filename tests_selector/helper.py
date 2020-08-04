@@ -1,3 +1,4 @@
+import ast
 import os
 import sqlite3
 import subprocess
@@ -357,3 +358,33 @@ def start_normal_phase(PROJECT_FOLDER, test_set):
     subprocess.run(["tests_selector_run", PROJECT_FOLDER] + list(test_set))
     os.rename(os.getcwd() + "/" + PROJECT_FOLDER + "/mapping.db", "./mapping.db")
     os.rename(os.getcwd() + "/" + PROJECT_FOLDER + "/.coveragerc", "./.coveragerc")
+
+
+def function_lines(node, end):
+    def _next_lineno(i, end):
+        try:
+            return node[i + 1].decorator_list[0].lineno - 1
+        except (IndexError, AttributeError):
+            pass
+
+        try:
+            return node[i + 1].lineno - 1
+        except IndexError:
+            return end
+        except AttributeError:
+            return None
+
+    result = []
+
+    if isinstance(node, ast.AST):
+        if node.__class__.__name__ == "FunctionDef":
+            result.append((node.name, node.body[0].lineno, end))
+
+        for field_name, field_value in ast.iter_fields(node):
+            result.extend(function_lines(field_value, end))
+
+    elif isinstance(node, list):
+        for i, item in enumerate(node):
+            result.extend(function_lines(item, _next_lineno(i, end)))
+
+    return result

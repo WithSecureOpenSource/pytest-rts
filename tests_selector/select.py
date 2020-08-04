@@ -46,7 +46,7 @@ def main():
         changed_test_files, changed_src_files
     )
     final_test_set = changes_test_set.union(new_tests)
-    print(f"found {len(final_test_set)} tests")
+    print(f"found {len(final_test_set)} tests to execute")
 
     if len(final_test_set) > 0:
         # run_tests_and_update_db(final_test_set, update_tuple,PROJECT_FOLDER)

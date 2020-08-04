@@ -2,8 +2,14 @@ import os
 import pytest
 import sys
 
+from tests_selector.pytest.fake_item import FakeItem
 
-def run(test_set):
+
+def main():
+    PROJECT_FOLDER = sys.argv[1]
+    os.chdir(os.getcwd() + "/" + PROJECT_FOLDER)
+    test_set = set(sys.argv[2:])
+
     class NormalPhasePlugin:
         def __init__(self):
             pass
@@ -22,19 +28,8 @@ def run(test_set):
         def pytest_sessionfinish(self, session, exitstatus):
             print(int(exitstatus))
 
-    class FakeItem(object):
-        def __init__(self, config):
-            self.config = config
-
     my_plugin = NormalPhasePlugin()
     pytest.main(["-p", "no:terminal"], plugins=[my_plugin])
-
-
-def main():
-    PROJECT_FOLDER = sys.argv[1]
-    os.chdir(os.getcwd() + "/" + PROJECT_FOLDER)
-    tests = set(sys.argv[2:])
-    run(tests)
 
 
 if __name__ == "__main__":
