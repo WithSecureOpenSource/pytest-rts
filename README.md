@@ -33,6 +33,8 @@
  
 ## Usage
 
+### Initialization
+
 1. checkout the project
 2. in project directory run `make install` - that will:
   * create virtual environment
@@ -41,8 +43,13 @@
 3. switch to directory with target project
 4. install all the dependencies needed for testing (should be installed into the same tests_selector virtual environment)
 5. go back to `tests_selector` directory
-6. execute `tests_selector path/to/target_project`
+6. execute `tests_selector_init path/to/target_project`
+
+### Running tests related to the changes
+
+1. switch to directory with target project
+2. execute `tests_selector`
 
 # Development
 
-* Don't forget to run `make install` before you are going to try the latest changes
+* ~~Don't forget to run `make install` before you are going to try the latest changes~~ - not needed as all the changes in source files are available immediately, just call the needed command line tool from the package
