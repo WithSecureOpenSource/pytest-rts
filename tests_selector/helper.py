@@ -66,8 +66,9 @@ def query_tests_sourcefile(lines_to_query, file_id):
             """ SELECT DISTINCT context
                 FROM test_function
                 JOIN test_map ON test_function.id == test_map.test_function_id
-                WHERE test_map.file_id = ? """,
-            (file_id,),
+                WHERE test_map.file_id = ?
+                AND test_map.line_id = ?  """,
+            (file_id, line_id,),
         )
         for line in data:
             test = line[0]

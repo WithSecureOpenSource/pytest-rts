@@ -301,5 +301,5 @@ def main():
         random_remove_test(iters)
 
 
-if __name__ == "__main__":
-    main()
+# if __name__ == "__main__":
+#    main()
