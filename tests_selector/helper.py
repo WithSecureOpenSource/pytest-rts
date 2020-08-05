@@ -4,7 +4,74 @@ import sqlite3
 import subprocess
 import re
 
+from pydriller import GitRepository
 PIPE = subprocess.PIPE
+
+
+def tests_from_changes_between_commits(commithash1, commithash2,PROJECT_FOLDER):
+    changed_files = file_changes_between_commits(commithash1,commithash2,PROJECT_FOLDER)
+    changed_test_files, changed_source_files = split_changes(changed_files)
+    (
+        test_test_set,
+        test_changed_lines_dict,
+        test_new_line_map_dict,
+    ) = tests_from_changed_testfiles_between_commits(changed_test_files, commithash1, commithash2,PROJECT_FOLDER)
+    (
+        src_test_set,
+        src_changed_lines_dict,
+        src_new_line_map_dict,
+    ) = tests_from_changed_sourcefiles_between_commits(changed_source_files, commithash1, commithash2,PROJECT_FOLDER)
+
+    test_set = test_test_set.union(src_test_set)
+    update_tuple = (
+        test_changed_lines_dict,
+        test_new_line_map_dict,
+        src_changed_lines_dict,
+        src_new_line_map_dict,
+    )
+
+    return test_set, update_tuple
+
+
+def tests_from_changed_testfiles_between_commits(files, commithash1, commithash2,PROJECT_FOLDER):
+    test_set = set()
+    changed_lines_dict = {}
+    new_line_map_dict = {}
+    for f in files:
+        file_id = f[0]
+        filename = f[1]
+        git_data = file_diff_data_between_commits(filename, commithash1, commithash2,PROJECT_FOLDER)
+        changed_lines, updates_to_lines = get_test_lines_and_update_lines(git_data)
+        line_map = line_mapping(updates_to_lines, filename)
+
+        changed_lines_dict[file_id] = changed_lines
+        new_line_map_dict[file_id] = line_map
+        tests = query_tests_testfile(changed_lines, file_id)
+
+        for t in tests:
+            test_set.add(t)
+
+    return test_set, changed_lines_dict, new_line_map_dict
+
+
+def tests_from_changed_sourcefiles_between_commits(files, commithash1, commithash2,PROJECT_FOLDER):
+    test_set = set()
+    changed_lines_dict = {}
+    new_line_map_dict = {}
+    for f in files:
+        file_id = f[0]
+        filename = f[1]
+        git_data = file_diff_data_between_commits(filename, commithash1, commithash2,PROJECT_FOLDER)
+        changed_lines, updates_to_lines = get_test_lines_and_update_lines(git_data)
+        line_map = line_mapping(updates_to_lines, filename)
+
+        changed_lines_dict[file_id] = changed_lines
+        new_line_map_dict[file_id] = line_map
+        tests = query_tests_sourcefile(changed_lines, file_id)
+
+        for t in tests:
+            test_set.add(t)
+    return test_set, changed_lines_dict, new_line_map_dict
 
 
 def run_tests_and_update_db(test_set, update_tuple, PROJECT_FOLDER):
@@ -64,15 +131,10 @@ def tests_from_changed_testfiles_current(files, PROJECT_FOLDER):
     return test_set, changed_lines_dict, new_line_map_dict
 
 
-def file_changes_between_commits(commit1, commit2):
-    git_dir = "./" + PROJECT_FOLDER + "/.git"
-    git_data = subprocess.run(
-        ["git", "--git-dir", git_dir, "diff", "--name-only", commit1, commit2],
-        stdout=PIPE,
-        stderr=PIPE,
-    ).stdout
-    changed_files = str(git_data, "utf-8").strip().split()
-    return changed_files
+def file_changes_between_commits(commit1, commit2, PROJECT_FOLDER):
+    repo = get_git_repo(PROJECT_FOLDER)
+    git_helper = repo.repo.git
+    return git_helper.diff("--name-only",commit1,commit2).split()
 
 
 def split_changes(changed_files):
@@ -94,51 +156,21 @@ def split_changes(changed_files):
 
 
 def changed_files_current(PROJECT_FOLDER):
-    # specifying git dir to this returns strange files so this changes the working directory now
-    current_dir = os.getcwd()
-    project_dir = "./" + PROJECT_FOLDER
-    os.chdir(project_dir)
-    git_data = subprocess.run(
-        ["git", "diff", "--name-only"], stdout=PIPE, stderr=PIPE,
-    ).stdout
-    changed_files = str(git_data, "utf-8").strip().split()
-    os.chdir(current_dir)
-    return changed_files
+    repo = get_git_repo(PROJECT_FOLDER)
+    git_helper = repo.repo.git
+    return git_helper.diff("--name-only").split()
 
 
-def file_diff_data_between_hashes(filename, commithash1, commithash2, PROJECT_FOLDER):
-    git_dir = "./" + PROJECT_FOLDER + "/.git"
-    git_data = str(
-        subprocess.run(
-            [
-                "git",
-                "--git-dir",
-                git_dir,
-                "diff",
-                "-U0",
-                commithash1,
-                commithash2,
-                "--",
-                filename,
-            ],
-            stdout=PIPE,
-            stderr=PIPE,
-        ).stdout
-    )
-    return git_data
+def file_diff_data_between_commits(filename, commithash1, commithash2, PROJECT_FOLDER):
+    repo = get_git_repo(PROJECT_FOLDER)
+    git_helper = repo.repo.git
+    return git_helper.diff("-U0",commithash1,commithash2,"--",filename)
 
 
 def file_diff_data_current(filename, PROJECT_FOLDER):
-    current_dir = os.getcwd()
-    project_dir = "./" + PROJECT_FOLDER
-    os.chdir(project_dir)
-    git_data = str(
-        subprocess.run(
-            ["git", "diff", "-U0", filename,], stdout=PIPE, stderr=PIPE,
-        ).stdout
-    )
-    os.chdir(current_dir)
-    return git_data
+    repo = get_git_repo(PROJECT_FOLDER)
+    git_helper = repo.repo.git
+    return git_helper.diff("-U0","--",filename)
 
 
 def get_testfiles_and_srcfiles():
@@ -388,3 +420,7 @@ def function_lines(node, end):
             result.extend(function_lines(item, _next_lineno(i, end)))
 
     return result
+
+
+def get_git_repo(PROJECT_FOLDER):
+    return GitRepository("./" + PROJECT_FOLDER)

@@ -4,23 +4,14 @@ import subprocess
 import sys
 import random
 
-from pydriller import GitRepository
 from tests_selector.helper import (
     get_test_lines_and_update_lines,
-    query_tests_sourcefile,
-    query_tests_testfile,
-    line_mapping,
     start_test_init,
-    start_normal_phase,
-    delete_ran_lines,
-    update_db_from_src_mapping,
-    update_db_from_test_mapping,
-    read_newly_added_tests,
     get_testfiles_and_srcfiles,
-    file_diff_data_between_hashes,
-    split_changes,
-    file_changes_between_commits,
     run_tests_and_update_db,
+    get_git_repo,
+    tests_from_changes_between_commits,
+    read_newly_added_tests
 )
 
 PIPE = subprocess.PIPE
@@ -28,106 +19,37 @@ PIPE = subprocess.PIPE
 PROJECT_FOLDER = sys.argv[1]
 
 
-def tests_from_changed_testfiles(files, commithash1, commithash2):
-    test_set = set()
-    changed_lines_dict = {}
-    new_line_map_dict = {}
-    for f in files:
-        file_id = f[0]
-        filename = f[1]
-        git_data = file_diff_data_between_hashes(filename, commithash1, commithash2)
-        changed_lines, updates_to_lines = get_test_lines_and_update_lines(git_data)
-        line_map = line_mapping(updates_to_lines, filename)
-
-        changed_lines_dict[file_id] = changed_lines
-        new_line_map_dict[file_id] = line_map
-        tests = query_tests_testfile(changed_lines, file_id)
-
-        for t in tests:
-            test_set.add(t)
-
-    return test_set, changed_lines_dict, new_line_map_dict
-
-
-def tests_from_changed_sourcefiles(files, commithash1, commithash2):
-    test_set = set()
-    changed_lines_dict = {}
-    new_line_map_dict = {}
-    for f in files:
-        file_id = f[0]
-        filename = f[1]
-        git_data = file_diff_data_between_hashes(filename, commithash1, commithash2)
-        changed_lines, updates_to_lines = get_test_lines_and_update_lines(git_data)
-        line_map = line_mapping(updates_to_lines, filename)
-
-        changed_lines_dict[file_id] = changed_lines
-        new_line_map_dict[file_id] = line_map
-        tests = query_tests_sourcefile(changed_lines, file_id)
-
-        for t in tests:
-            test_set.add(t)
-    return test_set, changed_lines_dict, new_line_map_dict
-
-
-def tests_from_changes(commithash1, commithash2):
-    changed_test_files, changed_source_files = split_changes(commithash1, commithash2)
-    (
-        test_test_set,
-        test_changed_lines_dict,
-        test_new_line_map_dict,
-    ) = tests_from_changed_testfiles(changed_test_files, commithash1, commithash2)
-    (
-        src_test_set,
-        src_changed_lines_dict,
-        src_new_line_map_dict,
-    ) = tests_from_changed_sourcefiles(changed_source_files, commithash1, commithash2)
-
-    test_set = test_test_set.union(src_test_set)
-    update_tuple = (
-        test_changed_lines_dict,
-        test_new_line_map_dict,
-        src_changed_lines_dict,
-        src_new_line_map_dict,
-    )
-
-    return test_set, update_tuple
-
-
-def commits_test():
-
-    # this is now most likely broken
-    repo = GitRepository("./" + PROJECT_FOLDER)
+def iterate_commits():
+    # builds database by going through commits and running specific tests
+    # problem: different dependencies
+    repo = get_git_repo(PROJECT_FOLDER)
     git_commits = list(repo.get_list_commits())
 
     print(f"repo has {len(git_commits)} commits")
     start = int(input("start commit?"))
     end = int(input("end commit?"))
 
-    error_rates = []
-
     hash_1 = git_commits[start].hash
     repo.checkout(hash_1)
     start_test_init(PROJECT_FOLDER)
 
     for commit in git_commits[start + 1 : end]:
-
         hash_2 = commit.hash
         repo.checkout(hash_2)
-
-        change_test_set, update_tuple = tests_from_changes(hash_1, hash_2)
-        subprocess.run(["tests_collector", PROJECT_FOLDER])
-        new_tests = read_newly_added_tests()
+        change_test_set, update_tuple = tests_from_changes_between_commits(hash_1, hash_2,PROJECT_FOLDER)
+        new_tests = read_newly_added_tests(PROJECT_FOLDER)
         final_test_set = change_test_set.union(new_tests)
-        run_tests_and_update(final_test_set, update_tuple)
-
+        run_tests_and_update_db(final_test_set, update_tuple,PROJECT_FOLDER)
         hash_1 = commit.hash
+
     repo._delete_tmp_branch()
-    # print(error_rates)
 
 
 def random_remove_test(iterations):
+    # Delete random line, run tests, store exit codes of pytest if possible
+    repo = get_git_repo(PROJECT_FOLDER)
+    git_helper = repo.repo.git
 
-    # this is now most likely broken
     ans = input("init db? [y/n]: ")
     if ans == "y":
         start_test_init(PROJECT_FOLDER)
@@ -140,35 +62,28 @@ def random_remove_test(iterations):
     )
 
     for i in range(iterations):
-
         while True:
             random_src = random.choice(src_files)
             src_name = random_src[1]
             src_id = random_src[0]
-            if PROJECT_FOLDER == src_name[0:4]:
+            if "tests-selector" not in src_name: #for now some tests-selector runners get mapped to source files by accident
                 break
-
         try:
             with open(os.getcwd() + "/" + PROJECT_FOLDER + "/" + src_name, "r") as f:
                 data = f.readlines()
                 rand_line = random.randint(0, len(data) - 1)
-                data[rand_line] = "\n"
+                data[rand_line] = "\n" # replace random line with newline.
         except FileNotFoundError:
             continue
         with open(os.getcwd() + "/" + PROJECT_FOLDER + "/" + src_name, "w") as f:
             for line in data:
                 f.write(line)
 
-        os.chdir(os.getcwd() + "/" + PROJECT_FOLDER)
-        git_data = str(
-            subprocess.run(
-                ["git", "diff", "-U0", src_name], stdout=PIPE, stderr=PIPE
-            ).stdout
-        )
-        os.chdir("..")
-        test_lines, updates_to_lines = get_test_lines_and_update_lines(git_data)
+        git_diff_data = git_helper.diff("-U0","--",src_name)
+        test_lines, updates_to_lines = get_test_lines_and_update_lines(git_diff_data)
         tests = query_tests_sourcefile(test_lines, src_id)
 
+        # run specific tests and capture exit code
         try:
             specific_exit_code = int(
                 str(
@@ -181,9 +96,10 @@ def random_remove_test(iterations):
                     "utf-8",
                 ).strip()
             )
-        except subprocess.TimeoutExpired:
+        except (subprocess.TimeoutExpired,ValueError) as e:
             specific_exit_code = -1
 
+        #run all tests and capture exit code
         try:
             all_exit_code = int(
                 str(
@@ -195,30 +111,29 @@ def random_remove_test(iterations):
                     "utf-8",
                 ).strip()
             )
-        except subprocess.TimeoutExpired:
+        except (subprocess.TimeoutExpired,ValueError) as e:
             all_exit_code = -1
 
         data_tuple = (specific_exit_code, all_exit_code)
         c.execute("INSERT INTO data VALUES (?,?)", data_tuple)
         conn.commit()
-
-        print("result:", data_tuple, "iteration:", i + 1)
-        os.chdir(os.getcwd() + "/" + PROJECT_FOLDER)
-        subprocess.run(["git", "restore", src_name])
-        os.chdir("..")
-
+        print("result:", "specific_exit_code:", data_tuple[0],"all_exit_code:",data_tuple[1],"iteration:", i + 1)
+        git_helper.restore(src_name)
+    
     conn.close()
 
-
 def main():
-    ans = input("what approach to commits or random_remove? [1/2]: ")
+    
+    ans = input("Iterate commits [1] or remove random lines and run tests [2] ?")
     if ans == "1":
-        commits_test()
+        iterate_commits()
     elif ans == "2":
+        print("This will randomly remove a src file line and run specific tests and compare it to all of the tests")
+        print("Exit codes of test runs will be stored to database")
         ans = input("how many iterations? ")
         iters = int(ans)
         random_remove_test(iters)
-
+    
 
 if __name__ == "__main__":
     main()

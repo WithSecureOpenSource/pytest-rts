@@ -19,6 +19,18 @@ class MyPytestPlugin:
 
     def init_db(self):
         self.cursor.execute(
+            "DROP TABLE IF EXISTS test_map"
+        )
+        self.cursor.execute(
+            "DROP TABLE IF EXISTS src_file"
+        )
+        self.cursor.execute(
+            "DROP TABLE IF EXISTS test_file"
+        )
+        self.cursor.execute(
+            "DROP TABLE IF EXISTS test_function"
+        )    
+        self.cursor.execute(
             "CREATE TABLE test_map (file_id INTEGER, test_function_id INTEGER, line_id INTEGER, UNIQUE(file_id,test_function_id,line_id))"
         )
         self.cursor.execute(
