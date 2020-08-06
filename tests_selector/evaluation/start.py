@@ -12,29 +12,39 @@ from tests_selector.helper import (
     get_git_repo,
     tests_from_changes_between_commits,
     read_newly_added_tests,
-    query_tests_sourcefile
+    query_tests_sourcefile,
+    get_results_cursor
 )
 
 PROJECT_FOLDER = sys.argv[1]
 
+def install_dependencies(install_cmd):
+    old_dir = os.getcwd()
+    os.chdir("./"+PROJECT_FOLDER)
+    subprocess.run(install_cmd.split())
+    os.chdir(old_dir)
+
 
 def iterate_commits_and_build_db():
     # builds database by going through commits and running specific tests
-    # problem: different dependencies
+    # problem: different dependencies / changing ways of installing dependencies
     repo = get_git_repo(PROJECT_FOLDER)
     git_commits = list(repo.get_list_commits())
 
     print(f"repo has {len(git_commits)} commits")
     start = int(input("start commit?"))
     end = int(input("end commit?"))
+    install_cmd = input("command to install dependencies? (when in the tested project folder)")
 
     hash_1 = git_commits[start].hash
     repo.checkout(hash_1)
+    install_dependencies(install_cmd)
     start_test_init(PROJECT_FOLDER)
 
     for commit in git_commits[start + 1 : end]:
         hash_2 = commit.hash
         repo.checkout(hash_2)
+        install_dependencies(install_cmd)
         change_test_set, update_tuple = tests_from_changes_between_commits(hash_1, hash_2,PROJECT_FOLDER)
         new_tests = read_newly_added_tests(PROJECT_FOLDER)
         final_test_set = change_test_set.union(new_tests)
@@ -54,8 +64,8 @@ def random_remove_test(iterations):
         start_test_init(PROJECT_FOLDER)
 
     test_files, src_files = get_testfiles_and_srcfiles()
-    conn = sqlite3.connect("results.db")
-    c = conn.cursor()
+
+    c,conn = get_results_cursor()
     c.execute(
         "CREATE TABLE IF NOT EXISTS data (specific_exit INTEGER, all_exit INTEGER)"
     )

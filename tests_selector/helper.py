@@ -190,6 +190,12 @@ def get_cursor():
     return c, conn
 
 
+def get_results_cursor():
+    conn = sqlite3.connect("results.db")
+    c = conn.cursor()
+    return c, conn
+
+
 def read_newly_added_tests(PROJECT_FOLDER):
     subprocess.run(["tests_collector", PROJECT_FOLDER])
     c, conn = get_cursor()
