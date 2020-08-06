@@ -202,7 +202,8 @@ def read_newly_added_tests(PROJECT_FOLDER):
 
 
 def get_test_lines_and_update_lines(diff):
-    line_changes = re.findall(r"[@][@][^@]+[@][@]", diff)
+    regex = r"[@][@]\s+[-][0-9]+(?:,[0-9]+)?\s+[+][0-9]+(?:,[0-9]+)?\s+[@][@]"
+    line_changes = re.findall(regex,diff)
     lines_to_query = []
     updates_to_lines = []
     cum_diff = 0
