@@ -305,6 +305,7 @@ def delete_ran_lines(line_ids, file_id):
 
 
 def update_db_from_src_mapping(line_map, file_id):
+    # this should update test mapping line data of src files to new line numbers calculated from changes
     cursor, conn = get_cursor()
     tests_to_update = []
     for line_id in line_map.keys():
@@ -329,17 +330,18 @@ def update_db_from_src_mapping(line_map, file_id):
 
 
 def update_db_from_test_mapping(line_map, file_id):
+    # this should update the start and end lines of test functions with new line numbers calculated from changes
     cursor, conn = get_cursor()
     tests_to_update = []
-    for line_id in line_map.keys():
-        db_data = cursor.execute(
-            """SELECT id,test_file_id,context,start,end FROM test_function
-                                    WHERE test_file_id = ?""",
-            (file_id,),
-        )
-        for line in db_data:
-            tests_to_update.append(line)
-        cursor.execute("DELETE FROM test_function WHERE test_file_id = ?", (file_id,))
+    db_data = cursor.execute(
+        """SELECT id,test_file_id,context,start,end FROM test_function
+            WHERE test_file_id = ?""",
+        (file_id,),
+    )
+    for line in db_data:
+        tests_to_update.append(line)
+    cursor.execute("DELETE FROM test_function WHERE test_file_id = ?", (file_id,))
+
     for t in tests_to_update:
         start = t[3]
         end = t[4]
