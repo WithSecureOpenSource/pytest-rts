@@ -11,10 +11,9 @@ from tests_selector.helper import (
     run_tests_and_update_db,
     get_git_repo,
     tests_from_changes_between_commits,
-    read_newly_added_tests
+    read_newly_added_tests,
+    query_tests_sourcefile
 )
-
-PIPE = subprocess.PIPE
 
 PROJECT_FOLDER = sys.argv[1]
 
@@ -85,32 +84,23 @@ def random_remove_test(iterations):
 
         # run specific tests and capture exit code
         try:
-            specific_exit_code = int(
-                str(
-                    subprocess.run(
-                        ["tests_selector_specific_without_remap", PROJECT_FOLDER]
-                        + tests,
-                        capture_output=True,
-                        timeout=60,
-                    ).stdout,
-                    "utf-8",
-                ).strip()
-            )
+            specific_test_output = subprocess.run(
+                ["tests_selector_specific_without_remap",PROJECT_FOLDER]+tests,
+                timeout=30,
+                capture_output=True
+            ).stdout
+            specific_exit_code = int(specific_test_output)
         except (subprocess.TimeoutExpired,ValueError) as e:
             specific_exit_code = -1
 
         #run all tests and capture exit code
         try:
-            all_exit_code = int(
-                str(
-                    subprocess.run(
-                        ["tests_selector_all_without_remap", PROJECT_FOLDER],
-                        capture_output=True,
-                        timeout=60,
-                    ).stdout,
-                    "utf-8",
-                ).strip()
-            )
+            all_test_output = subprocess.run(
+                ["tests_selector_all_without_remap",PROJECT_FOLDER],
+                timeout=30,
+                capture_output=True
+            ).stdout
+            all_exit_code = int(all_test_output)
         except (subprocess.TimeoutExpired,ValueError) as e:
             all_exit_code = -1
 

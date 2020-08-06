@@ -2,21 +2,12 @@ import os
 import pytest
 import sys
 
+from tests_selector.pytest.capture_plugin_all import CapturePluginAll
 
 def main():
     PROJECT_FOLDER = sys.argv[1]
     os.chdir(os.getcwd() + "/" + PROJECT_FOLDER)
-
-    class NormalPhasePlugin:
-        def __init__(self):
-            pass
-
-        def pytest_sessionfinish(self, session, exitstatus):
-            print(int(exitstatus))
-
-    my_plugin = NormalPhasePlugin()
-    pytest.main(["-p", "no:terminal"], plugins=[my_plugin])
-
+    pytest.main(["-p", "no:terminal"], plugins=[CapturePluginAll()])
 
 if __name__ == "__main__":
     main()

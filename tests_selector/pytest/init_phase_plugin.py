@@ -8,7 +8,7 @@ from _pytest.python import Function
 from tests_selector.helper import get_cursor, function_lines
 
 
-class MyPytestPlugin:
+class InitPhasePlugin:
     def __init__(self):
         self.test_func_lines = {}
         self.cov = coverage.Coverage()
