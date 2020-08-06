@@ -18,7 +18,7 @@ from tests_selector.helper import (
 PROJECT_FOLDER = sys.argv[1]
 
 
-def iterate_commits():
+def iterate_commits_and_build_db():
     # builds database by going through commits and running specific tests
     # problem: different dependencies
     repo = get_git_repo(PROJECT_FOLDER)
@@ -114,9 +114,9 @@ def random_remove_test(iterations):
 
 def main():
     
-    ans = input("Iterate commits [1] or remove random lines and run tests [2] ?")
+    ans = input("Iterate commits and build db [1] or remove random lines and run tests [2] ? ")
     if ans == "1":
-        iterate_commits()
+        iterate_commits_and_build_db()
     elif ans == "2":
         print("This will randomly remove a src file line and run specific tests and compare it to all of the tests")
         print("Exit codes of test runs will be stored to database")
