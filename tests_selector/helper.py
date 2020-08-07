@@ -99,7 +99,7 @@ def tests_from_changed_sourcefiles_current(files, PROJECT_FOLDER):
         file_diff = file_diff_data_current(filename, PROJECT_FOLDER)
         changed_lines, updates_to_lines = get_test_lines_and_update_lines(file_diff)
         line_map = line_mapping(updates_to_lines, filename,PROJECT_FOLDER)
-
+        
         changed_lines_dict[file_id] = changed_lines
         new_line_map_dict[file_id] = line_map
         tests = query_tests_sourcefile(changed_lines, file_id)
@@ -234,9 +234,17 @@ def get_test_lines_and_update_lines(diff):
         update_tuple = (int(old[0]), line_diff)
         updates_to_lines.append(update_tuple)
 
-        for i in range(int(old[0]), int(old[0]) + int(old[1])):
-            lines_to_query.append(i)
-
+        # example data:
+        # @@ -old0,old1 +new0,new1 @@
+        # old0 to old0 + old1 are now new0 to new0+new1
+        # changed lines: old0 to old0 + old1
+        # correct?
+        if int(old[1]) == 0:
+            lines_to_query.append(int(old[0]))
+        else:
+            for i in range(int(old[0]), int(old[0]) + int(old[1])):
+                lines_to_query.append(i)
+        
     return lines_to_query, updates_to_lines
 
 
