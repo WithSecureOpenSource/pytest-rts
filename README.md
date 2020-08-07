@@ -50,6 +50,11 @@
 1. switch to directory with target project
 2. execute `tests_selector`
 
+### Running evaluation code
+
+1. make sure you are in a separate directory from the tested project and that you have a `.coveragerc` file in the same folder
+2. execute `tests_selector_eval path/to/target_project`
+
 # Development
 
 * ~~Don't forget to run `make install` before you are going to try the latest changes~~ - not needed as all the changes in source files are available immediately, just call the needed command line tool from the package
