@@ -43,7 +43,7 @@
 3. switch to directory with target project
 4. install all the dependencies needed for testing (should be installed into the same tests_selector virtual environment)
 5. go back to `tests_selector` directory
-6. execute `tests_selector_init path/to/target_project`
+7. execute `tests_selector_init path/to/target_project` (note: a `.coveragerc`-file is required to be placed to the target project folder at the moment to specify which files are ignored during coverage collection and to prevent errors. Example file is in this project root)
 
 ### Running tests related to the changes
 
