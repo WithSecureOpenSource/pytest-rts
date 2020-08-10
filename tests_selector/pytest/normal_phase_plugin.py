@@ -41,10 +41,8 @@ class NormalPhasePlugin:
         lines = data[2]
         testfile = testname.split("::")[0]
 
-        for test_func in self.test_func_lines[testfile].keys():
-            if test_func == func_name[: len(test_func)]:
-                line_tuple = self.test_func_lines[testfile][test_func]
-                break
+        func_name_no_params = func_name.split("[")[0]
+        line_tuple = self.test_func_lines[testfile][func_name_no_params]
 
         self.cursor.execute(
             "INSERT OR IGNORE INTO src_file (path) VALUES (?)", (src_file,)
