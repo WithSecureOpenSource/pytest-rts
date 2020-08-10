@@ -6,6 +6,9 @@ import re
 
 from pydriller import GitRepository
 
+COVERAGE_CONF_FILE_NAME = ".coveragerc"
+DB_FILE_NAME = "mapping.db"
+
 
 def tests_from_changes_between_commits(commithash1, commithash2, PROJECT_FOLDER):
     changed_files = file_changes_between_commits(
@@ -386,40 +389,47 @@ def update_db_from_test_mapping(line_map, file_id):
     conn.close()
 
 
-def start_test_init(PROJECT_FOLDER):
-    if os.path.exists("mapping.db"):
-        os.remove("mapping.db")
+def start_test_init(project_folder):
+    if os.path.exists(DB_FILE_NAME):
+        os.remove(DB_FILE_NAME)
 
-    if os.path.exists("./" + PROJECT_FOLDER + "/.coveragerc"):
-        os.remove("./" + PROJECT_FOLDER + "/.coveragerc")
+    if os.path.exists("./" + project_folder + "/" + COVERAGE_CONF_FILE_NAME):
+        os.remove("./" + project_folder + "/" + COVERAGE_CONF_FILE_NAME)
 
     os.rename(
-        os.getcwd() + "/.coveragerc",
-        os.getcwd() + "/" + PROJECT_FOLDER + "/.coveragerc",
+        os.getcwd() + "/" + COVERAGE_CONF_FILE_NAME,
+        os.getcwd() + "/" + project_folder + "/" + COVERAGE_CONF_FILE_NAME,
     )
-    subprocess.run(["tests_selector_init", PROJECT_FOLDER])
+    subprocess.run(["tests_selector_init", project_folder])
     os.rename(
-        os.getcwd() + "/" + PROJECT_FOLDER + "/mapping.db", os.getcwd() + "/mapping.db"
+        os.getcwd() + "/" + project_folder + "/" + DB_FILE_NAME,
+        os.getcwd() + "/" + DB_FILE_NAME,
     )
     os.rename(
-        os.getcwd() + "/" + PROJECT_FOLDER + "/.coveragerc",
-        os.getcwd() + "/.coveragerc",
+        os.getcwd() + "/" + project_folder + "/" + COVERAGE_CONF_FILE_NAME,
+        os.getcwd() + "/" + COVERAGE_CONF_FILE_NAME,
     )
 
 
-def start_normal_phase(PROJECT_FOLDER, test_set):
+def start_normal_phase(project_folder, test_set):
     os.rename(
-        os.getcwd() + "/mapping.db", os.getcwd() + "/" + PROJECT_FOLDER + "/mapping.db"
+        os.getcwd() + "/" + DB_FILE_NAME,
+        os.getcwd() + "/" + project_folder + "/" + DB_FILE_NAME,
     )
-    if os.path.exists("./" + PROJECT_FOLDER + "/.coveragerc"):
-        os.remove("./" + PROJECT_FOLDER + "/.coveragerc")
+    if os.path.exists("./" + project_folder + "/" + COVERAGE_CONF_FILE_NAME):
+        os.remove("./" + project_folder + "/" + COVERAGE_CONF_FILE_NAME)
     os.rename(
-        os.getcwd() + "/.coveragerc",
-        os.getcwd() + "/" + PROJECT_FOLDER + "/.coveragerc",
+        os.getcwd() + "/" + COVERAGE_CONF_FILE_NAME,
+        os.getcwd() + "/" + project_folder + "/" + COVERAGE_CONF_FILE_NAME,
     )
-    subprocess.run(["tests_selector_run", PROJECT_FOLDER] + list(test_set))
-    os.rename(os.getcwd() + "/" + PROJECT_FOLDER + "/mapping.db", "./mapping.db")
-    os.rename(os.getcwd() + "/" + PROJECT_FOLDER + "/.coveragerc", "./.coveragerc")
+    subprocess.run(["tests_selector_run", project_folder] + list(test_set))
+    os.rename(
+        os.getcwd() + "/" + project_folder + "/" + DB_FILE_NAME, "./" + DB_FILE_NAME
+    )
+    os.rename(
+        os.getcwd() + "/" + project_folder + "/.coveragerc",
+        "./" + COVERAGE_CONF_FILE_NAME,
+    )
 
 
 def function_lines(node, end):
@@ -452,5 +462,5 @@ def function_lines(node, end):
     return result
 
 
-def get_git_repo(PROJECT_FOLDER):
-    return GitRepository("./" + PROJECT_FOLDER)
+def get_git_repo(project_folder):
+    return GitRepository("./" + project_folder)

@@ -1,5 +1,4 @@
 import os
-import sqlite3
 import subprocess
 import sys
 import random
@@ -139,7 +138,6 @@ def random_remove_test(iterations):
 
 
 def main():
-
     ans = input(
         "Iterate commits and build db [1] or remove random lines and run tests [2] ? "
     )

@@ -1,13 +1,18 @@
-import pytest
 import os
-import sys
 
+import pytest
+
+from tests_selector.helper import COVERAGE_CONF_FILE_NAME
 from tests_selector.pytest.init_phase_plugin import InitPhasePlugin
 
 
 def main():
-    project_folder = sys.argv[1]
-    os.chdir(os.getcwd() + "/" + project_folder)
+    if not os.path.isfile(COVERAGE_CONF_FILE_NAME):
+        with open(COVERAGE_CONF_FILE_NAME, "w") as coverage_config_file:
+            coverage_config_file.writelines(
+                ["[run]", "omit = */.venv/*, tests/*, /tmp/*, *__init__*"]
+            )
+
     pytest.main([], plugins=[InitPhasePlugin()])
 
 

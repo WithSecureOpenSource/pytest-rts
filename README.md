@@ -35,19 +35,19 @@
 
 ### Usage as a module (no source code)
 
-Just add `git+ssh://git@github.com/F-Secure/tests-selector.git#egg=tests-selector` as a dependency to `requirements.txt`
+1. Add your public key to github profile
+2. Add `git+ssh://git@github.com/F-Secure/tests-selector.git#egg=tests-selector` as a dependency to `requirements.txt`
 
 ### Initialization
 
-1. checkout the project
-2. in project directory run `make install` - that will:
+1. Checkout the project
+2. In project directory run `make install` - that will:
   * create virtual environment
   * download all the dependencies
   * install `tests_selector` as a tool
-3. switch to directory with target project
-4. install all the dependencies needed for testing (should be installed into the same tests_selector virtual environment)
-5. go back to `tests_selector` directory
-7. execute `tests_selector_init path/to/target_project` (note: a `.coveragerc`-file is required to be placed to the target project folder at the moment to specify which files are ignored during coverage collection and to prevent errors. Example file is in this project root)
+3. Switch to directory with target project
+4. Install all the dependencies needed for testing (should be installed into the same tests_selector virtual environment)
+5. Execute `tests_selector_init`
 
 ### Running tests related to the changes
 

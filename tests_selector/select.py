@@ -1,3 +1,4 @@
+import os
 import subprocess
 from tests_selector.helper import (
     changed_files_current,
@@ -5,6 +6,8 @@ from tests_selector.helper import (
     tests_from_changed_sourcefiles_current,
     tests_from_changed_testfiles_current,
     read_newly_added_tests,
+    COVERAGE_CONF_FILE_NAME,
+    DB_FILE_NAME,
 )
 
 PROJECT_FOLDER = "."
@@ -35,6 +38,10 @@ def get_tests_from_current_changes(changed_test_files, changed_src_files):
 
 
 def main():
+    if not os.path.isfile(COVERAGE_CONF_FILE_NAME) or not os.path.isfile(DB_FILE_NAME):
+        print("Run tests_selector_init first")
+        exit(1)
+
     changed_files = changed_files_current(PROJECT_FOLDER)
     changed_test_files, changed_src_files = split_changes(changed_files)
     new_tests = read_newly_added_tests(PROJECT_FOLDER)
