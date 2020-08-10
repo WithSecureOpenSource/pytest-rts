@@ -33,6 +33,10 @@
  
 ## Usage
 
+### Usage as a module (no source code)
+
+Just add `git+ssh://git@github.com/F-Secure/tests-selector.git#egg=tests-selector` as a dependency to `requirements.txt`
+
 ### Initialization
 
 1. checkout the project
