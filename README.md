@@ -37,24 +37,29 @@
 
 1. Add your public key to github profile
 2. Add `git+ssh://git@github.com/F-Secure/tests-selector.git#egg=tests-selector` as a dependency to `requirements.txt`
+3. Install dependencies
+4. Run initialization `tests_selector_init`
+5. Run affected tests `tests_selector` basing on uncommited changes
 
-### Initialization
+### Usage from source code
+
+#### Initialization
 
 1. Checkout the project
 2. In project directory run `make install` - that will:
-  * create virtual environment
-  * download all the dependencies
-  * install `tests_selector` as a tool
+    * create virtual environment
+    * download all the dependencies
+    * install `tests_selector` as a tool
 3. Switch to directory with target project
 4. Install all the dependencies needed for testing (should be installed into the same tests_selector virtual environment)
 5. Execute `tests_selector_init`
 
-### Running tests related to the changes
+#### Running tests related to the changes
 
 1. switch to directory with target project
 2. execute `tests_selector`
 
-### Running evaluation code
+#### Running evaluation code
 
 1. make sure you are in a separate directory from the tested project and that you have a `.coveragerc` file in the same folder
 2. execute `tests_selector_eval path/to/target_project`
