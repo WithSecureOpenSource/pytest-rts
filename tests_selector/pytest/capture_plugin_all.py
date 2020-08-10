@@ -1,6 +1,7 @@
 import pytest
 
-class CapturePluginAll():
+
+class CapturePluginAll:
     def __init__(self):
         pass
 

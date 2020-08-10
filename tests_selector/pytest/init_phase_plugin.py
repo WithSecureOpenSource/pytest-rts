@@ -18,18 +18,10 @@ class InitPhasePlugin:
         self.init_db()
 
     def init_db(self):
-        self.cursor.execute(
-            "DROP TABLE IF EXISTS test_map"
-        )
-        self.cursor.execute(
-            "DROP TABLE IF EXISTS src_file"
-        )
-        self.cursor.execute(
-            "DROP TABLE IF EXISTS test_file"
-        )
-        self.cursor.execute(
-            "DROP TABLE IF EXISTS test_function"
-        )    
+        self.cursor.execute("DROP TABLE IF EXISTS test_map")
+        self.cursor.execute("DROP TABLE IF EXISTS src_file")
+        self.cursor.execute("DROP TABLE IF EXISTS test_file")
+        self.cursor.execute("DROP TABLE IF EXISTS test_function")
         self.cursor.execute(
             "CREATE TABLE test_map (file_id INTEGER, test_function_id INTEGER, line_id INTEGER, UNIQUE(file_id,test_function_id,line_id))"
         )
@@ -75,7 +67,7 @@ class InitPhasePlugin:
 
         func_name_no_params = func_name.split("[")[0]
         line_tuple = self.test_func_lines[testfile][func_name_no_params]
- 
+
         self.cursor.execute(
             "INSERT OR IGNORE INTO src_file (path) VALUES (?)", (src_file,)
         )

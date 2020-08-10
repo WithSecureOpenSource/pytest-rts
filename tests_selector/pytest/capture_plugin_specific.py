@@ -2,8 +2,9 @@ import pytest
 
 from tests_selector.pytest.fake_item import FakeItem
 
+
 class CapturePluginSpecific:
-    def __init__(self,test_set):
+    def __init__(self, test_set):
         self.test_set = test_set
 
     def pytest_collection_modifyitems(self, session, config, items):

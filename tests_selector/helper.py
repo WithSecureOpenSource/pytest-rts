@@ -7,19 +7,25 @@ import re
 from pydriller import GitRepository
 
 
-def tests_from_changes_between_commits(commithash1, commithash2,PROJECT_FOLDER):
-    changed_files = file_changes_between_commits(commithash1,commithash2,PROJECT_FOLDER)
+def tests_from_changes_between_commits(commithash1, commithash2, PROJECT_FOLDER):
+    changed_files = file_changes_between_commits(
+        commithash1, commithash2, PROJECT_FOLDER
+    )
     changed_test_files, changed_source_files = split_changes(changed_files)
     (
         test_test_set,
         test_changed_lines_dict,
         test_new_line_map_dict,
-    ) = tests_from_changed_testfiles_between_commits(changed_test_files, commithash1, commithash2,PROJECT_FOLDER)
+    ) = tests_from_changed_testfiles_between_commits(
+        changed_test_files, commithash1, commithash2, PROJECT_FOLDER
+    )
     (
         src_test_set,
         src_changed_lines_dict,
         src_new_line_map_dict,
-    ) = tests_from_changed_sourcefiles_between_commits(changed_source_files, commithash1, commithash2,PROJECT_FOLDER)
+    ) = tests_from_changed_sourcefiles_between_commits(
+        changed_source_files, commithash1, commithash2, PROJECT_FOLDER
+    )
 
     test_set = test_test_set.union(src_test_set)
     update_tuple = (
@@ -32,16 +38,20 @@ def tests_from_changes_between_commits(commithash1, commithash2,PROJECT_FOLDER):
     return test_set, update_tuple
 
 
-def tests_from_changed_testfiles_between_commits(files, commithash1, commithash2,PROJECT_FOLDER):
+def tests_from_changed_testfiles_between_commits(
+    files, commithash1, commithash2, PROJECT_FOLDER
+):
     test_set = set()
     changed_lines_dict = {}
     new_line_map_dict = {}
     for f in files:
         file_id = f[0]
         filename = f[1]
-        git_data = file_diff_data_between_commits(filename, commithash1, commithash2,PROJECT_FOLDER)
+        git_data = file_diff_data_between_commits(
+            filename, commithash1, commithash2, PROJECT_FOLDER
+        )
         changed_lines, updates_to_lines = get_test_lines_and_update_lines(git_data)
-        line_map = line_mapping(updates_to_lines, filename,PROJECT_FOLDER)
+        line_map = line_mapping(updates_to_lines, filename, PROJECT_FOLDER)
 
         changed_lines_dict[file_id] = changed_lines
         new_line_map_dict[file_id] = line_map
@@ -53,16 +63,20 @@ def tests_from_changed_testfiles_between_commits(files, commithash1, commithash2
     return test_set, changed_lines_dict, new_line_map_dict
 
 
-def tests_from_changed_sourcefiles_between_commits(files, commithash1, commithash2,PROJECT_FOLDER):
+def tests_from_changed_sourcefiles_between_commits(
+    files, commithash1, commithash2, PROJECT_FOLDER
+):
     test_set = set()
     changed_lines_dict = {}
     new_line_map_dict = {}
     for f in files:
         file_id = f[0]
         filename = f[1]
-        git_data = file_diff_data_between_commits(filename, commithash1, commithash2,PROJECT_FOLDER)
+        git_data = file_diff_data_between_commits(
+            filename, commithash1, commithash2, PROJECT_FOLDER
+        )
         changed_lines, updates_to_lines = get_test_lines_and_update_lines(git_data)
-        line_map = line_mapping(updates_to_lines, filename,PROJECT_FOLDER)
+        line_map = line_mapping(updates_to_lines, filename, PROJECT_FOLDER)
 
         changed_lines_dict[file_id] = changed_lines
         new_line_map_dict[file_id] = line_map
@@ -98,8 +112,8 @@ def tests_from_changed_sourcefiles_current(files, PROJECT_FOLDER):
         filename = f[1]
         file_diff = file_diff_data_current(filename, PROJECT_FOLDER)
         changed_lines, updates_to_lines = get_test_lines_and_update_lines(file_diff)
-        line_map = line_mapping(updates_to_lines, filename,PROJECT_FOLDER)
-        
+        line_map = line_mapping(updates_to_lines, filename, PROJECT_FOLDER)
+
         changed_lines_dict[file_id] = changed_lines
         new_line_map_dict[file_id] = line_map
         tests = query_tests_sourcefile(changed_lines, file_id)
@@ -118,7 +132,7 @@ def tests_from_changed_testfiles_current(files, PROJECT_FOLDER):
         filename = f[1]
         file_diff = file_diff_data_current(filename, PROJECT_FOLDER)
         changed_lines, updates_to_lines = get_test_lines_and_update_lines(file_diff)
-        line_map = line_mapping(updates_to_lines, filename,PROJECT_FOLDER)
+        line_map = line_mapping(updates_to_lines, filename, PROJECT_FOLDER)
 
         changed_lines_dict[file_id] = changed_lines
         new_line_map_dict[file_id] = line_map
@@ -133,7 +147,7 @@ def tests_from_changed_testfiles_current(files, PROJECT_FOLDER):
 def file_changes_between_commits(commit1, commit2, PROJECT_FOLDER):
     repo = get_git_repo(PROJECT_FOLDER)
     git_helper = repo.repo.git
-    return git_helper.diff("--name-only",commit1,commit2).split()
+    return git_helper.diff("--name-only", commit1, commit2).split()
 
 
 def split_changes(changed_files):
@@ -163,13 +177,13 @@ def changed_files_current(PROJECT_FOLDER):
 def file_diff_data_between_commits(filename, commithash1, commithash2, PROJECT_FOLDER):
     repo = get_git_repo(PROJECT_FOLDER)
     git_helper = repo.repo.git
-    return git_helper.diff("-U0",commithash1,commithash2,"--",filename)
+    return git_helper.diff("-U0", commithash1, commithash2, "--", filename)
 
 
 def file_diff_data_current(filename, PROJECT_FOLDER):
     repo = get_git_repo(PROJECT_FOLDER)
     git_helper = repo.repo.git
-    return git_helper.diff("-U0","--",filename)
+    return git_helper.diff("-U0", "--", filename)
 
 
 def get_testfiles_and_srcfiles():
@@ -209,7 +223,7 @@ def read_newly_added_tests(PROJECT_FOLDER):
 
 def get_test_lines_and_update_lines(diff):
     regex = r"[@][@]\s+[-][0-9]+(?:,[0-9]+)?\s+[+][0-9]+(?:,[0-9]+)?\s+[@][@]"
-    line_changes = re.findall(regex,diff)
+    line_changes = re.findall(regex, diff)
     lines_to_query = []
     updates_to_lines = []
     cum_diff = 0
@@ -244,7 +258,7 @@ def get_test_lines_and_update_lines(diff):
         else:
             for i in range(int(old[0]), int(old[0]) + int(old[1])):
                 lines_to_query.append(i)
-        
+
     return lines_to_query, updates_to_lines
 
 
@@ -286,9 +300,9 @@ def query_tests_sourcefile(lines_to_query, file_id):
     return tests
 
 
-def line_mapping(updates_to_lines, filename,PROJECT_FOLDER):
+def line_mapping(updates_to_lines, filename, PROJECT_FOLDER):
     try:
-        line_count = sum(1 for line in open("./"+PROJECT_FOLDER+"/"+filename))
+        line_count = sum(1 for line in open("./" + PROJECT_FOLDER + "/" + filename))
     except OSError:
         return {}
     line_mapping = {}
