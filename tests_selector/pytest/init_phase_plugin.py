@@ -5,7 +5,8 @@ import coverage
 import pytest
 from _pytest.python import Function
 
-from tests_selector.helper import get_cursor, function_lines
+from tests_selector.utils.common import function_lines
+from tests_selector.utils.db import get_cursor
 
 
 class InitPhasePlugin:

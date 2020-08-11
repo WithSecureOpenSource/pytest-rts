@@ -2,22 +2,14 @@ import os
 import sys
 import pytest
 
-from tests_selector.helper import get_cursor
+from tests_selector.pytest.collect_plugin import CollectPlugin
+from tests_selector.utils.common import get_cursor
 
 PROJECT_FOLDER = sys.argv[1]
 
 
 def newly_added_tests(existing_tests):
-    class CollectPlugin:
-        def __init__(self):
-            self.collected = []
-
-        def pytest_collection_modifyitems(self, items):
-            for item in items:
-                if item.nodeid not in existing_tests:
-                    self.collected.append(item.nodeid)
-
-    coll_plugin = CollectPlugin()
+    coll_plugin = CollectPlugin(existing_tests)
     os.chdir(os.getcwd() + "/" + PROJECT_FOLDER)
     pytest.main(["--collect-only", "-p", "no:terminal"], plugins=[coll_plugin])
     os.chdir("..")

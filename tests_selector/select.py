@@ -1,7 +1,6 @@
 import os
 import subprocess
-from tests_selector.helper import (
-    changed_files_current,
+from tests_selector.utils.common import (
     split_changes,
     tests_from_changed_sourcefiles_current,
     tests_from_changed_testfiles_current,
@@ -9,6 +8,7 @@ from tests_selector.helper import (
     COVERAGE_CONF_FILE_NAME,
     DB_FILE_NAME,
 )
+from tests_selector.utils.git import changed_files_current
 
 
 def get_tests_from_current_changes(changed_test_files, changed_src_files):

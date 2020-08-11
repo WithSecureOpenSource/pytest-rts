@@ -1,7 +1,7 @@
 from tests_selector.pytest.fake_item import FakeItem
 
 
-class CapturePluginSpecific:
+class CaptureSpecificPlugin:
     def __init__(self, test_set):
         self.test_set = test_set
 

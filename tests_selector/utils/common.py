@@ -1,13 +1,16 @@
 import ast
 import os
-import sqlite3
 import subprocess
 import re
 
-from pydriller import GitRepository
+from tests_selector.utils.db import get_cursor, DB_FILE_NAME
+from tests_selector.utils.git import (
+    file_changes_between_commits,
+    file_diff_data_between_commits,
+    file_diff_data_current,
+)
 
 COVERAGE_CONF_FILE_NAME = ".coveragerc"
-DB_FILE_NAME = "mapping.db"
 
 
 def tests_from_changes_between_commits(commithash1, commithash2, project_folder):
@@ -149,12 +152,6 @@ def tests_from_changed_testfiles_current(files, project_folder="."):
     return test_set, changed_lines_dict, new_line_map_dict
 
 
-def file_changes_between_commits(commit1, commit2, project_folder):
-    repo = get_git_repo(project_folder)
-    git_helper = repo.repo.git
-    return git_helper.diff("--name-only", commit1, commit2).split()
-
-
 def split_changes(changed_files):
     changed_tests = []
     changed_sources = []
@@ -173,24 +170,6 @@ def split_changes(changed_files):
     return changed_tests, changed_sources
 
 
-def changed_files_current(project_folder="."):
-    repo = get_git_repo(project_folder)
-    git_helper = repo.repo.git
-    return git_helper.diff("--name-only").split()
-
-
-def file_diff_data_between_commits(filename, commithash1, commithash2, PROJECT_FOLDER):
-    repo = get_git_repo(PROJECT_FOLDER)
-    git_helper = repo.repo.git
-    return git_helper.diff("-U0", commithash1, commithash2, "--", filename)
-
-
-def file_diff_data_current(filename, PROJECT_FOLDER):
-    repo = get_git_repo(PROJECT_FOLDER)
-    git_helper = repo.repo.git
-    return git_helper.diff("-U0", "--", filename)
-
-
 def get_testfiles_and_srcfiles():
     c, conn = get_cursor()
     test_files = [
@@ -201,18 +180,6 @@ def get_testfiles_and_srcfiles():
     ]
     conn.close()
     return test_files, src_files
-
-
-def get_cursor():
-    conn = sqlite3.connect(DB_FILE_NAME)
-    c = conn.cursor()
-    return c, conn
-
-
-def get_results_cursor():
-    conn = sqlite3.connect("results.db")
-    c = conn.cursor()
-    return c, conn
 
 
 def read_newly_added_tests(project_folder="."):
@@ -471,10 +438,6 @@ def function_lines(node, end):
             result.extend(function_lines(item, _next_lineno(i, end)))
 
     return result
-
-
-def get_git_repo(project_folder):
-    return GitRepository("./" + project_folder)
 
 
 def check_create_coverage_conf():

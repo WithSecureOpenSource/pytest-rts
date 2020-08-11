@@ -3,17 +3,17 @@ import subprocess
 import sys
 import random
 
-from tests_selector.helper import (
+from tests_selector.utils.common import (
     get_test_lines_and_update_lines,
     start_test_init,
     get_testfiles_and_srcfiles,
     run_tests_and_update_db,
-    get_git_repo,
     tests_from_changes_between_commits,
     read_newly_added_tests,
     query_tests_sourcefile,
-    get_results_cursor,
 )
+from tests_selector.utils.db import get_results_cursor
+from tests_selector.utils.git import get_git_repo
 
 PROJECT_FOLDER = sys.argv[1]
 

@@ -1,4 +1,4 @@
-class CapturePluginAll:
+class CaptureAllPlugin:
     def __init__(self):
         pass
 
