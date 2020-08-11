@@ -1,13 +1,22 @@
 import ast
 import os
 import subprocess
-import re
 
-from tests_selector.utils.db import get_cursor, DB_FILE_NAME
+from tests_selector.utils.db import (
+    DB_FILE_NAME,
+    delete_ran_lines,
+    get_cursor,
+    get_testfiles_and_srcfiles,
+    query_tests_sourcefile,
+    query_tests_testfile,
+    update_db_from_test_mapping,
+    update_db_from_src_mapping,
+)
 from tests_selector.utils.git import (
     file_changes_between_commits,
     file_diff_data_between_commits,
     file_diff_data_current,
+    get_test_lines_and_update_lines,
 )
 
 COVERAGE_CONF_FILE_NAME = ".coveragerc"
@@ -170,18 +179,6 @@ def split_changes(changed_files):
     return changed_tests, changed_sources
 
 
-def get_testfiles_and_srcfiles():
-    c, conn = get_cursor()
-    test_files = [
-        (x[0], x[1]) for x in c.execute("SELECT id,path FROM test_file").fetchall()
-    ]
-    src_files = [
-        (x[0], x[1]) for x in c.execute("SELECT id,path FROM src_file").fetchall()
-    ]
-    conn.close()
-    return test_files, src_files
-
-
 def read_newly_added_tests(project_folder="."):
     subprocess.run(["tests_selector_collect", project_folder])
     c, conn = get_cursor()
@@ -190,85 +187,6 @@ def read_newly_added_tests(project_folder="."):
         new_tests.add(t)
     conn.close()
     return new_tests
-
-
-def get_test_lines_and_update_lines(diff):
-    regex = r"[@][@]\s+[-][0-9]+(?:,[0-9]+)?\s+[+][0-9]+(?:,[0-9]+)?\s+[@][@]"
-    line_changes = re.findall(regex, diff)
-    lines_to_query = []
-    updates_to_lines = []
-    cum_diff = 0
-    for change in line_changes:
-        changed_line = change.strip("@").split()
-        if "," not in changed_line[0]:
-            changed_line[0] += ",1"
-        if "," not in changed_line[1]:
-            changed_line[1] += ",1"
-        old = changed_line[0].split(",")
-        old[0] = old[0].strip("-")
-        new = changed_line[1].split(",")
-        new[0] = new[0].strip("+")
-
-        line_diff = (
-            ((int(new[0]) + int(new[1])) - int(new[0]))
-            - ((int(old[0]) + int(old[1])) - int(old[0]))
-            + cum_diff
-        )
-        cum_diff = line_diff
-
-        update_tuple = (int(old[0]), line_diff)
-        updates_to_lines.append(update_tuple)
-
-        # example data:
-        # @@ -old0,old1 +new0,new1 @@
-        # old0 to old0 + old1 are now new0 to new0+new1
-        # changed lines: old0 to old0 + old1
-        # correct?
-        if int(old[1]) == 0:
-            lines_to_query.append(int(old[0]))
-        else:
-            for i in range(int(old[0]), int(old[0]) + int(old[1])):
-                lines_to_query.append(i)
-
-    return lines_to_query, updates_to_lines
-
-
-def query_tests_testfile(lines_to_query, file_id):
-    cursor, conn = get_cursor()
-    tests = []
-    for line_id in lines_to_query:
-        data = cursor.execute(
-            """ SELECT DISTINCT context
-                FROM test_function
-                WHERE test_file_id = ? 
-                AND start <= ?
-                AND end >= ?""",
-            (file_id, line_id, line_id),
-        )
-        for line in data:
-            test = line[0]
-            tests.append(test)
-    conn.close()
-    return tests
-
-
-def query_tests_sourcefile(lines_to_query, file_id):
-    cursor, conn = get_cursor()
-    tests = []
-    for line_id in lines_to_query:
-        data = cursor.execute(
-            """ SELECT DISTINCT context
-                FROM test_function
-                JOIN test_map ON test_function.id == test_map.test_function_id
-                WHERE test_map.file_id = ?
-                AND test_map.line_id = ?  """,
-            (file_id, line_id,),
-        )
-        for line in data:
-            test = line[0]
-            tests.append(test)
-    conn.close()
-    return tests
 
 
 def line_mapping(updates_to_lines, filename, PROJECT_FOLDER):
@@ -292,69 +210,6 @@ def line_mapping(updates_to_lines, filename, PROJECT_FOLDER):
             line_mapping[k] = k + diff
 
     return line_mapping
-
-
-def delete_ran_lines(line_ids, file_id):
-    cursor, conn = get_cursor()
-    for line in line_ids:
-        cursor.execute(
-            "DELETE FROM test_map WHERE line_id == ? AND file_id == ?", (line, file_id)
-        )
-    conn.close()
-
-
-def update_db_from_src_mapping(line_map, file_id):
-    # this should update test mapping line data of src files to new line numbers calculated from changes
-    cursor, conn = get_cursor()
-    tests_to_update = []
-    for line_id in line_map.keys():
-        db_data = cursor.execute(
-            "SELECT file_id,test_function_id,line_id FROM test_map WHERE line_id == ? AND file_id == ?",
-            (line_id, file_id),
-        )
-        for line in db_data:
-            tests_to_update.append(line)
-        cursor.execute(
-            "DELETE FROM test_map WHERE line_id == ? AND file_id == ?",
-            (line_id, file_id),
-        )
-    for t in tests_to_update:
-        updated_t = (t[0], t[1], line_map[t[2]])
-        cursor.execute(
-            "INSERT OR IGNORE INTO test_map (file_id,test_function_id,line_id) VALUES (?,?,?)",
-            updated_t,
-        )
-    conn.commit()
-    conn.close()
-
-
-def update_db_from_test_mapping(line_map, file_id):
-    # this should update the start and end lines of test functions with new line numbers calculated from changes
-    cursor, conn = get_cursor()
-    tests_to_update = []
-    db_data = cursor.execute(
-        """SELECT id,test_file_id,context,start,end FROM test_function
-            WHERE test_file_id = ?""",
-        (file_id,),
-    )
-    for line in db_data:
-        tests_to_update.append(line)
-    cursor.execute("DELETE FROM test_function WHERE test_file_id = ?", (file_id,))
-
-    for t in tests_to_update:
-        start = t[3]
-        end = t[4]
-        if start in line_map:
-            start = line_map[start]
-        if end in line_map:
-            end = line_map[end]
-        updated_t = (t[0], t[1], t[2], start, end)
-        cursor.execute(
-            "INSERT OR IGNORE INTO test_function (id,test_file_id,context,start,end) VALUES (?,?,?,?,?)",
-            updated_t,
-        )
-    conn.commit()
-    conn.close()
 
 
 def start_test_init(project_folder):
@@ -446,6 +301,4 @@ def check_create_coverage_conf():
         return
 
     with open(COVERAGE_CONF_FILE_NAME, "w") as coverage_config_file:
-        coverage_config_file.writelines(
-            ["[run]", "omit = */.venv/*, tests/*, /tmp/*, *__init__*"]
-        )
+        coverage_config_file.writelines("[run]\nomit = */.venv/*, tests/*, /tmp/*, *__init__*")
