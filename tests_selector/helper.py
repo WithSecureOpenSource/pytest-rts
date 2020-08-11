@@ -10,9 +10,9 @@ COVERAGE_CONF_FILE_NAME = ".coveragerc"
 DB_FILE_NAME = "mapping.db"
 
 
-def tests_from_changes_between_commits(commithash1, commithash2, PROJECT_FOLDER):
+def tests_from_changes_between_commits(commithash1, commithash2, project_folder):
     changed_files = file_changes_between_commits(
-        commithash1, commithash2, PROJECT_FOLDER
+        commithash1, commithash2, project_folder
     )
     changed_test_files, changed_source_files = split_changes(changed_files)
     (
@@ -20,14 +20,14 @@ def tests_from_changes_between_commits(commithash1, commithash2, PROJECT_FOLDER)
         test_changed_lines_dict,
         test_new_line_map_dict,
     ) = tests_from_changed_testfiles_between_commits(
-        changed_test_files, commithash1, commithash2, PROJECT_FOLDER
+        changed_test_files, commithash1, commithash2, project_folder
     )
     (
         src_test_set,
         src_changed_lines_dict,
         src_new_line_map_dict,
     ) = tests_from_changed_sourcefiles_between_commits(
-        changed_source_files, commithash1, commithash2, PROJECT_FOLDER
+        changed_source_files, commithash1, commithash2, project_folder
     )
 
     test_set = test_test_set.union(src_test_set)
@@ -42,7 +42,7 @@ def tests_from_changes_between_commits(commithash1, commithash2, PROJECT_FOLDER)
 
 
 def tests_from_changed_testfiles_between_commits(
-    files, commithash1, commithash2, PROJECT_FOLDER
+    files, commithash1, commithash2, project_folder
 ):
     test_set = set()
     changed_lines_dict = {}
@@ -51,10 +51,10 @@ def tests_from_changed_testfiles_between_commits(
         file_id = f[0]
         filename = f[1]
         git_data = file_diff_data_between_commits(
-            filename, commithash1, commithash2, PROJECT_FOLDER
+            filename, commithash1, commithash2, project_folder
         )
         changed_lines, updates_to_lines = get_test_lines_and_update_lines(git_data)
-        line_map = line_mapping(updates_to_lines, filename, PROJECT_FOLDER)
+        line_map = line_mapping(updates_to_lines, filename, project_folder)
 
         changed_lines_dict[file_id] = changed_lines
         new_line_map_dict[file_id] = line_map
@@ -67,7 +67,7 @@ def tests_from_changed_testfiles_between_commits(
 
 
 def tests_from_changed_sourcefiles_between_commits(
-    files, commithash1, commithash2, PROJECT_FOLDER
+    files, commithash1, commithash2, project_folder
 ):
     test_set = set()
     changed_lines_dict = {}
@@ -76,10 +76,10 @@ def tests_from_changed_sourcefiles_between_commits(
         file_id = f[0]
         filename = f[1]
         git_data = file_diff_data_between_commits(
-            filename, commithash1, commithash2, PROJECT_FOLDER
+            filename, commithash1, commithash2, project_folder
         )
         changed_lines, updates_to_lines = get_test_lines_and_update_lines(git_data)
-        line_map = line_mapping(updates_to_lines, filename, PROJECT_FOLDER)
+        line_map = line_mapping(updates_to_lines, filename, project_folder)
 
         changed_lines_dict[file_id] = changed_lines
         new_line_map_dict[file_id] = line_map
@@ -90,8 +90,10 @@ def tests_from_changed_sourcefiles_between_commits(
     return test_set, changed_lines_dict, new_line_map_dict
 
 
-def run_tests_and_update_db(test_set, update_tuple, PROJECT_FOLDER):
-    changed_lines_test = update_tuple[0]
+def run_tests_and_update_db(test_set, update_tuple, project_folder):
+    changed_lines_test = update_tuple[
+        0
+    ]  # TODO: `changed_lines_test` is not used below!
     line_map_test = update_tuple[1]
     changed_lines_src = update_tuple[2]
     line_map_src = update_tuple[3]
@@ -103,19 +105,19 @@ def run_tests_and_update_db(test_set, update_tuple, PROJECT_FOLDER):
         delete_ran_lines(changed_lines_src[f], f)
         update_db_from_src_mapping(line_map_src[f], f)
 
-    start_normal_phase(PROJECT_FOLDER, test_set)
+    start_normal_phase(project_folder, test_set)
 
 
-def tests_from_changed_sourcefiles_current(files, PROJECT_FOLDER):
+def tests_from_changed_sourcefiles_current(files, project_folder="."):
     test_set = set()
     changed_lines_dict = {}
     new_line_map_dict = {}
     for f in files:
         file_id = f[0]
         filename = f[1]
-        file_diff = file_diff_data_current(filename, PROJECT_FOLDER)
+        file_diff = file_diff_data_current(filename, project_folder)
         changed_lines, updates_to_lines = get_test_lines_and_update_lines(file_diff)
-        line_map = line_mapping(updates_to_lines, filename, PROJECT_FOLDER)
+        line_map = line_mapping(updates_to_lines, filename, project_folder)
 
         changed_lines_dict[file_id] = changed_lines
         new_line_map_dict[file_id] = line_map
@@ -126,16 +128,16 @@ def tests_from_changed_sourcefiles_current(files, PROJECT_FOLDER):
     return test_set, changed_lines_dict, new_line_map_dict
 
 
-def tests_from_changed_testfiles_current(files, PROJECT_FOLDER):
+def tests_from_changed_testfiles_current(files, project_folder="."):
     test_set = set()
     changed_lines_dict = {}
     new_line_map_dict = {}
     for f in files:
         file_id = f[0]
         filename = f[1]
-        file_diff = file_diff_data_current(filename, PROJECT_FOLDER)
+        file_diff = file_diff_data_current(filename, project_folder)
         changed_lines, updates_to_lines = get_test_lines_and_update_lines(file_diff)
-        line_map = line_mapping(updates_to_lines, filename, PROJECT_FOLDER)
+        line_map = line_mapping(updates_to_lines, filename, project_folder)
 
         changed_lines_dict[file_id] = changed_lines
         new_line_map_dict[file_id] = line_map
@@ -147,8 +149,8 @@ def tests_from_changed_testfiles_current(files, PROJECT_FOLDER):
     return test_set, changed_lines_dict, new_line_map_dict
 
 
-def file_changes_between_commits(commit1, commit2, PROJECT_FOLDER):
-    repo = get_git_repo(PROJECT_FOLDER)
+def file_changes_between_commits(commit1, commit2, project_folder):
+    repo = get_git_repo(project_folder)
     git_helper = repo.repo.git
     return git_helper.diff("--name-only", commit1, commit2).split()
 
@@ -171,8 +173,8 @@ def split_changes(changed_files):
     return changed_tests, changed_sources
 
 
-def changed_files_current(PROJECT_FOLDER):
-    repo = get_git_repo(PROJECT_FOLDER)
+def changed_files_current(project_folder="."):
+    repo = get_git_repo(project_folder)
     git_helper = repo.repo.git
     return git_helper.diff("--name-only").split()
 
@@ -202,7 +204,7 @@ def get_testfiles_and_srcfiles():
 
 
 def get_cursor():
-    conn = sqlite3.connect("mapping.db")
+    conn = sqlite3.connect(DB_FILE_NAME)
     c = conn.cursor()
     return c, conn
 
@@ -213,14 +215,13 @@ def get_results_cursor():
     return c, conn
 
 
-def read_newly_added_tests(PROJECT_FOLDER):
-    subprocess.run(["tests_collector", PROJECT_FOLDER])
+def read_newly_added_tests(project_folder="."):
+    subprocess.run(["tests_selector_collect", project_folder])
     c, conn = get_cursor()
     new_tests = set()
     for t in [x[0] for x in c.execute("SELECT context FROM new_tests").fetchall()]:
         new_tests.add(t)
     conn.close()
-
     return new_tests
 
 
@@ -400,7 +401,12 @@ def start_test_init(project_folder):
         os.getcwd() + "/" + COVERAGE_CONF_FILE_NAME,
         os.getcwd() + "/" + project_folder + "/" + COVERAGE_CONF_FILE_NAME,
     )
-    subprocess.run(["tests_selector_init", project_folder])
+
+    curr_dir = os.getcwd()
+    os.chdir(curr_dir + "/" + project_folder)
+    subprocess.run(["tests_selector_init"])
+    os.chdir(curr_dir)
+
     os.rename(
         os.getcwd() + "/" + project_folder + "/" + DB_FILE_NAME,
         os.getcwd() + "/" + DB_FILE_NAME,
@@ -422,7 +428,12 @@ def start_normal_phase(project_folder, test_set):
         os.getcwd() + "/" + COVERAGE_CONF_FILE_NAME,
         os.getcwd() + "/" + project_folder + "/" + COVERAGE_CONF_FILE_NAME,
     )
-    subprocess.run(["tests_selector_run", project_folder] + list(test_set))
+
+    curr_dir = os.getcwd()
+    os.chdir(curr_dir + "/" + project_folder)
+    subprocess.run(["tests_selector_run"] + list(test_set))
+    os.chdir(curr_dir)
+
     os.rename(
         os.getcwd() + "/" + project_folder + "/" + DB_FILE_NAME, "./" + DB_FILE_NAME
     )
@@ -464,3 +475,14 @@ def function_lines(node, end):
 
 def get_git_repo(project_folder):
     return GitRepository("./" + project_folder)
+
+
+def check_create_coverage_conf():
+    if os.path.isfile(COVERAGE_CONF_FILE_NAME):
+        print(f"file {COVERAGE_CONF_FILE_NAME} already exists")
+        return
+
+    with open(COVERAGE_CONF_FILE_NAME, "w") as coverage_config_file:
+        coverage_config_file.writelines(
+            ["[run]", "omit = */.venv/*, tests/*, /tmp/*, *__init__*"]
+        )
