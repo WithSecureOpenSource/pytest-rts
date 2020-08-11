@@ -1,5 +1,3 @@
-import pytest
-
 from tests_selector.pytest.fake_item import FakeItem
 
 

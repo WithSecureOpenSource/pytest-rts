@@ -1,6 +1,3 @@
-import pytest
-
-
 class CapturePluginAll:
     def __init__(self):
         pass
