@@ -21,6 +21,7 @@ def delete_ran_lines(line_ids, file_id):
         cursor.execute(
             "DELETE FROM test_map WHERE line_id == ? AND file_id == ?", (line, file_id)
         )
+    conn.commit()
     conn.close()
 
 
