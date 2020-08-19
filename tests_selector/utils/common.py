@@ -16,6 +16,7 @@ from tests_selector.utils.git import (
     file_changes_between_commits,
     file_diff_data_between_commits,
     file_diff_data_current,
+    file_diff_data_branch,
     get_test_lines_and_update_lines,
 )
 
@@ -118,6 +119,47 @@ def run_tests_and_update_db(test_set, update_tuple, project_folder):
         update_db_from_src_mapping(line_map_src[f], f)
 
     start_normal_phase(project_folder, test_set)
+
+
+def tests_from_changed_sourcefiles_branch(files, project_folder="."):
+    test_set = set()
+    changed_lines_dict = {}
+    new_line_map_dict = {}
+    for f in files:
+        file_id = f[0]
+        filename = f[1]
+        file_diff = file_diff_data_branch(filename, project_folder)
+        changed_lines, updates_to_lines = get_test_lines_and_update_lines(file_diff)
+        line_map = line_mapping(updates_to_lines, filename, project_folder)
+
+        changed_lines_dict[file_id] = changed_lines
+        new_line_map_dict[file_id] = line_map
+        tests = query_tests_sourcefile(changed_lines, file_id)
+
+        for t in tests:
+            test_set.add(t)
+    return test_set, changed_lines_dict, new_line_map_dict
+
+
+def tests_from_changed_testfiles_branch(files, project_folder="."):
+    test_set = set()
+    changed_lines_dict = {}
+    new_line_map_dict = {}
+    for f in files:
+        file_id = f[0]
+        filename = f[1]
+        file_diff = file_diff_data_branch(filename, project_folder)
+        changed_lines, updates_to_lines = get_test_lines_and_update_lines(file_diff)
+        line_map = line_mapping(updates_to_lines, filename, project_folder)
+
+        changed_lines_dict[file_id] = changed_lines
+        new_line_map_dict[file_id] = line_map
+        tests = query_tests_testfile(changed_lines, file_id)
+
+        for t in tests:
+            test_set.add(t)
+
+    return test_set, changed_lines_dict, new_line_map_dict
 
 
 def tests_from_changed_sourcefiles_current(files, project_folder="."):
