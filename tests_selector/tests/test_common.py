@@ -6,7 +6,7 @@ import ast
 from tests_selector.utils import git,common
 
 
-def test_tests_from_changed_sourcefiles_current(temp_project_repo):
+def test_tests_from_changed_sourcefiles(temp_project_repo):
     with open("./src/car.py","r") as f:
         lines = f.readlines()
         code = lines[11]
@@ -19,12 +19,13 @@ def test_tests_from_changed_sourcefiles_current(temp_project_repo):
     changed_files = git.changed_files_current()
     test_files,src_files = common.split_changes(changed_files)
     src_file_id = src_files[0][0]
-    
+    diff_dict = common.file_diff_dict_current(src_files)
+
     (
         test_set,
         changed_lines_dict,
         new_line_map_dict,
-    ) = common.tests_from_changed_sourcefiles_current(src_files)
+    ) = common.tests_from_changed_srcfiles(diff_dict,src_files)
 
     assert test_set == {"tests/test_car.py::test_acceleration"}
     assert changed_lines_dict == {src_file_id: [12]}
@@ -32,7 +33,7 @@ def test_tests_from_changed_sourcefiles_current(temp_project_repo):
     subprocess.run(["git","restore","."])
 
 
-def test_tests_from_changed_testfiles_current(temp_project_repo):
+def test_tests_from_changed_testfiles(temp_project_repo):
     with open("./tests/test_some_methods.py","r") as f:
         lines = f.readlines()
         lines[8] = "\n" #change 'test_normal_shop_purchase' test func
@@ -44,12 +45,13 @@ def test_tests_from_changed_testfiles_current(temp_project_repo):
     changed_files = git.changed_files_current()
     test_files,src_files = common.split_changes(changed_files)
     test_file_id = test_files[0][0]
+    diff_dict = common.file_diff_dict_current(test_files)
 
     (
         test_set,
         changed_lines_dict,
         new_line_map_dict,
-    ) = common.tests_from_changed_testfiles_current(test_files)
+    ) = common.tests_from_changed_testfiles(diff_dict,test_files)
 
     assert test_set == {"tests/test_some_methods.py::test_normal_shop_purchase"}
     assert changed_lines_dict == {test_file_id: [9]}

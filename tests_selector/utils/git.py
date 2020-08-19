@@ -32,7 +32,7 @@ def file_diff_data_between_commits(filename, commithash1, commithash2, project_f
     return repo.repo.git.diff("-U0", commithash1, commithash2, "--", filename)
 
 
-def file_diff_data_current(filename, project_folder):
+def file_diff_data_current(filename, project_folder="."):
     repo = get_git_repo(project_folder)
     return repo.repo.git.diff("-U0", "--", filename)
 

@@ -2,27 +2,28 @@ import os
 import subprocess
 from tests_selector.utils.common import (
     split_changes,
-    tests_from_changed_sourcefiles_current,
-    tests_from_changed_testfiles_current,
+    tests_from_changed_srcfiles,
+    tests_from_changed_testfiles,
     read_newly_added_tests,
+    file_diff_dict_current,
     COVERAGE_CONF_FILE_NAME,
     DB_FILE_NAME,
 )
 from tests_selector.utils.git import changed_files_current
 
 
-def get_tests_from_current_changes(changed_test_files, changed_src_files):
+def get_tests_from_current_changes(diff_dict_test,diff_dict_src,testfiles, srcfiles):
     (
         src_test_set,
         src_changed_lines_dict,
         src_new_line_map_dict,
-    ) = tests_from_changed_sourcefiles_current(changed_src_files)
+    ) = tests_from_changed_srcfiles(diff_dict_src,srcfiles)
 
     (
         test_test_set,
         test_changed_lines_dict,
         test_new_line_map_dict,
-    ) = tests_from_changed_testfiles_current(changed_test_files)
+    ) = tests_from_changed_testfiles(diff_dict_test,testfiles)
 
     test_set = test_test_set.union(src_test_set)
 
@@ -42,13 +43,18 @@ def main():
 
     changed_files = changed_files_current()
     changed_test_files, changed_src_files = split_changes(changed_files)
+    diff_dict_src = file_diff_dict_current(changed_src_files)
+    diff_dict_test = file_diff_dict_current(changed_test_files)
     new_tests = read_newly_added_tests()
     print(f"found {len(changed_test_files)} changed test files")
     print(f"found {len(changed_src_files)} changed src files")
     print(f"found {len(new_tests)} newly added tests")
 
     changes_test_set, update_tuple = get_tests_from_current_changes(
-        changed_test_files, changed_src_files
+        diff_dict_test,
+        diff_dict_src,
+        changed_test_files,
+        changed_src_files
     )
     final_test_set = changes_test_set.union(new_tests)
     print(f"found {len(final_test_set)} tests to execute")

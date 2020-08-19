@@ -79,7 +79,7 @@ def update_db_from_test_mapping(line_map, file_id):
     conn.close()
 
 
-def query_tests_sourcefile(lines_to_query, file_id):
+def query_tests_srcfile(lines_to_query, file_id):
     cursor, conn = get_cursor()
     tests = []
     for line_id in lines_to_query:
