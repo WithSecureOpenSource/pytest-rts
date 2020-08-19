@@ -12,18 +12,18 @@ from tests_selector.utils.common import (
 from tests_selector.utils.git import changed_files_current
 
 
-def get_tests_from_current_changes(diff_dict_test,diff_dict_src,testfiles, srcfiles):
+def get_tests_from_current_changes(diff_dict_test, diff_dict_src, testfiles, srcfiles):
     (
         src_test_set,
         src_changed_lines_dict,
         src_new_line_map_dict,
-    ) = tests_from_changed_srcfiles(diff_dict_src,srcfiles)
+    ) = tests_from_changed_srcfiles(diff_dict_src, srcfiles)
 
     (
         test_test_set,
         test_changed_lines_dict,
         test_new_line_map_dict,
-    ) = tests_from_changed_testfiles(diff_dict_test,testfiles)
+    ) = tests_from_changed_testfiles(diff_dict_test, testfiles)
 
     test_set = test_test_set.union(src_test_set)
 
@@ -51,10 +51,7 @@ def main():
     print(f"found {len(new_tests)} newly added tests")
 
     changes_test_set, update_tuple = get_tests_from_current_changes(
-        diff_dict_test,
-        diff_dict_src,
-        changed_test_files,
-        changed_src_files
+        diff_dict_test, diff_dict_src, changed_test_files, changed_src_files
     )
     final_test_set = changes_test_set.union(new_tests)
     print(f"found {len(final_test_set)} tests to execute")

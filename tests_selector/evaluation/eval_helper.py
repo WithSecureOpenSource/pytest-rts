@@ -5,10 +5,11 @@ from tests_selector.utils.db import (
     DB_FILE_NAME,
     update_db_from_src_mapping,
     update_db_from_test_mapping,
-    delete_ran_lines
+    delete_ran_lines,
 )
 
 COVERAGE_CONF_FILE_NAME = ".coveragerc"
+
 
 def run_tests_and_update_db(test_set, update_tuple, project_folder):
     changed_lines_test = update_tuple[

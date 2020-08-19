@@ -54,7 +54,7 @@ def file_diff_dict_between_commits(files, commithash1, commithash2, project_fold
     return diff_dict
 
 
-def tests_from_changed_testfiles(diff_dict,files):
+def tests_from_changed_testfiles(diff_dict, files):
     test_set = set()
     changed_lines_dict = {}
     new_line_map_dict = {}
@@ -74,7 +74,7 @@ def tests_from_changed_testfiles(diff_dict,files):
     return test_set, changed_lines_dict, new_line_map_dict
 
 
-def tests_from_changed_srcfiles(diff_dict,files):
+def tests_from_changed_srcfiles(diff_dict, files):
     test_set = set()
     changed_lines_dict = {}
     new_line_map_dict = {}
@@ -110,7 +110,7 @@ def run_tests_and_update_db(test_set, update_tuple, project_folder):
         delete_ran_lines(changed_lines_src[f], f)
         update_db_from_src_mapping(line_map_src[f], f)
 
-    #start_normal_phase(project_folder, test_set)
+    # start_normal_phase(project_folder, test_set)
 
 
 def split_changes(changed_files):
@@ -200,4 +200,6 @@ def check_create_coverage_conf():
         return
 
     with open(COVERAGE_CONF_FILE_NAME, "w") as coverage_config_file:
-        coverage_config_file.writelines("[run]\nomit = */.venv/*, tests/*, /tmp/*, *__init__*")
+        coverage_config_file.writelines(
+            "[run]\nomit = */.venv/*, tests/*, /tmp/*, *__init__*"
+        )
