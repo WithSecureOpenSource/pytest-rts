@@ -1,6 +1,7 @@
 import sqlite3
 
 DB_FILE_NAME = "mapping.db"
+RESULTS_DB_FILE_NAME = "results.db"
 
 
 def get_cursor():
@@ -10,7 +11,7 @@ def get_cursor():
 
 
 def get_results_cursor():
-    conn = sqlite3.connect("results.db")
+    conn = sqlite3.connect(RESULTS_DB_FILE_NAME)
     c = conn.cursor()
     return c, conn
 
@@ -98,6 +99,23 @@ def query_tests_srcfile(lines_to_query, file_id):
     return tests
 
 
+def query_all_tests_srcfile(file_id):
+    cursor, conn = get_cursor()
+    tests = []
+    data = cursor.execute(
+        """ SELECT DISTINCT context
+            FROM test_function
+            JOIN test_map ON test_function.id == test_map.test_function_id
+            WHERE test_map.file_id = ? """,
+        (file_id,),
+    )
+    for line in data:
+        test = line[0]
+        tests.append(test)
+    conn.close()
+    return tests
+
+
 def query_tests_testfile(lines_to_query, file_id):
     cursor, conn = get_cursor()
     tests = []
@@ -127,3 +145,83 @@ def get_testfiles_and_srcfiles():
     ]
     conn.close()
     return test_files, src_files
+
+
+def init_results_db():
+    c, conn = get_results_cursor()
+    c.execute(
+        """ CREATE TABLE IF NOT EXISTS project (
+                    id INTEGER PRIMARY KEY,
+                    name TEXT,
+                    commithash TEXT,
+                    test_suite_size INTEGER,
+                    database_size INTEGER,
+                    UNIQUE (name,commithash))"""
+    )
+    c.execute(
+        """ CREATE TABLE IF NOT EXISTS data (
+                    project_id INTEGER,
+                    specific_exit_line INTEGER,
+                    specific_exit_file INTEGER,
+                    all_exit INTEGER,
+                    suite_size_line INTEGER,
+                    suite_size_file INTEGER,
+                    FOREIGN KEY (project_id) REFERENCES project(id))"""
+    )
+    conn.commit()
+    conn.close()
+
+
+def get_test_suite_size():
+    c, conn = get_cursor()
+    size = int(c.execute("SELECT count() FROM test_function").fetchone()[0])
+    conn.close()
+    return size
+
+
+def store_results_project(project_name, commithash, suite_size, db_size):
+    c, conn = get_results_cursor()
+    c.execute(
+        " INSERT OR IGNORE INTO project (name,commithash,test_suite_size,database_size) VALUES (?,?,?,?)",
+        (project_name, commithash, suite_size, db_size),
+    )
+    conn.commit()
+    project_id = int(
+        c.execute(
+            "SELECT id FROM project WHERE name = ? AND commithash = ?",
+            (project_name, commithash),
+        ).fetchone()[0]
+    )
+    conn.close()
+    return project_id
+
+
+def store_results_data(
+    project_id,
+    specific_exit_line,
+    specific_exit_file,
+    all_exit,
+    suite_size_line,
+    suite_size_file,
+):
+    c, conn = get_results_cursor()
+    c.execute(
+        """ INSERT INTO data (
+            project_id,
+            specific_exit_line,
+            specific_exit_file,
+            all_exit,
+            suite_size_line,
+            suite_size_file)
+            VALUES (?,?,?,?,?,?)""",
+        (
+            project_id,
+            specific_exit_line,
+            specific_exit_file,
+            all_exit,
+            suite_size_line,
+            suite_size_file,
+        ),
+    )
+    conn.commit()
+    conn.close()

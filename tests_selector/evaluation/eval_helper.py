@@ -1,5 +1,6 @@
 import os
 import subprocess
+import random
 
 from tests_selector.utils.db import (
     DB_FILE_NAME,
@@ -80,3 +81,57 @@ def start_normal_phase(project_folder, test_set):
         os.getcwd() + "/" + project_folder + "/.coveragerc",
         "./" + COVERAGE_CONF_FILE_NAME,
     )
+
+
+def select_random_file(files):
+    while True:
+        random_file = random.choice(files)
+        filename = random_file[1]
+        if (
+            "tests-selector" not in filename
+        ):  # for now some tests-selector runners get mapped to source files by accident
+            break
+    return random_file
+
+
+def delete_random_line(filename, project_folder):
+    try:
+        with open(os.getcwd() + "/" + project_folder + "/" + filename, "r") as f:
+            data = f.readlines()
+            rand_line = random.randint(0, len(data) - 1)
+            data[rand_line] = "\n"  # replace random line with newline.
+
+        with open(os.getcwd() + "/" + project_folder + "/" + filename, "w") as f:
+            for line in data:
+                f.write(line)
+
+    except FileNotFoundError:
+        print("can't open selected random file")
+        exit(1)
+
+
+def capture_specific_exit_code(tests, project_folder):
+    # 30 second timeout for tests in case of loop
+    try:
+        specific_exit_code = subprocess.run(
+            ["tests_selector_specific_without_remap", project_folder] + tests,
+            timeout=30,
+            capture_output=True,
+        ).returncode
+    except subprocess.TimeoutExpired:
+        specific_exit_code = -1
+
+    return specific_exit_code
+
+
+def capture_all_exit_code(project_folder):
+    try:
+        all_exit_code = subprocess.run(
+            ["tests_selector_all_without_remap", project_folder],
+            timeout=30,
+            capture_output=True,
+        ).returncode
+    except subprocess.TimeoutExpired:
+        all_exit_code = -1
+
+    return all_exit_code
