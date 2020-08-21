@@ -110,12 +110,12 @@ def delete_random_line(filename, project_folder):
         exit(1)
 
 
-def capture_specific_exit_code(tests, project_folder):
+def capture_specific_exit_code(tests, project_folder, max_wait):
     # 30 second timeout for tests in case of loop
     try:
         specific_exit_code = subprocess.run(
             ["tests_selector_specific_without_remap", project_folder] + tests,
-            timeout=30,
+            timeout=max_wait,
             capture_output=True,
         ).returncode
     except subprocess.TimeoutExpired:
@@ -124,11 +124,11 @@ def capture_specific_exit_code(tests, project_folder):
     return specific_exit_code
 
 
-def capture_all_exit_code(project_folder):
+def capture_all_exit_code(project_folder, max_wait):
     try:
         all_exit_code = subprocess.run(
             ["tests_selector_all_without_remap", project_folder],
-            timeout=30,
+            timeout=max_wait,
             capture_output=True,
         ).returncode
     except subprocess.TimeoutExpired:

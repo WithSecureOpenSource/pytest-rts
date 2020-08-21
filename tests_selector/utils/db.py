@@ -166,6 +166,7 @@ def init_results_db():
                     all_exit INTEGER,
                     suite_size_line INTEGER,
                     suite_size_file INTEGER,
+                    diff TEXT,
                     FOREIGN KEY (project_id) REFERENCES project(id))"""
     )
     conn.commit()
@@ -203,6 +204,7 @@ def store_results_data(
     all_exit,
     suite_size_line,
     suite_size_file,
+    diff,
 ):
     c, conn = get_results_cursor()
     c.execute(
@@ -212,8 +214,9 @@ def store_results_data(
             specific_exit_file,
             all_exit,
             suite_size_line,
-            suite_size_file)
-            VALUES (?,?,?,?,?,?)""",
+            suite_size_file,
+            diff)
+            VALUES (?,?,?,?,?,?,?)""",
         (
             project_id,
             specific_exit_line,
@@ -221,6 +224,7 @@ def store_results_data(
             all_exit,
             suite_size_line,
             suite_size_file,
+            diff,
         ),
     )
     conn.commit()

@@ -126,6 +126,7 @@ def random_remove_test(iterations):
         print("no mapping db found")
         exit(1)
 
+    max_wait = int(input("max wait time for tests? in seconds "))
     repo = get_git_repo(PROJECT_FOLDER)
     git_helper = repo.repo.git
 
@@ -152,9 +153,13 @@ def random_remove_test(iterations):
         tests_line_level = query_tests_srcfile(test_lines, file_id)
         tests_file_level = query_all_tests_srcfile(file_id)
 
-        exitcode_line = capture_specific_exit_code(tests_line_level, PROJECT_FOLDER)
-        exitcode_file = capture_specific_exit_code(tests_file_level, PROJECT_FOLDER)
-        exitcode_all = capture_all_exit_code(PROJECT_FOLDER)
+        exitcode_line = capture_specific_exit_code(
+            tests_line_level, PROJECT_FOLDER, max_wait
+        )
+        exitcode_file = capture_specific_exit_code(
+            tests_file_level, PROJECT_FOLDER, max_wait
+        )
+        exitcode_all = capture_all_exit_code(PROJECT_FOLDER, max_wait)
 
         store_results_data(
             project_id,
@@ -163,6 +168,7 @@ def random_remove_test(iterations):
             exitcode_all,
             len(tests_line_level),
             len(tests_file_level),
+            diff,
         )
 
         print("============")
