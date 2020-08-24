@@ -6,6 +6,7 @@ from tests_selector.utils.common import (
     tests_from_changed_testfiles,
     read_newly_added_tests,
     file_diff_dict_branch,
+    run_tests_and_update_db,
     COVERAGE_CONF_FILE_NAME,
     DB_FILE_NAME,
 )
@@ -57,10 +58,10 @@ def main():
     print(f"found {len(final_test_set)} tests to execute")
 
     if len(final_test_set) > 0:
-        # run_tests_and_update_db(final_test_set, update_tuple,PROJECT_FOLDER)
-        # now the database is updated with new mapping but git diff still remains the same
-        # whats the best way to handle that?
-        subprocess.run(["tests_selector_run"] + list(final_test_set))
+        run_tests_and_update_db(final_test_set, update_tuple)
+
+        # used when not updating db
+        # subprocess.run(["tests_selector_run"] + list(final_test_set))
 
 
 if __name__ == "__main__":

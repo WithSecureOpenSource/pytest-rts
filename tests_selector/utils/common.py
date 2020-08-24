@@ -94,23 +94,27 @@ def tests_from_changed_srcfiles(diff_dict, files):
     return test_set, changed_lines_dict, new_line_map_dict
 
 
-def run_tests_and_update_db(test_set, update_tuple, project_folder):
-    # not used at this time
+def run_tests_and_update_db(test_set, update_tuple, project_folder="."):
     changed_lines_test = update_tuple[
         0
     ]  # TODO: `changed_lines_test` is not used below!
+    # thinking: no reason to delete the lines / use this
+
     line_map_test = update_tuple[1]
     changed_lines_src = update_tuple[2]
     line_map_src = update_tuple[3]
 
     for t in line_map_test.keys():
+        # shift test functions
         update_db_from_test_mapping(line_map_test[t], t)
 
     for f in changed_lines_src.keys():
+        # delete ran lines of src file mapping to be remapped by coverage collection
+        # shift affected lines by correct amount
         delete_ran_lines(changed_lines_src[f], f)
         update_db_from_src_mapping(line_map_src[f], f)
 
-    # start_normal_phase(project_folder, test_set)
+    subprocess.run(["tests_selector_run"] + list(test_set))
 
 
 def split_changes(changed_files):

@@ -39,7 +39,7 @@ class NormalPhasePlugin:
         src_file = os.path.relpath(src_file_full, os.getcwd())
         testname = data[1]
         func_name = data[2]
-        lines = data[2]
+        lines = data[3]
         testfile = testname.split("::")[0]
 
         func_name_no_params = func_name.split("[")[0]
