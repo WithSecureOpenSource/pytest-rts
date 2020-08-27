@@ -2,18 +2,41 @@ import os
 import subprocess
 import sys
 import random
+import ntpath
 
 from tests_selector.utils.common import (
-    get_test_lines_and_update_lines,
-    start_test_init,
-    get_testfiles_and_srcfiles,
-    run_tests_and_update_db,
-    tests_from_changes_between_commits,
+    tests_from_changed_testfiles,
+    tests_from_changed_srcfiles,
+    file_diff_dict_between_commits,
     read_newly_added_tests,
-    query_tests_sourcefile,
+    split_changes,
 )
-from tests_selector.utils.db import get_results_cursor
-from tests_selector.utils.git import get_git_repo
+from tests_selector.utils.db import (
+    get_results_cursor,
+    get_testfiles_and_srcfiles,
+    init_results_db,
+    DB_FILE_NAME,
+    RESULTS_DB_FILE_NAME,
+    get_test_suite_size,
+    store_results_project,
+    query_tests_srcfile,
+    query_all_tests_srcfile,
+    store_results_data,
+)
+from tests_selector.utils.git import (
+    get_git_repo,
+    file_changes_between_commits,
+    file_diff_data_current,
+    get_test_lines_and_update_lines,
+)
+from tests_selector.evaluation.eval_helper import (
+    start_test_init,
+    run_tests_and_update_db,
+    select_random_file,
+    delete_random_line,
+    capture_specific_exit_code,
+    capture_all_exit_code,
+)
 
 PROJECT_FOLDER = sys.argv[1]
 
@@ -23,6 +46,41 @@ def install_dependencies(install_cmd):
     os.chdir("./" + PROJECT_FOLDER)
     subprocess.run(install_cmd.split())
     os.chdir(old_dir)
+
+
+def tests_from_changes_between_commits(commithash1, commithash2, project_folder):
+    changed_files = file_changes_between_commits(
+        commithash1, commithash2, project_folder
+    )
+
+    changed_test_files, changed_src_files = split_changes(changed_files)
+
+    diff_dict_src = file_diff_dict_between_commits(
+        changed_src_files, commithash1, commithash2, project_folder
+    )
+    diff_dict_test = file_diff_dict_between_commits(
+        changed_test_files, commithash1, commithash2, project_folder
+    )
+    (
+        test_test_set,
+        test_changed_lines_dict,
+        test_new_line_map_dict,
+    ) = tests_from_changed_testfiles(diff_dict_test, changed_test_files)
+    (
+        src_test_set,
+        src_changed_lines_dict,
+        src_new_line_map_dict,
+    ) = tests_from_changed_srcfiles(diff_dict_src, changed_src_files)
+
+    test_set = test_test_set.union(src_test_set)
+    update_tuple = (
+        test_changed_lines_dict,
+        test_new_line_map_dict,
+        src_changed_lines_dict,
+        src_new_line_map_dict,
+    )
+
+    return test_set, update_tuple
 
 
 def iterate_commits_and_build_db():
@@ -59,82 +117,75 @@ def iterate_commits_and_build_db():
 
 
 def random_remove_test(iterations):
-    # Delete random line, run tests, store exit codes of pytest if possible
-    repo = get_git_repo(PROJECT_FOLDER)
-    git_helper = repo.repo.git
 
-    ans = input("init db? [y/n]: ")
+    ans = input("init mapping db? [y/n]: ")
     if ans == "y":
         start_test_init(PROJECT_FOLDER)
 
-    test_files, src_files = get_testfiles_and_srcfiles()
+    if not os.path.isfile(DB_FILE_NAME):
+        print("no mapping db found")
+        exit(1)
 
-    c, conn = get_results_cursor()
-    c.execute(
-        "CREATE TABLE IF NOT EXISTS data (specific_exit INTEGER, all_exit INTEGER)"
+    max_wait = int(input("max wait time for tests? in seconds "))
+    repo = get_git_repo(PROJECT_FOLDER)
+    git_helper = repo.repo.git
+
+    init_results_db()
+    test_suite_size = get_test_suite_size()
+    project_name = ntpath.basename(PROJECT_FOLDER)
+    commithash = repo.get_head().hash
+    db_size = os.path.getsize("./mapping.db")
+    project_id = store_results_project(
+        project_name, commithash, test_suite_size, db_size
     )
 
+    test_files, src_files = get_testfiles_and_srcfiles()
+
     for i in range(iterations):
-        while True:
-            random_src = random.choice(src_files)
-            src_name = random_src[1]
-            src_id = random_src[0]
-            if (
-                "tests-selector" not in src_name
-            ):  # for now some tests-selector runners get mapped to source files by accident
-                break
-        try:
-            with open(os.getcwd() + "/" + PROJECT_FOLDER + "/" + src_name, "r") as f:
-                data = f.readlines()
-                rand_line = random.randint(0, len(data) - 1)
-                data[rand_line] = "\n"  # replace random line with newline.
-        except FileNotFoundError:
-            continue
-        with open(os.getcwd() + "/" + PROJECT_FOLDER + "/" + src_name, "w") as f:
-            for line in data:
-                f.write(line)
+        random_file = select_random_file(src_files)
+        file_id = random_file[0]
+        filename = random_file[1]
 
-        git_diff_data = git_helper.diff("-U0", "--", src_name)
-        test_lines, updates_to_lines = get_test_lines_and_update_lines(git_diff_data)
-        tests = query_tests_sourcefile(test_lines, src_id)
+        delete_random_line(filename, PROJECT_FOLDER)
 
-        # run specific tests and capture exit code
-        try:
-            specific_test_output = subprocess.run(
-                ["tests_selector_specific_without_remap", PROJECT_FOLDER] + tests,
-                timeout=30,
-                capture_output=True,
-            ).stdout
-            specific_exit_code = int(specific_test_output)
-        except (subprocess.TimeoutExpired, ValueError) as e:
-            specific_exit_code = -1
+        diff = file_diff_data_current(filename, PROJECT_FOLDER)
+        test_lines, updates_to_lines = get_test_lines_and_update_lines(diff)
+        tests_line_level = query_tests_srcfile(test_lines, file_id)
+        tests_file_level = query_all_tests_srcfile(file_id)
 
-        # run all tests and capture exit code
-        try:
-            all_test_output = subprocess.run(
-                ["tests_selector_all_without_remap", PROJECT_FOLDER],
-                timeout=30,
-                capture_output=True,
-            ).stdout
-            all_exit_code = int(all_test_output)
-        except (subprocess.TimeoutExpired, ValueError) as e:
-            all_exit_code = -1
-
-        data_tuple = (specific_exit_code, all_exit_code)
-        c.execute("INSERT INTO data VALUES (?,?)", data_tuple)
-        conn.commit()
-        print(
-            "result:",
-            "specific_exit_code:",
-            data_tuple[0],
-            "all_exit_code:",
-            data_tuple[1],
-            "iteration:",
-            i + 1,
+        exitcode_line = capture_specific_exit_code(
+            tests_line_level, PROJECT_FOLDER, max_wait
         )
-        git_helper.restore(src_name)
+        exitcode_file = capture_specific_exit_code(
+            tests_file_level, PROJECT_FOLDER, max_wait
+        )
+        exitcode_all = capture_all_exit_code(PROJECT_FOLDER, max_wait)
 
-    conn.close()
+        store_results_data(
+            project_id,
+            exitcode_line,
+            exitcode_file,
+            exitcode_all,
+            len(tests_line_level),
+            len(tests_file_level),
+            diff,
+        )
+
+        print("============")
+        print("iteration:", i + 1)
+        print("project name:", project_name)
+        print("commit hash:", commithash)
+        print("deleted random line in file:", filename)
+        print("size of full test suite:", test_suite_size)
+        print("size of line level test suite:", len(tests_line_level))
+        print("size of file level test suite:", len(tests_file_level))
+        print(
+            f"exitcodes: line-level: {exitcode_line}, file-level: {exitcode_file}, all: {exitcode_all}"
+        )
+        print("STORING TO DATABASE:", RESULTS_DB_FILE_NAME)
+        print("============")
+
+        git_helper.restore(filename)
 
 
 def main():
@@ -144,10 +195,6 @@ def main():
     if ans == "1":
         iterate_commits_and_build_db()
     elif ans == "2":
-        print(
-            "This will randomly remove a src file line and run specific tests and compare it to all of the tests"
-        )
-        print("Exit codes of test runs will be stored to database")
         ans = input("how many iterations? ")
         iters = int(ans)
         random_remove_test(iters)

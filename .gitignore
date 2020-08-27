@@ -5,3 +5,4 @@
 *.db
 *.pyc
 __pycache__
+.coverage

@@ -7,7 +7,7 @@ $(VENV_DIR)/bin/activate: requirements.txt setup.py
 	$(PYTHON) -m pip install -r requirements.txt
 
 lint: venv
-	$(PYTHON) -m black *.py tests_selector
+	$(PYTHON) -m black *.py tests_selector --exclude helper_project
 
 install: venv
 	$(PYTHON) setup.py develop

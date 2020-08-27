@@ -1,2 +1,2 @@
 [run]
-omit = */.venv/*, tests/*, /tmp/*, *__init__*
+omit = */.venv/*, */tests/*, /tmp/*, *__init__*

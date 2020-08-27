@@ -15,6 +15,3 @@ class CaptureSpecificPlugin:
         session.config.hook.pytest_deselected(
             items=([FakeItem(session.config)] * (original_length - len(selected)))
         )
-
-    def pytest_sessionfinish(self, session, exitstatus):
-        print(int(exitstatus))
