@@ -303,8 +303,12 @@ def save_testfile_and_func(testfile, testname, func_name, start, end, elapsed):
 
 def get_test_duration(testname):
     c, conn = get_cursor()
-    duration = c.execute(
+    data = c.execute(
         "SELECT duration FROM test_function WHERE context = ?", (testname,)
-    ).fetchone()[0]
+    ).fetchone()
+    if data == None:
+        duration = 99999
+    else:
+        duration = data[0]
     conn.close()
     return duration
