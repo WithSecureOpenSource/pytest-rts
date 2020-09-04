@@ -1,5 +1,5 @@
 import subprocess
-from setuptools import setup
+from setuptools import setup, find_packages
 
 
 git_version = (
@@ -11,6 +11,7 @@ dev_require = ["black"]
 setup(
     name="tests_selector",
     version=git_version,
+    packages=find_packages(),
     entry_points={
         "console_scripts": [
             "tests_selector_init=tests_selector.init:main",
