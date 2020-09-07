@@ -90,7 +90,10 @@ def query_tests_srcfile(lines_to_query, file_id):
                 JOIN test_map ON test_function.id == test_map.test_function_id
                 WHERE test_map.file_id = ?
                 AND test_map.line_id = ?  """,
-            (file_id, line_id,),
+            (
+                file_id,
+                line_id,
+            ),
         )
         for line in data:
             test = line[0]
@@ -237,6 +240,7 @@ def init_mapping_db():
     c.execute("DROP TABLE IF EXISTS src_file")
     c.execute("DROP TABLE IF EXISTS test_file")
     c.execute("DROP TABLE IF EXISTS test_function")
+    c.execute("DROP TABLE IF EXISTS last_hash")
     c.execute(
         "CREATE TABLE test_map (file_id INTEGER, test_function_id INTEGER, line_id INTEGER, UNIQUE(file_id,test_function_id,line_id))"
     )
@@ -257,6 +261,7 @@ def init_mapping_db():
                             FOREIGN KEY (test_file_id) REFERENCES test_file(id), 
                             UNIQUE (context))"""
     )
+    c.execute("CREATE TABLE last_hash (hash TEXT)")
     conn.commit()
     conn.close()
 
@@ -312,3 +317,21 @@ def get_test_duration(testname):
         duration = data[0]
     conn.close()
     return duration
+
+
+def save_last_hash(lasthash):
+    c, conn = get_cursor()
+    c.execute("DELETE FROM last_hash")
+    c.execute("INSERT INTO last_hash (hash) VALUES (?)", (lasthash,))
+    conn.commit()
+    conn.close()
+
+
+def get_last_hash():
+    c, conn = get_cursor()
+    lasthash = c.execute("SELECT hash FROM last_hash").fetchone()
+    conn.close()
+    if lasthash == None:
+        return None
+    else:
+        return lasthash[0]

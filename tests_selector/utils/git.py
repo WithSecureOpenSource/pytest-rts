@@ -35,9 +35,7 @@ def file_diff_data_branch(filename, project_folder=None):
     return repo.repo.git.diff("-U0", "master...", "--", filename)
 
 
-def file_diff_data_between_commits(
-    filename, commithash1, commithash2, project_folder
-):
+def file_diff_data_between_commits(filename, commithash1, commithash2, project_folder):
     repo = get_git_repo(project_folder)
     return repo.repo.git.diff("-U0", commithash1, commithash2, "--", filename)
 
@@ -86,3 +84,7 @@ def get_test_lines_and_update_lines(diff):
                 lines_to_query.append(i)
 
     return lines_to_query, updates_to_lines
+
+
+def get_current_hash():
+    return get_git_repo(None).repo.head.object.hexsha
