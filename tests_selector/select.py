@@ -57,6 +57,9 @@ def main():
     changed_test_files, changed_src_files = split_changes(changed_files)
 
     if len(changed_test_files) > 0 or len(changed_src_files) > 0:
+        # Should new tests be checked here?
+        # If so, when to update the database for them
+        # so they are not found as new tests in the working directory changes?
         print(f"Found {len(changed_test_files)} changed test files")
         print(f"Found {len(changed_src_files)} changed src files")
 

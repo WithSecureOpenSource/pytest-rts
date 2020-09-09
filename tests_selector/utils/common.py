@@ -114,7 +114,7 @@ def run_tests_and_update_db(test_set, update_tuple, project_folder="."):
         delete_ran_lines(changed_lines_src[f], f)
         update_db_from_src_mapping(line_map_src[f], f)
 
-    subprocess.run(["tests_selector_run"] + list(test_set))
+    subprocess.run(["tests_selector_run_and_update"] + list(test_set))
 
 
 def split_changes(changed_files):
