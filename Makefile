@@ -2,7 +2,7 @@ VENV_DIR := .venv
 PYTHON := ${VENV_DIR}/bin/python
 
 venv: $(VENV_DIR)/bin/activate
-$(VENV_DIR)/bin/activate: requirements.txt setup.py
+$(VENV_DIR)/bin/activate: setup.py
 	test -d $(VENV_DIR) || virtualenv --python=python3 $(VENV_DIR)
 	$(PYTHON) -m pip install -e .[dev]
 
