@@ -205,5 +205,5 @@ def check_create_coverage_conf():
 
     with open(COVERAGE_CONF_FILE_NAME, "w") as coverage_config_file:
         coverage_config_file.writelines(
-            "[run]\nomit = */.venv/*, tests/*, /tmp/*, *__init__*"
+            "[run]\nomit = */.venv/*, tests/*, */tests/*, /tmp/*, *__init__*, */test/*, test/*"
         )
