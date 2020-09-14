@@ -311,7 +311,7 @@ def get_test_duration(testname):
     data = c.execute(
         "SELECT duration FROM test_function WHERE context = ?", (testname,)
     ).fetchone()
-    if data == None:
+    if data == None or (None,):
         duration = 99999
     else:
         duration = data[0]
