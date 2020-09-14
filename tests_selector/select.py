@@ -1,21 +1,28 @@
 import os
 import subprocess
-import sys
 from tests_selector.utils.common import (
     split_changes,
     tests_from_changed_srcfiles,
     tests_from_changed_testfiles,
     read_newly_added_tests,
     file_diff_dict_current,
+    file_diff_dict_branch,
+    run_tests_and_update_db,
     COVERAGE_CONF_FILE_NAME,
     DB_FILE_NAME,
 )
-from tests_selector.utils.git import changed_files_current
+from tests_selector.utils.git import (
+    changed_files_current,
+    changed_files_branch,
+    get_current_hash,
+)
+from tests_selector.utils.db import (
+    save_last_hash,
+    get_last_hash,
+)
 
-PYTEST_PARAM = sys.argv[1] if len(sys.argv) > 1 else ""
 
-
-def get_tests_from_current_changes(diff_dict_test, diff_dict_src, testfiles, srcfiles):
+def get_tests_from_changes(diff_dict_test, diff_dict_src, testfiles, srcfiles):
     (
         src_test_set,
         src_changed_lines_dict,
@@ -44,26 +51,62 @@ def main():
         print("Run tests_selector_init first")
         exit(1)
 
+    print("Checking for changes in working directory...")
+    # Check changes that are not added or committed
     changed_files = changed_files_current()
     changed_test_files, changed_src_files = split_changes(changed_files)
-    diff_dict_src = file_diff_dict_current(changed_src_files)
-    diff_dict_test = file_diff_dict_current(changed_test_files)
-    new_tests = read_newly_added_tests()
-    print(f"found {len(changed_test_files)} changed test files")
-    print(f"found {len(changed_src_files)} changed src files")
-    print(f"found {len(new_tests)} newly added tests")
 
-    changes_test_set, update_tuple = get_tests_from_current_changes(
-        diff_dict_test, diff_dict_src, changed_test_files, changed_src_files
-    )
-    final_test_set = changes_test_set.union(new_tests)
-    print(f"found {len(final_test_set)} tests to execute")
+    if len(changed_test_files) > 0 or len(changed_src_files) > 0:
+        # Should new tests be checked here?
+        # If so, when to update the database for them
+        # so they are not found as new tests in the working directory changes?
+        print(f"Found {len(changed_test_files)} changed test files")
+        print(f"Found {len(changed_src_files)} changed src files")
 
-    if len(final_test_set) > 0:
-        # run_tests_and_update_db(final_test_set, update_tuple,PROJECT_FOLDER)
-        # now the database is updated with new mapping but git diff still remains the same
-        # whats the best way to handle that?
-        subprocess.run(["tests_selector_run", PYTEST_PARAM] + list(final_test_set))
+        # Get tests from changes in the working directory
+        diff_dict_src = file_diff_dict_current(changed_src_files)
+        diff_dict_test = file_diff_dict_current(changed_test_files)
+        test_set, update_tuple = get_tests_from_changes(
+            diff_dict_test, diff_dict_src, changed_test_files, changed_src_files
+        )
+        # Update tuple (lines to delete and new lines) not used here
+
+        print(f"Found {len(test_set)} tests to execute")
+        if len(test_set) > 0:
+            # Run the selected tests without updating database with new line numbers
+            print("Running selected tests without updating database...")
+            subprocess.run(["tests_selector_run"] + list(test_set))
+    else:
+        # Check committed changes
+        print("Found no changed src files or test files in the working directory")
+        print("Comparing current branch to master...")
+
+        if get_last_hash() == get_current_hash():
+            print("Tests already ran and database updated for this comparison")
+            exit()
+
+        changed_files = changed_files_branch()
+        changed_test_files, changed_src_files = split_changes(changed_files)
+        diff_dict_src = file_diff_dict_branch(changed_src_files)
+        diff_dict_test = file_diff_dict_branch(changed_test_files)
+
+        # Newly added tests checked only here
+        new_tests = read_newly_added_tests()
+
+        print(f"Found {len(changed_test_files)} changed test files")
+        print(f"Found {len(changed_src_files)} changed src files")
+        print(f"Found {len(new_tests)} newly added tests")
+
+        changes_test_set, update_tuple = get_tests_from_changes(
+            diff_dict_test, diff_dict_src, changed_test_files, changed_src_files
+        )
+        final_test_set = changes_test_set.union(new_tests)
+
+        print(f"Found {len(final_test_set)} tests to execute")
+        if len(final_test_set) > 0:
+            print("Running selected tests and updating database...")
+            save_last_hash(get_current_hash())
+            run_tests_and_update_db(final_test_set, update_tuple)
 
 
 if __name__ == "__main__":

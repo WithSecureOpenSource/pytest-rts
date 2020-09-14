@@ -18,10 +18,10 @@ setup(
             "tests_selector=tests_selector.select:main",
             "tests_selector_eval=tests_selector.evaluation.start:main",
             "tests_selector_run=tests_selector.run:main",
+            "tests_selector_run_and_update=tests_selector.run_and_update:main",
             "tests_selector_specific_without_remap=tests_selector.evaluation.specific_without_remap:main",
             "tests_selector_all_without_remap=tests_selector.evaluation.all_without_remap:main",
             "tests_selector_collect=tests_selector.collect:main",
-            "tests_selector_branch=tests_selector.select_branch:main",
         ]
     },
     install_requires=["pydriller", "coverage", "pytest"],
