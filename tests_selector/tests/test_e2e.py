@@ -141,13 +141,22 @@ def test_full_integration(temp_project_repo):
     # Running tests_selector should now update database
     # So new test function should be found in db
     subprocess.run(["tests_selector"])
-    new_test_db = c.execute(
+    new_test_func_id = c.execute(
         "SELECT id FROM test_function WHERE context = ?", (new_test_name,)
-    ).fetchall()
-    assert len(new_test_db) == 1
+    ).fetchone()
+    assert new_test_func_id[0] != None
+    new_mapping_lines = [
+        x[0]
+        for x in c.execute(
+            "SELECT line_id FROM test_map WHERE test_function_id = ? AND file_id = ?",
+            (new_test_func_id[0], car_id),
+        ).fetchall()
+    ]
+    assert new_mapping_lines == [4, 5, 6, 15, 18, 19]
 
     subprocess.run(["git", "checkout", "master"])
     subprocess.run(["git", "branch", "-D", "new-branch"])
+    subprocess.run(["tests_selector_init"])
     conn.close()
 
 
@@ -212,4 +221,5 @@ def test_db_updating_only_once(temp_project_repo):
 
     subprocess.run(["git", "checkout", "master"])
     subprocess.run(["git", "branch", "-D", "new-branch"])
+    subprocess.run(["tests_selector_init"])
     conn.close()
