@@ -19,7 +19,6 @@ from tests_selector.utils.git import (
     get_test_lines_and_update_lines,
 )
 
-COVERAGE_CONF_FILE_NAME = ".coveragerc"
 
 
 def file_diff_dict_branch(files):
@@ -197,13 +196,3 @@ def function_lines(node, end):
 
     return result
 
-
-def check_create_coverage_conf():
-    if os.path.isfile(COVERAGE_CONF_FILE_NAME):
-        print(f"file {COVERAGE_CONF_FILE_NAME} already exists")
-        return
-
-    with open(COVERAGE_CONF_FILE_NAME, "w") as coverage_config_file:
-        coverage_config_file.writelines(
-            "[run]\nomit = */.venv/*, tests/*, */tests/*, /tmp/*, *__init__*, */test/*, test/*"
-        )

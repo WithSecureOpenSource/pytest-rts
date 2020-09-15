@@ -17,8 +17,10 @@ class InitPhasePlugin:
     def __init__(self):
         self.test_func_lines = {}
         self.cov = coverage.Coverage()
-        self.cov._warn_no_data = True
+        self.cov._warn_unimported_source = False
+        self.cov._warn_no_data = False
         self._should_write_debug = False
+        self.testfiles = set()
         init_mapping_db()
 
     def start(self):
@@ -54,15 +56,25 @@ class InitPhasePlugin:
         )
         cov_data = self.cov.get_data()
         for filename in cov_data.measured_files():
-            if "tests-selector" in filename:
-                continue
             src_file = os.path.relpath(filename, os.getcwd())
+            conditions = [
+                "tests-selector" in filename,
+                ("/tmp/" in filename) and ("/tmp/" not in os.getcwd()),
+                "/.venv/" in filename,
+                src_file in self.testfiles,
+                src_file.endswith("__init__.py"),
+                src_file.endswith("conftest.py"),
+                not src_file.endswith(".py"),
+            ]
+            if any(conditions):
+                continue
             src_id = save_src_file(src_file)
             save_mapping_lines(src_id, test_function_id, cov_data.lines(filename))
 
     def pytest_collection_modifyitems(self, session, config, items):
         for item in items:
             testfile = item.nodeid.split("::")[0]
+            self.testfiles.add(testfile)
             if testfile not in self.test_func_lines:
                 self.calculate_func_lines(testfile)
 

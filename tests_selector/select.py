@@ -8,7 +8,6 @@ from tests_selector.utils.common import (
     file_diff_dict_current,
     file_diff_dict_branch,
     run_tests_and_update_db,
-    COVERAGE_CONF_FILE_NAME,
     DB_FILE_NAME,
 )
 from tests_selector.utils.git import (
@@ -47,7 +46,7 @@ def get_tests_from_changes(diff_dict_test, diff_dict_src, testfiles, srcfiles):
 
 
 def main():
-    if not os.path.isfile(COVERAGE_CONF_FILE_NAME) or not os.path.isfile(DB_FILE_NAME):
+    if not os.path.isfile(DB_FILE_NAME):
         print("Run tests_selector_init first")
         exit(1)
 
