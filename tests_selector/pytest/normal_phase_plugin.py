@@ -25,4 +25,3 @@ class NormalPhasePlugin:
         session.config.hook.pytest_deselected(
             items=([FakeItem(session.config)] * (original_length - len(selected)))
         )
-
