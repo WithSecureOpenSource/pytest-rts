@@ -1,5 +1,3 @@
-import pytest
-import os
 import subprocess
 
 from tests_selector.utils import (

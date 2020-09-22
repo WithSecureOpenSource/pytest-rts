@@ -5,7 +5,7 @@ from setuptools import setup, find_packages
 git_version = (
     subprocess.check_output("git describe --always".split()).strip().decode("ascii")
 )
-tests_require = []
+tests_require = ["pytest-cov"]
 dev_require = ["black"]
 
 setup(
