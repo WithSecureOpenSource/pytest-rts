@@ -11,6 +11,10 @@ from tests_selector.utils.db import (
     query_tests_testfile,
     update_db_from_test_mapping,
     update_db_from_src_mapping,
+    init_mapping_db,
+    save_mapping_lines,
+    save_src_file,
+    save_testfile_and_func,
 )
 from tests_selector.utils.git import (
     file_diff_data_between_commits,
@@ -18,7 +22,6 @@ from tests_selector.utils.git import (
     file_diff_data_branch,
     get_test_lines_and_update_lines,
 )
-
 
 
 def file_diff_dict_branch(files):
@@ -196,3 +199,42 @@ def function_lines(node, end):
 
     return result
 
+
+def save_data(item, elapsed, test_func_lines, cov_data, testfiles):
+    testname = item.nodeid
+    func_name = item.name
+    testfile = testname.split("::")[0]
+    func_name_no_params = func_name.split("[")[0]
+    line_tuple = test_func_lines[testfile][func_name_no_params]
+    func_start = line_tuple[0]
+    func_end = line_tuple[1]
+    test_file_id, test_function_id = save_testfile_and_func(
+        testfile, testname, func_name, func_start, func_end, elapsed
+    )
+    for filename in cov_data.measured_files():
+        src_file = os.path.relpath(filename, os.getcwd())
+        conditions = [
+            "tests-selector" in filename,
+            ("/tmp/" in filename) and ("/tmp/" not in os.getcwd()),
+            "/.venv/" in filename,
+            src_file in testfiles,
+            src_file.endswith("__init__.py"),
+            src_file.endswith("conftest.py"),
+            not src_file.endswith(".py"),
+        ]
+        if any(conditions):
+            continue
+        src_id = save_src_file(src_file)
+        save_mapping_lines(src_id, test_function_id, cov_data.lines(filename))
+
+
+def calculate_func_lines(src_code):
+    parsed_src_code = ast.parse(src_code)
+    func_lines = function_lines(parsed_src_code, len(src_code.splitlines()))
+    lower_dict = {}
+    for t in func_lines:
+        func = t[0]
+        start = t[1]
+        end = t[2]
+        lower_dict[func] = (start, end)
+    return lower_dict

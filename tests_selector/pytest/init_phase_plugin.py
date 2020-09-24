@@ -1,15 +1,14 @@
-import ast
-import os
 import coverage
 import pytest
 from _pytest.python import Function
 from timeit import default_timer as timer
-from tests_selector.utils.common import function_lines
+from tests_selector.utils.common import (
+    function_lines,
+    save_data,
+    calculate_func_lines,
+)
 from tests_selector.utils.db import (
     init_mapping_db,
-    save_mapping_lines,
-    save_src_file,
-    save_testfile_and_func,
 )
 
 
@@ -18,75 +17,30 @@ class InitPhasePlugin:
         self.test_func_lines = {}
         self.cov = coverage.Coverage()
         self.cov._warn_unimported_source = False
-        self.cov._warn_no_data = False
-        self._should_write_debug = False
         self.testfiles = set()
         init_mapping_db()
-
-    def start(self):
-        self.cov.erase()
-        self.cov.start()
-
-    def stop(self):
-        self.cov.stop()
-        self.cov.save()
-
-    def calculate_func_lines(self, testfile):
-        src_code = coverage.python.get_python_source(testfile)
-        parsed_src_code = ast.parse(src_code)
-        func_lines = function_lines(parsed_src_code, len(src_code.splitlines()))
-        lower_dict = {}
-        for t in func_lines:
-            func = t[0]
-            start = t[1]
-            end = t[2]
-            lower_dict[func] = (start, end)
-        self.test_func_lines[testfile] = lower_dict
-
-    def save_data(self, item, elapsed):
-        testname = item.nodeid
-        func_name = item.name
-        testfile = testname.split("::")[0]
-        func_name_no_params = func_name.split("[")[0]
-        line_tuple = self.test_func_lines[testfile][func_name_no_params]
-        func_start = line_tuple[0]
-        func_end = line_tuple[1]
-        test_file_id, test_function_id = save_testfile_and_func(
-            testfile, testname, func_name, func_start, func_end, elapsed
-        )
-        cov_data = self.cov.get_data()
-        for filename in cov_data.measured_files():
-            src_file = os.path.relpath(filename, os.getcwd())
-            conditions = [
-                "tests-selector" in filename,
-                ("/tmp/" in filename) and ("/tmp/" not in os.getcwd()),
-                "/.venv/" in filename,
-                src_file in self.testfiles,
-                src_file.endswith("__init__.py"),
-                src_file.endswith("conftest.py"),
-                not src_file.endswith(".py"),
-            ]
-            if any(conditions):
-                continue
-            src_id = save_src_file(src_file)
-            save_mapping_lines(src_id, test_function_id, cov_data.lines(filename))
 
     def pytest_collection_modifyitems(self, session, config, items):
         for item in items:
             testfile = item.nodeid.split("::")[0]
             self.testfiles.add(testfile)
             if testfile not in self.test_func_lines:
-                self.calculate_func_lines(testfile)
+                testfile_src_code = coverage.python.get_python_source(testfile)
+                self.test_func_lines[testfile] = calculate_func_lines(testfile_src_code)
 
     @pytest.hookimpl(hookwrapper=True)
     def pytest_runtest_protocol(self, item, nextitem):
         if isinstance(item, Function):
             start = timer()
-            self.start()
+            self.cov.erase()
+            self.cov.start()
             yield
-            self.stop()
+            self.cov.stop()
+            self.cov.save()
             end = timer()
             elapsed = round(end - start, 4)
-            self.save_data(item, elapsed)
+            save_data(
+                item, elapsed, self.test_func_lines, self.cov.get_data(), self.testfiles
+            )
         else:
             yield
