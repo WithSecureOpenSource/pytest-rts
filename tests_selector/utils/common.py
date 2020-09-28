@@ -1,21 +1,6 @@
 import ast
 import os
 import subprocess
-
-from tests_selector.utils.db import (
-    DB_FILE_NAME,
-    delete_ran_lines,
-    get_cursor,
-    get_testfiles_and_srcfiles,
-    query_tests_srcfile,
-    query_tests_testfile,
-    update_db_from_test_mapping,
-    update_db_from_src_mapping,
-    init_mapping_db,
-    save_mapping_lines,
-    save_src_file,
-    save_testfile_and_func,
-)
 from tests_selector.utils.git import (
     file_diff_data_between_commits,
     file_diff_data_current,
@@ -56,7 +41,7 @@ def file_diff_dict_between_commits(files, commithash1, commithash2, project_fold
     return diff_dict
 
 
-def tests_from_changed_testfiles(diff_dict, files):
+def tests_from_changed_testfiles(diff_dict, files, db):
     test_set = set()
     changed_lines_dict = {}
     new_line_map_dict = {}
@@ -69,14 +54,14 @@ def tests_from_changed_testfiles(diff_dict, files):
 
         changed_lines_dict[file_id] = changed_lines
         new_line_map_dict[file_id] = line_map
-        tests = query_tests_testfile(changed_lines, file_id)
+        tests = db.query_tests_testfile(changed_lines, file_id)
 
         for t in tests:
             test_set.add(t)
     return test_set, changed_lines_dict, new_line_map_dict
 
 
-def tests_from_changed_srcfiles(diff_dict, files):
+def tests_from_changed_srcfiles(diff_dict, files, db):
     test_set = set()
     changed_lines_dict = {}
     new_line_map_dict = {}
@@ -89,14 +74,14 @@ def tests_from_changed_srcfiles(diff_dict, files):
 
         changed_lines_dict[file_id] = changed_lines
         new_line_map_dict[file_id] = line_map
-        tests = query_tests_srcfile(changed_lines, file_id)
+        tests = db.query_tests_srcfile(changed_lines, file_id)
 
         for t in tests:
             test_set.add(t)
     return test_set, changed_lines_dict, new_line_map_dict
 
 
-def run_tests_and_update_db(test_set, update_tuple, project_folder="."):
+def run_tests_and_update_db(test_set, update_tuple, db, project_folder="."):
     changed_lines_test = update_tuple[
         0
     ]  # TODO: `changed_lines_test` is not used below!
@@ -108,21 +93,25 @@ def run_tests_and_update_db(test_set, update_tuple, project_folder="."):
 
     for t in line_map_test.keys():
         # shift test functions
-        update_db_from_test_mapping(line_map_test[t], t)
+        db.update_db_from_test_mapping(line_map_test[t], t)
 
     for f in changed_lines_src.keys():
         # delete ran lines of src file mapping to be remapped by coverage collection
         # shift affected lines by correct amount
-        delete_ran_lines(changed_lines_src[f], f)
-        update_db_from_src_mapping(line_map_src[f], f)
+        db.delete_ran_lines(changed_lines_src[f], f)
+        db.update_db_from_src_mapping(line_map_src[f], f)
 
-    subprocess.run(["tests_selector_run_and_update"] + list(test_set))
+    if len(test_set) > 0:
+        print("Running selected tests...")
+        subprocess.run(["tests_selector_run_and_update"] + list(test_set))
+    else:
+        print("No tests to run")
 
 
-def split_changes(changed_files):
+def split_changes(changed_files, db):
     changed_tests = []
     changed_sources = []
-    db_test_files, db_src_files = get_testfiles_and_srcfiles()
+    db_test_files, db_src_files = db.get_testfiles_and_srcfiles()
 
     for changed_file in changed_files:
         for sf in db_src_files:
@@ -137,14 +126,9 @@ def split_changes(changed_files):
     return changed_tests, changed_sources
 
 
-def read_newly_added_tests(project_folder="."):
+def read_newly_added_tests(db, project_folder="."):
     subprocess.run(["tests_selector_collect", project_folder])
-    c, conn = get_cursor()
-    new_tests = set()
-    for t in [x[0] for x in c.execute("SELECT context FROM new_tests").fetchall()]:
-        new_tests.add(t)
-    conn.close()
-    return new_tests
+    return db.read_newly_added_tests()
 
 
 def line_mapping(updates_to_lines, filename, project_folder="."):
@@ -200,7 +184,7 @@ def function_lines(node, end):
     return result
 
 
-def save_data(item, elapsed, test_func_lines, cov_data, testfiles):
+def save_data(item, elapsed, test_func_lines, cov_data, testfiles, db):
     testname = item.nodeid
     func_name = item.name
     testfile = testname.split("::")[0]
@@ -208,7 +192,7 @@ def save_data(item, elapsed, test_func_lines, cov_data, testfiles):
     line_tuple = test_func_lines[testfile][func_name_no_params]
     func_start = line_tuple[0]
     func_end = line_tuple[1]
-    test_file_id, test_function_id = save_testfile_and_func(
+    test_file_id, test_function_id = db.save_testfile_and_func(
         testfile, testname, func_name, func_start, func_end, elapsed
     )
     for filename in cov_data.measured_files():
@@ -224,8 +208,8 @@ def save_data(item, elapsed, test_func_lines, cov_data, testfiles):
         ]
         if any(conditions):
             continue
-        src_id = save_src_file(src_file)
-        save_mapping_lines(src_id, test_function_id, cov_data.lines(filename))
+        src_id = db.save_src_file(src_file)
+        db.save_mapping_lines(src_id, test_function_id, cov_data.lines(filename))
 
 
 def calculate_func_lines(src_code):
