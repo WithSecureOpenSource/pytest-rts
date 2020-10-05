@@ -5,9 +5,9 @@ import sqlite3
 
 
 def test_branch_updating():
-    db_name = "mapping.db"
+    DB_FILE_NAME = "mapping.db"
     # get test_map lines for car.py
-    conn = sqlite3.connect(db_name)
+    conn = sqlite3.connect(DB_FILE_NAME)
     c = conn.cursor()
     sql = "SELECT id FROM src_file WHERE path = ?"
     file_id_car = c.execute(sql, ("src/car.py",)).fetchone()[0]
@@ -48,7 +48,7 @@ def test_branch_updating():
     subprocess.run(["tests_selector"])
 
     # Get updated line_ids for car.py
-    conn = sqlite3.connect(db_name)
+    conn = sqlite3.connect(DB_FILE_NAME)
     c = conn.cursor()
     sql = "SELECT line_id FROM test_map WHERE file_id = ?"
     new_line_ids_car = [x[0] for x in c.execute(sql, (file_id_car,)).fetchall()]
@@ -58,7 +58,7 @@ def test_branch_updating():
     assert [x + 2 for x in old_line_ids_car] == new_line_ids_car
 
     # Get all line mapping lines for shop.py
-    conn = sqlite3.connect(db_name)
+    conn = sqlite3.connect(DB_FILE_NAME)
     c = conn.cursor()
     sql = "SELECT id FROM src_file WHERE path = ?"
     file_id_shop = c.execute(sql, ("src/shop.py",)).fetchone()[0]
@@ -96,7 +96,7 @@ def test_branch_updating():
     subprocess.run(["tests_selector"])
 
     # Get updated line_ids for shop.py
-    conn = sqlite3.connect(db_name)
+    conn = sqlite3.connect(DB_FILE_NAME)
     c = conn.cursor()
     sql = "SELECT line_id FROM test_map WHERE file_id = ?"
     new_line_ids_shop = [x[0] for x in c.execute(sql, (file_id_shop,)).fetchall()]
@@ -106,7 +106,7 @@ def test_branch_updating():
     assert [x + 2 for x in old_line_ids_shop] == new_line_ids_shop
 
     # Get updated line_ids for car.py
-    conn = sqlite3.connect(db_name)
+    conn = sqlite3.connect(DB_FILE_NAME)
     c = conn.cursor()
     sql = "SELECT line_id FROM test_map WHERE file_id = ?"
     new_line_ids_car = [x[0] for x in c.execute(sql, (file_id_car,)).fetchall()]
