@@ -280,6 +280,7 @@ class ResultDatabaseHelper:
         self.db_cursor.execute(
             """ CREATE TABLE IF NOT EXISTS data (
                         project_id INTEGER,
+                        lines_removed INTEGER,
                         specific_exit_line INTEGER,
                         specific_exit_file INTEGER,
                         all_exit INTEGER,
@@ -307,6 +308,7 @@ class ResultDatabaseHelper:
     def store_results_data(
         self,
         project_id,
+        lines_removed,
         specific_exit_line,
         specific_exit_file,
         all_exit,
@@ -317,15 +319,17 @@ class ResultDatabaseHelper:
         self.db_cursor.execute(
             """ INSERT INTO data (
                 project_id,
+                lines_removed,
                 specific_exit_line,
                 specific_exit_file,
                 all_exit,
                 suite_size_line,
                 suite_size_file,
                 diff)
-                VALUES (?,?,?,?,?,?,?)""",
+                VALUES (?,?,?,?,?,?,?,?)""",
             (
                 project_id,
+                lines_removed,
                 specific_exit_line,
                 specific_exit_file,
                 all_exit,
