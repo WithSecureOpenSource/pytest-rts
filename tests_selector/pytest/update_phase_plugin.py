@@ -5,12 +5,10 @@ from timeit import default_timer as timer
 from tests_selector.pytest.fake_item import FakeItem
 from tests_selector.utils.common import (
     function_lines,
-    save_data,
     calculate_func_lines,
+    save_data,
 )
-from tests_selector.utils.db import (
-    get_test_duration,
-)
+from tests_selector.utils.db import DatabaseHelper
 
 
 class UpdatePhasePlugin:
@@ -20,12 +18,14 @@ class UpdatePhasePlugin:
         self.cov = coverage.Coverage()
         self.cov._warn_unimported_source = False
         self.test_set = test_set
-        self.fill_times_dict()
         self.testfiles = set()
+        self.db = DatabaseHelper()
+        self.db.init_conn()
+        self.fill_times_dict()
 
     def fill_times_dict(self):
         for testname in self.test_set:
-            self.test_func_times[testname] = get_test_duration(testname)
+            self.test_func_times[testname] = self.db.get_test_duration(testname)
 
     def pytest_collection_modifyitems(self, session, config, items):
         original_length = len(items)
@@ -59,7 +59,12 @@ class UpdatePhasePlugin:
             end = timer()
             elapsed = round(end - start, 4)
             save_data(
-                item, elapsed, self.test_func_lines, self.cov.get_data(), self.testfiles
+                item,
+                elapsed,
+                self.test_func_lines,
+                self.cov.get_data(),
+                self.testfiles,
+                self.db,
             )
         else:
             yield

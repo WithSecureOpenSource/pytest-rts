@@ -1,12 +1,13 @@
-import pytest
 import os
-import subprocess
 import ast
 
 from tests_selector.utils import git, common
+from tests_selector.utils.db import DatabaseHelper
 
+def test_tests_from_changed_sourcefiles():
+    db = DatabaseHelper()
+    db.init_conn()
 
-def test_tests_from_changed_sourcefiles(temp_project_repo):
     with open("./src/car.py", "r") as f:
         lines = f.readlines()
         code = lines[11]
@@ -17,7 +18,7 @@ def test_tests_from_changed_sourcefiles(temp_project_repo):
             f.write(line)
 
     changed_files = git.changed_files_current()
-    test_files, src_files = common.split_changes(changed_files)
+    test_files, src_files = common.split_changes(changed_files, db)
     src_file_id = src_files[0][0]
     diff_dict = common.file_diff_dict_current(src_files)
 
@@ -25,15 +26,17 @@ def test_tests_from_changed_sourcefiles(temp_project_repo):
         test_set,
         changed_lines_dict,
         new_line_map_dict,
-    ) = common.tests_from_changed_srcfiles(diff_dict, src_files)
+    ) = common.tests_from_changed_srcfiles(diff_dict, src_files, db)
 
     assert test_set == {"tests/test_car.py::test_acceleration"}
     assert changed_lines_dict == {src_file_id: [12]}
     assert new_line_map_dict == {src_file_id: {}}
-    subprocess.run(["git", "restore", "."])
+    db.close_conn()
 
 
-def test_tests_from_changed_testfiles(temp_project_repo):
+def test_tests_from_changed_testfiles():
+    db = DatabaseHelper()
+    db.init_conn()
     with open("./tests/test_some_methods.py", "r") as f:
         lines = f.readlines()
         lines[8] = "\n"  # change 'test_normal_shop_purchase' test func
@@ -43,7 +46,7 @@ def test_tests_from_changed_testfiles(temp_project_repo):
             f.write(line)
 
     changed_files = git.changed_files_current()
-    test_files, src_files = common.split_changes(changed_files)
+    test_files, src_files = common.split_changes(changed_files, db)
     test_file_id = test_files[0][0]
     diff_dict = common.file_diff_dict_current(test_files)
 
@@ -51,15 +54,18 @@ def test_tests_from_changed_testfiles(temp_project_repo):
         test_set,
         changed_lines_dict,
         new_line_map_dict,
-    ) = common.tests_from_changed_testfiles(diff_dict, test_files)
+    ) = common.tests_from_changed_testfiles(diff_dict, test_files, db)
 
     assert test_set == {"tests/test_some_methods.py::test_normal_shop_purchase"}
     assert changed_lines_dict == {test_file_id: [9]}
     assert new_line_map_dict == {test_file_id: {}}
-    subprocess.run(["git", "restore", "."])
+    db.close_conn()
 
 
-def test_split_changes(temp_project_repo):
+def test_split_changes():
+    db = DatabaseHelper()
+    db.init_conn()
+
     with open("./tests/test_some_methods.py", "w") as f:
         f.write("nothing")
 
@@ -70,17 +76,19 @@ def test_split_changes(temp_project_repo):
         f.write("nothing")
 
     changed_files = git.changed_files_current()
-    test_files, src_files = common.split_changes(changed_files)
+    test_files, src_files = common.split_changes(changed_files, db)
 
     assert len(test_files) == 1
     assert test_files[0][1] == "tests/test_some_methods.py"
     assert len(src_files) == 1
     assert src_files[0][1] == "src/car.py"
     os.remove("./random_file.txt")
-    subprocess.run(["git", "restore", "."])
+    db.close_conn()
 
 
-def test_newly_added_tests(temp_project_repo):
+def test_newly_added_tests():
+    db = DatabaseHelper()
+    db.init_conn()
     with open("./tests/test_new_methods.py", "w") as f:
         lines = [
             "import pytest\n",
@@ -91,12 +99,13 @@ def test_newly_added_tests(temp_project_repo):
         for line in lines:
             f.write(line)
 
-    new_tests = common.read_newly_added_tests()
+    new_tests = common.read_newly_added_tests(db)
     assert new_tests == {"tests/test_new_methods.py::test_new_stuff"}
     os.remove("./tests/test_new_methods.py")
+    db.close_conn()
 
 
-def test_line_mapping(temp_project_repo):
+def test_line_mapping():
     with open("./src/car.py", "r") as f:
         lines = f.readlines()
         lines[4] = lines[4] + "\n\n\n"
@@ -137,10 +146,9 @@ def test_line_mapping(temp_project_repo):
     }
 
     assert line_map == real_lines
-    subprocess.run(["git", "restore", "."])
 
 
-def test_function_lines(temp_project_repo):
+def test_function_lines():
     with open("./src/car.py", "r") as f:
         code = f.read()
         codelines = f.readlines()

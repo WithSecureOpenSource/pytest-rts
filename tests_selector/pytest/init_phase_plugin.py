@@ -4,12 +4,10 @@ from _pytest.python import Function
 from timeit import default_timer as timer
 from tests_selector.utils.common import (
     function_lines,
-    save_data,
     calculate_func_lines,
+    save_data,
 )
-from tests_selector.utils.db import (
-    init_mapping_db,
-)
+from tests_selector.utils.db import DatabaseHelper
 
 
 class InitPhasePlugin:
@@ -18,7 +16,9 @@ class InitPhasePlugin:
         self.cov = coverage.Coverage()
         self.cov._warn_unimported_source = False
         self.testfiles = set()
-        init_mapping_db()
+        self.db = DatabaseHelper()
+        self.db.init_conn()
+        self.db.init_mapping_db()
 
     def pytest_collection_modifyitems(self, session, config, items):
         for item in items:
@@ -40,7 +40,12 @@ class InitPhasePlugin:
             end = timer()
             elapsed = round(end - start, 4)
             save_data(
-                item, elapsed, self.test_func_lines, self.cov.get_data(), self.testfiles
+                item,
+                elapsed,
+                self.test_func_lines,
+                self.cov.get_data(),
+                self.testfiles,
+                self.db,
             )
         else:
             yield

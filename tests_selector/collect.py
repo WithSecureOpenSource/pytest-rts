@@ -1,9 +1,8 @@
 import os
 import sys
 import pytest
-
 from tests_selector.pytest.collect_plugin import CollectPlugin
-from tests_selector.utils.common import get_cursor
+from tests_selector.utils.db import DatabaseHelper
 
 PROJECT_FOLDER = sys.argv[1]
 
@@ -21,18 +20,21 @@ def newly_added_tests(existing_tests):
 
 
 def main():
-    c, conn = get_cursor()
+    db = DatabaseHelper()
+    db.init_conn()
     existing_tests = set()
-    for t in [x[0] for x in c.execute("SELECT context FROM test_function").fetchall()]:
+    for t in [
+        x[0]
+        for x in db.db_cursor.execute("SELECT context FROM test_function").fetchall()
+    ]:
         existing_tests.add(t)
 
     test_set = newly_added_tests(existing_tests)
-    c.execute("DROP TABLE IF EXISTS new_tests")
-    c.execute("CREATE TABLE new_tests (context TEXT)")
+    db.db_cursor.execute("DELETE FROM new_tests")
     for t in test_set:
-        c.execute("INSERT INTO new_tests (context) VALUES (?)", (t,))
-    conn.commit()
-    conn.close()
+        db.db_cursor.execute("INSERT INTO new_tests (context) VALUES (?)", (t,))
+    db.db_conn.commit()
+    db.db_conn.close()
 
 
 if __name__ == "__main__":

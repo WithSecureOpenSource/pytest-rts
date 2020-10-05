@@ -1,16 +1,11 @@
-import pytest
-import subprocess
-import os
-import shutil
-
 from tests_selector.utils import git
 
 
-def test_changed_files_current_no_change(temp_project_repo):
+def test_changed_files_current_no_change():
     assert git.changed_files_current() == []
 
 
-def test_changed_files_current_one_change(temp_project_repo):
+def test_changed_files_current_one_change():
     with open("./src/car.py", "r") as f:
         lines = f.readlines()
         lines[6] = "abcd\n"
@@ -20,10 +15,9 @@ def test_changed_files_current_one_change(temp_project_repo):
             f.write(line)
 
     assert git.changed_files_current() == ["src/car.py"]
-    subprocess.run(["git", "restore", "."])
 
 
-def test_get_test_lines_and_update_lines1(temp_project_repo):
+def test_get_test_lines_and_update_lines1():
     with open("./fake_diff_data/1.txt", "r") as f:
         diff = f.read()
 
@@ -95,7 +89,7 @@ def test_get_test_lines_and_update_lines1(temp_project_repo):
     assert updates == real_updates
 
 
-def test_get_test_lines_and_update_lines2(temp_project_repo):
+def test_get_test_lines_and_update_lines2():
     with open("./fake_diff_data/2.txt", "r") as f:
         diff = f.read()
 
@@ -107,7 +101,7 @@ def test_get_test_lines_and_update_lines2(temp_project_repo):
     assert updates == real_updates
 
 
-def test_get_test_lines_and_update_lines3(temp_project_repo):
+def test_get_test_lines_and_update_lines3():
     with open("./fake_diff_data/3.txt", "r") as f:
         diff = f.read()
 
@@ -119,7 +113,7 @@ def test_get_test_lines_and_update_lines3(temp_project_repo):
     assert updates == real_updates
 
 
-def test_get_test_lines_and_update_lines4(temp_project_repo):
+def test_get_test_lines_and_update_lines4():
     with open("./src/car.py", "r") as f:
         lines = f.readlines()
         lines[11] = lines[11].strip() + "+1\n"
@@ -137,4 +131,3 @@ def test_get_test_lines_and_update_lines4(temp_project_repo):
 
     assert lines == real_lines
     assert updates == real_updates
-    subprocess.run(["git", "restore", "."])

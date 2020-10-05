@@ -2,103 +2,19 @@ import os
 import subprocess
 import random
 
-from tests_selector.utils.db import (
-    DB_FILE_NAME,
-    update_db_from_src_mapping,
-    update_db_from_test_mapping,
-    delete_ran_lines,
-)
-
-COVERAGE_CONF_FILE_NAME = ".coveragerc"
-
-
-def run_tests_and_update_db(test_set, update_tuple, project_folder):
-    changed_lines_test = update_tuple[
-        0
-    ]  # TODO: `changed_lines_test` is not used below!
-    line_map_test = update_tuple[1]
-    changed_lines_src = update_tuple[2]
-    line_map_src = update_tuple[3]
-
-    for t in line_map_test.keys():
-        update_db_from_test_mapping(line_map_test[t], t)
-
-    for f in changed_lines_src.keys():
-        delete_ran_lines(changed_lines_src[f], f)
-        update_db_from_src_mapping(line_map_src[f], f)
-
-    start_normal_phase(project_folder, test_set)
-
-
-def start_test_init(project_folder):
-    if os.path.exists(DB_FILE_NAME):
-        os.remove(DB_FILE_NAME)
-
-    if os.path.exists("./" + project_folder + "/" + COVERAGE_CONF_FILE_NAME):
-        os.remove("./" + project_folder + "/" + COVERAGE_CONF_FILE_NAME)
-
-    os.rename(
-        os.getcwd() + "/" + COVERAGE_CONF_FILE_NAME,
-        os.getcwd() + "/" + project_folder + "/" + COVERAGE_CONF_FILE_NAME,
-    )
-
-    curr_dir = os.getcwd()
-    os.chdir(curr_dir + "/" + project_folder)
-    subprocess.run(["tests_selector_init"])
-    os.chdir(curr_dir)
-
-    os.rename(
-        os.getcwd() + "/" + project_folder + "/" + DB_FILE_NAME,
-        os.getcwd() + "/" + DB_FILE_NAME,
-    )
-    os.rename(
-        os.getcwd() + "/" + project_folder + "/" + COVERAGE_CONF_FILE_NAME,
-        os.getcwd() + "/" + COVERAGE_CONF_FILE_NAME,
-    )
-
-
-def start_normal_phase(project_folder, test_set):
-    os.rename(
-        os.getcwd() + "/" + DB_FILE_NAME,
-        os.getcwd() + "/" + project_folder + "/" + DB_FILE_NAME,
-    )
-    if os.path.exists("./" + project_folder + "/" + COVERAGE_CONF_FILE_NAME):
-        os.remove("./" + project_folder + "/" + COVERAGE_CONF_FILE_NAME)
-    os.rename(
-        os.getcwd() + "/" + COVERAGE_CONF_FILE_NAME,
-        os.getcwd() + "/" + project_folder + "/" + COVERAGE_CONF_FILE_NAME,
-    )
-
-    curr_dir = os.getcwd()
-    os.chdir(curr_dir + "/" + project_folder)
-    subprocess.run(["tests_selector_run"] + list(test_set))
-    os.chdir(curr_dir)
-
-    os.rename(
-        os.getcwd() + "/" + project_folder + "/" + DB_FILE_NAME, "./" + DB_FILE_NAME
-    )
-    os.rename(
-        os.getcwd() + "/" + project_folder + "/.coveragerc",
-        "./" + COVERAGE_CONF_FILE_NAME,
-    )
-
 
 def select_random_file(files):
-    while True:
-        random_file = random.choice(files)
-        filename = random_file[1]
-        if (
-            "tests-selector" not in filename
-        ):  # for now some tests-selector runners get mapped to source files by accident
-            break
-    return random_file
+    return random.choice(files)
 
 
 def delete_random_line(filename, project_folder):
     try:
         with open(os.getcwd() + "/" + project_folder + "/" + filename, "r") as f:
             data = f.readlines()
-            rand_line = random.randint(0, len(data) - 1)
+            while True:
+                rand_line = random.randint(0, len(data) - 1)
+                if data[rand_line] != "\n":
+                    break
             data[rand_line] = "\n"  # replace random line with newline.
 
         with open(os.getcwd() + "/" + project_folder + "/" + filename, "w") as f:
@@ -135,3 +51,73 @@ def capture_all_exit_code(project_folder, max_wait):
         all_exit_code = -1
 
     return all_exit_code
+
+
+def print_remove_test_output(
+    i,
+    project_name,
+    commithash,
+    deletes,
+    full_test_suite_size,
+    line_test_suite_size,
+    file_test_suite_size,
+    exitcode_line,
+    exitcode_file,
+    exitcode_all,
+    db_name,
+):
+    print("============")
+    print("iteration:", i + 1)
+    print("project name:", project_name)
+    print("commit hash:", commithash)
+    print(f"removed {deletes} random src file lines")
+    print("size of full test suite:", full_test_suite_size)
+    print("size of line level test suite:", line_test_suite_size)
+    print("size of file level test suite:", file_test_suite_size)
+    print(
+        f"exitcodes: line-level: {exitcode_line}, file-level: {exitcode_file}, all: {exitcode_all}"
+    )
+    print("STORING TO DATABASE:", db_name)
+    print("============")
+
+
+def tests_from_changes_between_commits(commithash1, commithash2, project_folder, db):
+    changed_files = file_changes_between_commits(
+        commithash1, commithash2, project_folder
+    )
+
+    changed_test_files, changed_src_files = split_changes(changed_files, db)
+
+    diff_dict_src = file_diff_dict_between_commits(
+        changed_src_files, commithash1, commithash2, project_folder
+    )
+    diff_dict_test = file_diff_dict_between_commits(
+        changed_test_files, commithash1, commithash2, project_folder
+    )
+    (
+        test_test_set,
+        test_changed_lines_dict,
+        test_new_line_map_dict,
+    ) = tests_from_changed_testfiles(diff_dict_test, changed_test_files)
+    (
+        src_test_set,
+        src_changed_lines_dict,
+        src_new_line_map_dict,
+    ) = tests_from_changed_srcfiles(diff_dict_src, changed_src_files)
+
+    test_set = test_test_set.union(src_test_set)
+    update_tuple = (
+        test_changed_lines_dict,
+        test_new_line_map_dict,
+        src_changed_lines_dict,
+        src_new_line_map_dict,
+    )
+
+    return test_set, update_tuple
+
+
+def install_dependencies(install_cmd, project_folder):
+    old_dir = os.getcwd()
+    os.chdir("./" + project_folder)
+    subprocess.run(install_cmd.split(), capture_output=True)
+    os.chdir(old_dir)
