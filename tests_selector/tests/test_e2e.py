@@ -8,7 +8,6 @@ from tests_selector.utils.db import DatabaseHelper
 from tests_selector import select
 
 initial_mapping_name = "mapping.db"
-new_mapping_name = "new_mapping.db"
 
 
 def test_full_integration():
@@ -86,15 +85,14 @@ def test_full_integration():
     test_set, update_tuple = select.get_tests_from_changes(
         diff_dict_test, diff_dict_src, changed_test_files, changed_src_files, db
     )
-     # New method addition = test_set should be all tests of that file
+    # New method addition = test_set should be all tests of that file
     assert list(test_set) == all_tests_car
 
     # Close conn of tool's db just in case
     db.close_conn()
 
     # Open separate connection to database for this test
-    # Using the new updated database
-    conn = sqlite3.connect(new_mapping_name)
+    conn = sqlite3.connect(initial_mapping_name)
     c = conn.cursor()
 
     # DB should update after running this
@@ -118,7 +116,6 @@ def test_full_integration():
         f.write("    car = Car(3,0,1)\n")
         f.write("    car.add_passenger()\n")
         f.write("    assert car.get_passengers() == 2\n")
-
 
     # Reopen tool's db connection
     db.init_conn()
@@ -148,8 +145,7 @@ def test_full_integration():
     assert list(new_tests) == [new_test_name]
 
     # Open separate connection to database for this test
-    # Using the new updated database
-    conn = sqlite3.connect(new_mapping_name)
+    conn = sqlite3.connect(initial_mapping_name)
     c = conn.cursor()
 
     # Running test_selector should run tests but not add new test to database
@@ -188,14 +184,12 @@ def test_full_integration():
     # Close conn of tool's db just in case
     db.close_conn()
 
-
     # Running tests_selector should now update database
     # So new test function should be found in db
     subprocess.run(["tests_selector"])
 
     # Open separate connection to database for this test
-    # Using the new updated database
-    conn = sqlite3.connect(new_mapping_name)
+    conn = sqlite3.connect(initial_mapping_name)
     c = conn.cursor()
 
     new_test_func_id = c.execute(
@@ -260,7 +254,7 @@ def test_db_updating_only_once():
     # Committed changes, run tests_selector
     # Should update db
     subprocess.run(["tests_selector"])
-    conn = sqlite3.connect(new_mapping_name)
+    conn = sqlite3.connect(initial_mapping_name)
     c = conn.cursor()
     new_car_lines = [
         x[0]
@@ -274,7 +268,7 @@ def test_db_updating_only_once():
 
     # Run again, shouldn't update db
     subprocess.run(["tests_selector"])
-    conn = sqlite3.connect(new_mapping_name)
+    conn = sqlite3.connect(initial_mapping_name)
     c = conn.cursor()
     new_car_lines = [
         x[0]

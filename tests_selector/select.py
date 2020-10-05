@@ -12,11 +12,11 @@ from tests_selector.utils.common import (
 from tests_selector.utils.git import (
     changed_files_current,
     changed_files_branch,
+    get_current_hash,
 )
 
 from tests_selector.utils.db import (
     DB_FILE_NAME,
-    NEW_DB_FILE_NAME,
     DatabaseHelper,
 )
 
@@ -60,12 +60,6 @@ def main():
 
     if len(changed_test_files) > 0 or len(changed_src_files) > 0:
 
-        if os.path.isfile(NEW_DB_FILE_NAME):
-            db.swap_cursor()
-
-        # Should new tests be checked here?
-        # If so, when to update the database for them
-        # so they are not found as new tests in the working directory changes?
         print(f"Found {len(changed_test_files)} changed test files")
         print(f"Found {len(changed_src_files)} changed src files")
 
@@ -85,6 +79,10 @@ def main():
         # Check committed changes
         print("Found no changed src files or test files in the working directory")
         print("Comparing current branch to master...")
+
+        if db.get_last_hash() == get_current_hash():
+            print("Tests already ran and database updated for this comparison")
+            exit()
 
         changed_files = changed_files_branch()
         changed_test_files, changed_src_files = split_changes(changed_files, db)
@@ -106,6 +104,7 @@ def main():
         print(f"Found {len(final_test_set)} tests to execute")
 
         run_tests_and_update_db(final_test_set, update_tuple, db)
+        db.save_last_hash(get_current_hash())
 
     db.close_conn()
 

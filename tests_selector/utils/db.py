@@ -1,7 +1,6 @@
 import sqlite3
 
 DB_FILE_NAME = "mapping.db"
-NEW_DB_FILE_NAME = "new_mapping.db"
 RESULTS_DB_FILE_NAME = "results.db"
 
 
@@ -11,20 +10,8 @@ class DatabaseHelper:
         self.db_cursor = None
 
     def init_conn(self, new=False):
-        dbname = NEW_DB_FILE_NAME if new else DB_FILE_NAME
-        self.db_conn = sqlite3.connect(dbname)
+        self.db_conn = sqlite3.connect(DB_FILE_NAME)
         self.db_cursor = self.db_conn.cursor()
-
-    def swap_cursor(self):
-        self.close_conn()
-        self.init_conn(True)
-
-    def copy_db(self):
-        conn_old = sqlite3.connect(DB_FILE_NAME)
-        conn_new = sqlite3.connect(NEW_DB_FILE_NAME)
-        conn_old.backup(conn_new)
-        conn_old.close()
-        conn_new.close()
 
     def close_conn(self):
         self.db_conn.close()
@@ -161,6 +148,7 @@ class DatabaseHelper:
         self.db_cursor.execute("DROP TABLE IF EXISTS test_file")
         self.db_cursor.execute("DROP TABLE IF EXISTS test_function")
         self.db_cursor.execute("DROP TABLE IF EXISTS new_tests")
+        self.db_cursor.execute("DROP TABLE IF EXISTS last_hash")
         self.db_cursor.execute(
             "CREATE TABLE test_map (file_id INTEGER, test_function_id INTEGER, line_id INTEGER, UNIQUE(file_id,test_function_id,line_id))"
         )
@@ -182,6 +170,7 @@ class DatabaseHelper:
                                 UNIQUE (context))"""
         )
         self.db_cursor.execute("CREATE TABLE new_tests (context TEXT)")
+        self.db_cursor.execute("CREATE TABLE last_hash (hash TEXT)")
         self.db_conn.commit()
 
     def save_mapping_lines(self, src_id, test_function_id, lines):

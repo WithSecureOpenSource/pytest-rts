@@ -20,8 +20,7 @@ class UpdatePhasePlugin:
         self.test_set = test_set
         self.testfiles = set()
         self.db = DatabaseHelper()
-        self.db.copy_db()  # Copy mapping.db to new_mapping.db
-        self.db.init_conn(True)  # Boolean to state that new_mapping.db is used
+        self.db.init_conn()
         self.fill_times_dict()
 
     def fill_times_dict(self):
