@@ -128,8 +128,6 @@ def test_full_integration():
     test_set, update_tuple = select.get_tests_from_changes(
         diff_dict_test, diff_dict_src, changed_test_files, changed_src_files, db
     )
-    # Also get newly added tests
-    new_tests = common.read_newly_added_tests(db)
 
     # Close conn of tool's db just in case
     db.close_conn()
@@ -139,7 +137,6 @@ def test_full_integration():
     assert list(test_set) == ["tests/test_car.py::test_acceleration"]
     # New test should be found
     new_test_name = "tests/test_car.py::test_add_passenger"
-    assert list(new_tests) == [new_test_name]
 
     # Open separate connection to database for this test
     conn = sqlite3.connect(initial_mapping_name)
