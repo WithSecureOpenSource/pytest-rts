@@ -120,9 +120,6 @@ def test_full_integration():
     # Reopen tool's db connection
     db.init_conn()
 
-    # Swap to new database for working directory changes
-    db.swap_cursor()
-
     # Get working directory diffs and test_set like in tests_selector script
     changed_files = git.changed_files_current()
     changed_test_files, changed_src_files = common.split_changes(changed_files, db)
