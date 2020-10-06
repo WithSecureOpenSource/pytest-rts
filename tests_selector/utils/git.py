@@ -50,6 +50,7 @@ def get_test_lines_and_update_lines(diff):
     line_changes = re.findall(regex, diff)
     lines_to_query = []
     updates_to_lines = []
+    new_lines = []
     cum_diff = 0
     for change in line_changes:
         changed_line = change.strip("@").split()
@@ -83,8 +84,32 @@ def get_test_lines_and_update_lines(diff):
             for i in range(int(old[0]), int(old[0]) + int(old[1])):
                 lines_to_query.append(i)
 
-    return lines_to_query, updates_to_lines
+        # Extract new lines
+        if int(new[1]) == 0:
+            new_lines.append(int(new[0]))
+        else:
+            for i in range(int(new[0]), int(new[0]) + int(new[1])):
+                new_lines.append(i)
+
+    return lines_to_query, updates_to_lines, new_lines
 
 
-def get_current_hash():
-    return get_git_repo(None).repo.head.object.hexsha
+def get_head_and_previous_hash():
+    git_data = get_git_repo(None).repo.git.rev_list("--parents", "-n 1", "HEAD").split()
+    if len(git_data) == 1:
+        head = git_data[0]
+        previous = None
+    else:
+        head = git_data[0]
+        previous = git_data[1]
+    return head, previous
+
+
+def changed_files_since_last_commit(project_folder=None):
+    repo = get_git_repo(project_folder)
+    return repo.repo.git.diff("--name-only", "HEAD^").split()
+
+
+def file_diff_data_since_last_commit(filename, project_folder=None):
+    repo = get_git_repo(project_folder)
+    return repo.repo.git.diff("-U0", "HEAD^", "--", filename)
