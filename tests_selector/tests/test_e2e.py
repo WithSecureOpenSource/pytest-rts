@@ -31,21 +31,21 @@ def test_full_integration():
         f.write("        i = self.speed + self.seats\n")
         f.write("        return i + 8\n")
 
-    # Get working directory diffs and test_set like in tests_selector script
-    changed_files = git.changed_files_current()
-    changed_test_files, changed_src_files = common.split_changes(changed_files, db)
-    diff_dict_src = common.file_diff_dict_current(changed_src_files)
-    diff_dict_test = common.file_diff_dict_current(changed_test_files)
-    test_set, update_tuple = select.get_tests_from_changes(
-        diff_dict_test, diff_dict_src, changed_test_files, changed_src_files, db
-    )
+    # Get working directory test_set like in tests_selector script
+
+    (
+        workdir_test_set,
+        workdir_changed_test_files,
+        workdir_changed_src_files,
+    ) = select.get_tests_and_data_current(db)
+
     all_tests_car = db.query_all_tests_srcfile(car_id)
 
     # Close conn of tool's db just in case
     db.close_conn()
 
     # New method addition = test_set should be all tests of that file
-    assert list(test_set) == all_tests_car
+    assert workdir_test_set == set(all_tests_car)
 
     # Open separate connection to database for this test
     conn = sqlite3.connect(initial_mapping_name)
@@ -77,16 +77,16 @@ def test_full_integration():
     # Reopen tool's db connection
     db.init_conn()
 
-    # Get branch comparison diffs and test_set like in tests_selector script
-    changed_files = git.changed_files_branch()
-    changed_test_files, changed_src_files = common.split_changes(changed_files, db)
-    diff_dict_src = common.file_diff_dict_branch(changed_src_files)
-    diff_dict_test = common.file_diff_dict_branch(changed_test_files)
-    test_set, update_tuple = select.get_tests_from_changes(
-        diff_dict_test, diff_dict_src, changed_test_files, changed_src_files, db
-    )
+    # Get committed changes test_set like in tests_selector script
+    (
+        commit_test_set,
+        commit_update_tuple,
+        commit_changed_test_files,
+        commit_changed_src_files,
+        new_tests_amount,
+    ) = select.get_tests_and_data_committed(db)
     # New method addition = test_set should be all tests of that file
-    assert list(test_set) == all_tests_car
+    assert commit_test_set == set(all_tests_car)
 
     # Close conn of tool's db just in case
     db.close_conn()
@@ -121,28 +121,26 @@ def test_full_integration():
     db.init_conn()
 
     # Get working directory diffs and test_set like in tests_selector script
-    changed_files = git.changed_files_current()
-    changed_test_files, changed_src_files = common.split_changes(changed_files, db)
-    diff_dict_src = common.file_diff_dict_current(changed_src_files)
-    diff_dict_test = common.file_diff_dict_current(changed_test_files)
-    test_set, update_tuple = select.get_tests_from_changes(
-        diff_dict_test, diff_dict_src, changed_test_files, changed_src_files, db
-    )
+    (
+        workdir_test_set2,
+        workdir_changed_test_files2,
+        workdir_changed_src_files2,
+    ) = select.get_tests_and_data_current(db)
 
     # Close conn of tool's db just in case
     db.close_conn()
 
     # Changes test_set should be empty
     # But newline at the end existing test is also considered a change
-    assert list(test_set) == ["tests/test_car.py::test_acceleration"]
-    # New test should be found
+    assert workdir_test_set2 == set(["tests/test_car.py::test_acceleration"])
+
     new_test_name = "tests/test_car.py::test_add_passenger"
 
     # Open separate connection to database for this test
     conn = sqlite3.connect(initial_mapping_name)
     c = conn.cursor()
 
-    # Running test_selector should run tests but not add new test to database
+    # Running test_selector should not add new test to database
     subprocess.run(["tests_selector"])
     new_test_in_db = c.execute(
         "SELECT id FROM test_function WHERE context = ?", (new_test_name,)
@@ -159,18 +157,22 @@ def test_full_integration():
     # Reopen tool's db connection
     db.init_conn()
 
-    # Get branch comparison diffs and test_set like in tests_selector script
-    changed_files = git.changed_files_branch()
-    changed_test_files, changed_src_files = common.split_changes(changed_files, db)
-    diff_dict_src = common.file_diff_dict_branch(changed_src_files)
-    diff_dict_test = common.file_diff_dict_branch(changed_test_files)
-    test_set, update_tuple = select.get_tests_from_changes(
-        diff_dict_test, diff_dict_src, changed_test_files, changed_src_files, db
+    # Get committed changes test_set like in tests_selector script
+    (
+        commit_test_set2,
+        commit_update_tuple2,
+        commit_changed_test_files2,
+        commit_changed_src_files2,
+        new_tests_amount2,
+    ) = select.get_tests_and_data_committed(db)
+
+    # Test_set should now include all tests from changes between this commit and previous
+    # = New test method + newline causing acceleration test to show up
+
+    assert commit_test_set2 == set(
+        ["tests/test_car.py::test_acceleration", new_test_name]
     )
 
-    # Test_set should now include all tests from previous commit and this commit
-    # = All tests for car because new method on car.py
-    assert list(test_set) == all_tests_car
     # New tests should include the newly added test only
     new_tests = common.read_newly_added_tests(db)
     assert list(new_tests) == [new_test_name]
