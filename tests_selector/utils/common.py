@@ -5,8 +5,17 @@ from tests_selector.utils.git import (
     file_diff_data_between_commits,
     file_diff_data_current,
     file_diff_data_branch,
+    file_diff_data_since_last_commit,
     get_test_lines_and_update_lines,
 )
+
+
+def file_diff_dict_since_last_commit(files):
+    """Returns a dictionary with file id as key and git diff as value"""
+    return {
+        file_id: file_diff_data_since_last_commit(filename)
+        for file_id, filename in files
+    }
 
 
 def file_diff_dict_branch(files):
@@ -49,7 +58,9 @@ def tests_from_changed_testfiles(diff_dict, files, db):
         file_id = f[0]
         filename = f[1]
         file_diff = diff_dict[file_id]
-        changed_lines, updates_to_lines = get_test_lines_and_update_lines(file_diff)
+        changed_lines, updates_to_lines, new_lines = get_test_lines_and_update_lines(
+            file_diff
+        )
         line_map = line_mapping(updates_to_lines, filename)
 
         changed_lines_dict[file_id] = changed_lines
@@ -69,12 +80,18 @@ def tests_from_changed_srcfiles(diff_dict, files, db):
         file_id = f[0]
         filename = f[1]
         file_diff = diff_dict[file_id]
-        changed_lines, updates_to_lines = get_test_lines_and_update_lines(file_diff)
+        changed_lines, updates_to_lines, new_lines = get_test_lines_and_update_lines(
+            file_diff
+        )
         line_map = line_mapping(updates_to_lines, filename)
 
         changed_lines_dict[file_id] = changed_lines
         new_line_map_dict[file_id] = line_map
-        tests = db.query_tests_srcfile(changed_lines, file_id)
+
+        if any([not db.mapping_line_exists(file_id, line_id) for line_id in new_lines]):
+            tests = db.query_all_tests_srcfile(file_id)
+        else:
+            tests = db.query_tests_srcfile(changed_lines, file_id)
 
         for t in tests:
             test_set.add(t)
@@ -102,10 +119,7 @@ def run_tests_and_update_db(test_set, update_tuple, db, project_folder="."):
         db.update_db_from_src_mapping(line_map_src[f], f)
 
     if len(test_set) > 0:
-        print("Running selected tests...")
         subprocess.run(["tests_selector_run_and_update"] + list(test_set))
-    else:
-        print("No tests to run")
 
 
 def split_changes(changed_files, db):

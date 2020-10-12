@@ -21,7 +21,7 @@ def test_get_test_lines_and_update_lines1():
     with open("./fake_diff_data/1.txt", "r") as f:
         diff = f.read()
 
-    lines, updates = git.get_test_lines_and_update_lines(diff)
+    lines, updates, _ = git.get_test_lines_and_update_lines(diff)
 
     real_lines = [
         23,
@@ -93,7 +93,7 @@ def test_get_test_lines_and_update_lines2():
     with open("./fake_diff_data/2.txt", "r") as f:
         diff = f.read()
 
-    lines, updates = git.get_test_lines_and_update_lines(diff)
+    lines, updates, _ = git.get_test_lines_and_update_lines(diff)
     real_lines = [83, 240]
     real_updates = [(83, 0), (240, 1)]
 
@@ -105,7 +105,7 @@ def test_get_test_lines_and_update_lines3():
     with open("./fake_diff_data/3.txt", "r") as f:
         diff = f.read()
 
-    lines, updates = git.get_test_lines_and_update_lines(diff)
+    lines, updates, _ = git.get_test_lines_and_update_lines(diff)
     real_lines = [16, 24]
     real_updates = [(16, 3), (24, 4)]
 
@@ -125,7 +125,7 @@ def test_get_test_lines_and_update_lines4():
             f.write(line)
 
     diff = git.file_diff_data_current("src/car.py", ".")
-    lines, updates = git.get_test_lines_and_update_lines(diff)
+    lines, updates, _ = git.get_test_lines_and_update_lines(diff)
     real_lines = [12, 16, 22]
     real_updates = [(12, 0), (16, 2), (22, 2)]
 

@@ -7,6 +7,7 @@ from tests_selector.utils.common import (
     calculate_func_lines,
     save_data,
 )
+from tests_selector.utils.git import get_head_and_previous_hash
 from tests_selector.utils.db import DatabaseHelper
 
 
@@ -19,6 +20,8 @@ class InitPhasePlugin:
         self.db = DatabaseHelper()
         self.db.init_conn()
         self.db.init_mapping_db()
+        self.head_hash, _ = get_head_and_previous_hash()
+        self.db.save_init_hash(self.head_hash)
 
     def pytest_collection_modifyitems(self, session, config, items):
         for item in items:

@@ -4,6 +4,7 @@ import ast
 from tests_selector.utils import git, common
 from tests_selector.utils.db import DatabaseHelper
 
+
 def test_tests_from_changed_sourcefiles():
     db = DatabaseHelper()
     db.init_conn()
@@ -117,7 +118,7 @@ def test_line_mapping():
             f.write(line)
 
     diff = git.file_diff_data_current("src/car.py", ".")
-    lines_to_query, updates_to_lines = git.get_test_lines_and_update_lines(diff)
+    lines_to_query, updates_to_lines, _ = git.get_test_lines_and_update_lines(diff)
     line_map = common.line_mapping(updates_to_lines, "src/car.py", ".")
 
     real_lines = {

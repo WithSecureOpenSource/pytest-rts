@@ -148,7 +148,8 @@ class DatabaseHelper:
         self.db_cursor.execute("DROP TABLE IF EXISTS test_file")
         self.db_cursor.execute("DROP TABLE IF EXISTS test_function")
         self.db_cursor.execute("DROP TABLE IF EXISTS new_tests")
-        self.db_cursor.execute("DROP TABLE IF EXISTS last_hash")
+        self.db_cursor.execute("DROP TABLE IF EXISTS comparisons")
+        self.db_cursor.execute("DROP TABLE IF EXISTS init_hash")
         self.db_cursor.execute(
             "CREATE TABLE test_map (file_id INTEGER, test_function_id INTEGER, line_id INTEGER, UNIQUE(file_id,test_function_id,line_id))"
         )
@@ -170,7 +171,10 @@ class DatabaseHelper:
                                 UNIQUE (context))"""
         )
         self.db_cursor.execute("CREATE TABLE new_tests (context TEXT)")
-        self.db_cursor.execute("CREATE TABLE last_hash (hash TEXT)")
+        self.db_cursor.execute(
+            "CREATE TABLE comparisons (hash1 TEXT, hash2 TEXT, UNIQUE(hash1, hash2))"
+        )
+        self.db_cursor.execute("CREATE TABLE init_hash (hash TEXT)")
         self.db_conn.commit()
 
     def save_mapping_lines(self, src_id, test_function_id, lines):
@@ -220,18 +224,6 @@ class DatabaseHelper:
             duration = data[0]
         return duration
 
-    def save_last_hash(self, lasthash):
-        self.db_cursor.execute("DELETE FROM last_hash")
-        self.db_cursor.execute("INSERT INTO last_hash (hash) VALUES (?)", (lasthash,))
-        self.db_conn.commit()
-
-    def get_last_hash(self):
-        lasthash = self.db_cursor.execute("SELECT hash FROM last_hash").fetchone()
-        if lasthash == None:
-            return None
-        else:
-            return lasthash[0]
-
     def read_newly_added_tests(self):
         new_tests = set()
         for t in [
@@ -240,6 +232,37 @@ class DatabaseHelper:
         ]:
             new_tests.add(t)
         return new_tests
+
+    def mapping_line_exists(self, file_id, line_id):
+        return bool(
+            self.db_cursor.execute(
+                "SELECT EXISTS(SELECT file_id FROM test_map WHERE file_id = ? AND line_id = ?)",
+                (
+                    file_id,
+                    line_id,
+                ),
+            ).fetchone()[0]
+        )
+
+    def comparison_exists(self, hash1, hash2):
+        return bool(
+            self.db_cursor.execute(
+                "SELECT EXISTS(SELECT * FROM comparisons WHERE hash1 = ? AND hash2 = ?)",
+                (hash1, hash2),
+            ).fetchone()[0]
+        )
+
+    def save_comparison(self, hash1, hash2):
+        self.db_cursor.execute("INSERT INTO comparisons VALUES (?,?)", (hash1, hash2))
+        self.db_conn.commit()
+
+    def save_init_hash(self, inithash):
+        self.db_cursor.execute("INSERT INTO init_hash VALUES (?)", (inithash,))
+        self.db_conn.commit()
+
+    def is_init_hash(self, commithash):
+        db_hash = self.db_cursor.execute("SELECT hash FROM init_hash").fetchone()[0]
+        return db_hash == commithash
 
 
 class ResultDatabaseHelper:
