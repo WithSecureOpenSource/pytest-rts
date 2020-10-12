@@ -4,50 +4,21 @@ import subprocess
 from tests_selector.utils.git import (
     file_diff_data_between_commits,
     file_diff_data_current,
-    file_diff_data_branch,
-    file_diff_data_since_last_commit,
     get_test_lines_and_update_lines,
 )
 
 
-def file_diff_dict_since_last_commit(files):
+def file_diff_dict_current(files):
+    """Returns a dictionary with file id as key and git diff as value"""
+    return {file_id: file_diff_data_current(filename) for file_id, filename in files}
+
+
+def file_diff_dict_between_commits(files, commithash1, commithash2):
     """Returns a dictionary with file id as key and git diff as value"""
     return {
-        file_id: file_diff_data_since_last_commit(filename)
+        file_id: file_diff_data_between_commits(filename, commithash1, commithash2)
         for file_id, filename in files
     }
-
-
-def file_diff_dict_branch(files):
-    diff_dict = {}
-    for f in files:
-        file_id = f[0]
-        filename = f[1]
-        diff = file_diff_data_branch(filename)
-        diff_dict[file_id] = diff
-    return diff_dict
-
-
-def file_diff_dict_current(files):
-    diff_dict = {}
-    for f in files:
-        file_id = f[0]
-        filename = f[1]
-        diff = file_diff_data_current(filename)
-        diff_dict[file_id] = diff
-    return diff_dict
-
-
-def file_diff_dict_between_commits(files, commithash1, commithash2, project_folder):
-    diff_dict = {}
-    for f in files:
-        file_id = f[0]
-        filename = f[1]
-        diff = file_diff_data_between_commits(
-            filename, commithash1, commithash2, project_folder
-        )
-        diff_dict[file_id] = diff
-    return diff_dict
 
 
 def tests_from_changed_testfiles(diff_dict, files, db):

@@ -6,15 +6,13 @@ from tests_selector.utils.common import (
     tests_from_changed_testfiles,
     read_newly_added_tests,
     file_diff_dict_current,
-    file_diff_dict_branch,
+    file_diff_dict_between_commits,
     run_tests_and_update_db,
-    file_diff_dict_since_last_commit,
 )
 from tests_selector.utils.git import (
     changed_files_current,
-    changed_files_branch,
-    changed_files_since_last_commit,
-    get_head_and_previous_hash,
+    changed_files_between_commits,
+    get_current_head_hash,
 )
 
 from tests_selector.utils.db import (
@@ -24,6 +22,7 @@ from tests_selector.utils.db import (
 
 
 def get_tests_from_changes(diff_dict_test, diff_dict_src, testfiles, srcfiles, db):
+    """Returns the test set and data required for line shifting"""
     (
         src_test_set,
         src_changed_lines_dict,
@@ -48,29 +47,50 @@ def get_tests_from_changes(diff_dict_test, diff_dict_src, testfiles, srcfiles, d
 
 
 def get_tests_and_data_current(db):
+    """Returns the test set from working directory changes and data for printing statistics"""
     changed_files = changed_files_current()
     changed_test_files, changed_src_files = split_changes(changed_files, db)
+
     diff_dict_src = file_diff_dict_current(changed_src_files)
     diff_dict_test = file_diff_dict_current(changed_test_files)
+
     test_set, update_tuple = get_tests_from_changes(
         diff_dict_test, diff_dict_src, changed_test_files, changed_src_files, db
     )
-    # No need to return update_tuple because no updating in working directory changes
-    return test_set, changed_test_files, changed_src_files
+
+    return test_set, len(changed_test_files), len(changed_src_files)
 
 
 def get_tests_and_data_committed(db):
-    changed_files = changed_files_since_last_commit()
+    """Compares current git HEAD has to previous update state commit hash
+    Returns the test set and data required for line-shifting and printing statistics
+    """
+    current_hash = get_current_head_hash()
+    previous_hash = db.get_last_update_hash()
+
+    changed_files = changed_files_between_commits(previous_hash, current_hash)
     changed_test_files, changed_src_files = split_changes(changed_files, db)
-    diff_dict_src = file_diff_dict_since_last_commit(changed_src_files)
-    diff_dict_test = file_diff_dict_since_last_commit(changed_test_files)
+
+    diff_dict_src = file_diff_dict_between_commits(
+        changed_src_files, previous_hash, current_hash
+    )
+    diff_dict_test = file_diff_dict_between_commits(
+        changed_test_files, previous_hash, current_hash
+    )
+
     new_tests = read_newly_added_tests(db)
     changes_test_set, update_tuple = get_tests_from_changes(
         diff_dict_test, diff_dict_src, changed_test_files, changed_src_files, db
     )
     test_set = changes_test_set.union(new_tests)
 
-    return test_set, update_tuple, changed_test_files, changed_src_files, len(new_tests)
+    return (
+        test_set,
+        update_tuple,
+        len(changed_test_files),
+        len(changed_src_files),
+        len(new_tests),
+    )
 
 
 def main():
@@ -83,14 +103,14 @@ def main():
 
     (
         workdir_test_set,
-        workdir_changed_test_files,
-        workdir_changed_src_files,
+        workdir_changed_test_files_amount,
+        workdir_changed_src_files_amount,
     ) = get_tests_and_data_current(db)
 
     print("")
     print("WORKING DIRECTORY CHANGES")
-    print(f"Found {len(workdir_changed_test_files)} changed test files")
-    print(f"Found {len(workdir_changed_src_files)} changed src files")
+    print(f"Found {workdir_changed_test_files_amount} changed test files")
+    print(f"Found {workdir_changed_src_files_amount} changed src files")
     print(f"Found {len(workdir_test_set)} tests to execute")
     print("")
 
@@ -99,39 +119,34 @@ def main():
         subprocess.run(["tests_selector_run"] + list(workdir_test_set))
         exit()
 
-    head, previous = get_head_and_previous_hash()
     print("No WORKING DIRECTORY tests to run, checking COMMITTED changes...")
-    if db.is_init_hash(head):
-        print("Current commit is the initial commit where database was created")
+    current_hash = get_current_head_hash()
+    if db.is_last_update_hash(current_hash):
+        print("Database is updated to the current commit state")
         print("=> Skipping test discovery, execution and updating")
         exit()
 
-    print(f"Comparison: {head} => {previous}")
+    previous_hash = db.get_last_update_hash()
+    print(f"Comparison: {current_hash} => {previous_hash}")
+
     (
         commit_test_set,
         commit_update_tuple,
-        commit_changed_test_files,
-        commit_changed_src_files,
+        commit_changed_test_files_amount,
+        commit_changed_src_files_amount,
         new_tests_amount,
     ) = get_tests_and_data_committed(db)
 
     print("")
     print("COMMITTED CHANGES")
-    print(f"Found {len(commit_changed_test_files)} changed test files")
-    print(f"Found {len(commit_changed_src_files)} changed src files")
+    print(f"Found {commit_changed_test_files_amount} changed test files")
+    print(f"Found {commit_changed_src_files_amount} changed src files")
     print(f"Found {new_tests_amount} newly added tests")
     print(f"Found {len(commit_test_set)} tests to execute")
     print("")
 
-    print("Checking database update status...")
-    if db.comparison_exists(head, previous):
-        print("Database already updated for this state")
-        print("=> Skipping updating but executing tests...")
-        subprocess.run(["tests_selector_run"] + list(commit_test_set))
-        exit()
-
-    print("=> Executing tests and updating database")
-    db.save_comparison(head, previous)
+    print("=> Executing tests (if any) and updating database")
+    db.save_last_update_hash(current_hash)
     run_tests_and_update_db(commit_test_set, commit_update_tuple, db)
 
     db.close_conn()
