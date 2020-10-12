@@ -11,13 +11,11 @@ from tests_selector.utils.git import (
 
 
 def file_diff_dict_since_last_commit(files):
-    diff_dict = {}
-    for f in files:
-        file_id = f[0]
-        filename = f[1]
-        diff = file_diff_data_since_last_commit(filename)
-        diff_dict[file_id] = diff
-    return diff_dict
+    """Returns a dictionary with file id as key and git diff as value"""
+    return {
+        file_id: file_diff_data_since_last_commit(filename)
+        for file_id, filename in files
+    }
 
 
 def file_diff_dict_branch(files):

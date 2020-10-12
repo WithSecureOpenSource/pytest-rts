@@ -97,40 +97,42 @@ def main():
     if len(workdir_test_set) > 0:
         print("Running WORKING DIRECTORY test set and exiting without updating...")
         subprocess.run(["tests_selector_run"] + list(workdir_test_set))
-    else:
-        head, previous = get_head_and_previous_hash()
-        print("No WORKING DIRECTORY tests to run, checking COMMITTED changes...")
-        if db.is_init_hash(head):
-            print("Current commit is the initial commit where database was created")
-            print("=> Skipping test discovery, execution and updating")
+        exit()
 
-        else:
-            print(f"Comparison: {head} => {previous}")
-            (
-                commit_test_set,
-                commit_update_tuple,
-                commit_changed_test_files,
-                commit_changed_src_files,
-                new_tests_amount,
-            ) = get_tests_and_data_committed(db)
+    head, previous = get_head_and_previous_hash()
+    print("No WORKING DIRECTORY tests to run, checking COMMITTED changes...")
+    if db.is_init_hash(head):
+        print("Current commit is the initial commit where database was created")
+        print("=> Skipping test discovery, execution and updating")
+        exit()
 
-            print("")
-            print("COMMITTED CHANGES")
-            print(f"Found {len(commit_changed_test_files)} changed test files")
-            print(f"Found {len(commit_changed_src_files)} changed src files")
-            print(f"Found {new_tests_amount} newly added tests")
-            print(f"Found {len(commit_test_set)} tests to execute")
-            print("")
+    print(f"Comparison: {head} => {previous}")
+    (
+        commit_test_set,
+        commit_update_tuple,
+        commit_changed_test_files,
+        commit_changed_src_files,
+        new_tests_amount,
+    ) = get_tests_and_data_committed(db)
 
-            print("Checking database update status...")
-            if db.comparison_exists(head, previous):
-                print("Database already updated for this state")
-                print("=> Skipping updating but executing tests...")
-                subprocess.run(["tests_selector_run"] + list(commit_test_set))
-            else:
-                print("=> Executing tests and updating database")
-                db.save_comparison(head, previous)
-                run_tests_and_update_db(commit_test_set, commit_update_tuple, db)
+    print("")
+    print("COMMITTED CHANGES")
+    print(f"Found {len(commit_changed_test_files)} changed test files")
+    print(f"Found {len(commit_changed_src_files)} changed src files")
+    print(f"Found {new_tests_amount} newly added tests")
+    print(f"Found {len(commit_test_set)} tests to execute")
+    print("")
+
+    print("Checking database update status...")
+    if db.comparison_exists(head, previous):
+        print("Database already updated for this state")
+        print("=> Skipping updating but executing tests...")
+        subprocess.run(["tests_selector_run"] + list(commit_test_set))
+        exit()
+
+    print("=> Executing tests and updating database")
+    db.save_comparison(head, previous)
+    run_tests_and_update_db(commit_test_set, commit_update_tuple, db)
 
     db.close_conn()
 

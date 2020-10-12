@@ -169,9 +169,7 @@ def test_full_integration():
     # Test_set should now include all tests from changes between this commit and previous
     # = New test method + newline causing acceleration test to show up
 
-    assert commit_test_set2 == set(
-        ["tests/test_car.py::test_acceleration", new_test_name]
-    )
+    assert commit_test_set2 == {"tests/test_car.py::test_acceleration", new_test_name}
 
     # New tests should include the newly added test only
     new_tests = common.read_newly_added_tests(db)
