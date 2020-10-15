@@ -7,7 +7,16 @@ from tests_selector.utils.db import DB_FILE_NAME, DatabaseHelper
 from tests_selector import select
 
 
-def test_branch_updating():
+@pytest.mark.parametrize(
+    "change_list",
+    [
+        (
+            "changes/car/shift_2_forward.txt",
+            "changes/shop/shift_2_forward.txt",
+        ),
+    ],
+)
+def test_updating_only_once(change_list):
     # get test_map lines for car.py
     conn = sqlite3.connect(DB_FILE_NAME)
     c = conn.cursor()
@@ -21,30 +30,10 @@ def test_branch_updating():
     subprocess.run(["git", "checkout", "-b", "new-branch"])
 
     # Add two new lines at the start of car.py -> shifts others forward by 2
-    with open("./src/car.py", "r") as f:
-        content = f.read()
-
-    with open("./src/car.py", "w") as f:
-        f.write("empty_variable = 0\nanother = 0\n")
-
-    with open("./src/car.py", "a") as f:
-        f.write(content)
-
-    # Also add a change that triggers test running and db updating
-    # Perhaps it should update lines also without running tests
-    with open("./src/car.py", "r") as f:
-        lines = f.readlines()
-
-    lines[13] = lines[13].strip()
-    lines[13] = "        " + lines[13] + "+1-1\n"
-
-    with open("./src/car.py", "w") as f:
-        for line in lines:
-            f.write(line)
-
-    # Commit changes
+    # And commit
+    subprocess.run(["cp", "-f", change_list[0], "src/car.py"])
     subprocess.run(["git", "add", "src/car.py"])
-    subprocess.run(["git", "commit", "-m", "car_changes"])
+    subprocess.run(["git", "commit", "-m", "commit1"])
 
     # Run test selector, should update db
     subprocess.run(["tests_selector"])
@@ -69,30 +58,10 @@ def test_branch_updating():
     conn.close()
 
     # Add two new lines at the start of shop.py -> shifts others forward by 2
-    with open("./src/shop.py", "r") as f:
-        content = f.read()
-
-    with open("./src/shop.py", "w") as f:
-        f.write("empty_variable = 0\nanother = 0\n")
-
-    with open("./src/shop.py", "a") as f:
-        f.write(content)
-
-    # Also add a change that triggers test running and db updating
-    # Perhaps it should update lines also without running tests
-    with open("./src/shop.py", "r") as f:
-        lines = f.readlines()
-
-    lines[12] = lines[12].strip()
-    lines[12] = "            " + lines[12] + "+1-1\n"
-
-    with open("./src/shop.py", "w") as f:
-        for line in lines:
-            f.write(line)
-
-    # Commit changes
+    # And commit
+    subprocess.run(["cp", "-f", change_list[1], "src/shop.py"])
     subprocess.run(["git", "add", "src/shop.py"])
-    subprocess.run(["git", "commit", "-m", "shop_changes"])
+    subprocess.run(["git", "commit", "-m", "commit2"])
 
     # Run test selector, should update db
     subprocess.run(["tests_selector"])
@@ -122,12 +91,15 @@ def test_branch_updating():
     "change_list,expected",
     [
         (
-            ["changes/car_01.txt", "changes/shop_01.txt", "changes/test_car_01.txt"],
+            [
+                "changes/car/change_accelerate.txt",
+                "changes/shop/change_get_price.txt",
+                "changes/test_car/add_test_passengers.txt",
+            ],
             {
                 "tests/test_some_methods.py::test_normal_shop_purchase2",
                 "tests/test_some_methods.py::test_normal_shop_purchase",
                 "tests/test_car.py::test_passengers",
-                "tests/test_car.py::test_acceleration",
             },
         )
     ],

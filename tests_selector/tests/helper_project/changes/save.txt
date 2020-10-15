@@ -1,0 +1,3 @@
+def test_passengers():
+    car = Car(2,0,13)
+    assert car.get_passengers() == 13
