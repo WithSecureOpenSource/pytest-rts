@@ -1,26 +1,28 @@
-import os
 import ast
-
+import pytest
+import subprocess
 from tests_selector.utils import git, common
 from tests_selector.utils.db import DatabaseHelper
 
 
-def test_tests_from_changed_sourcefiles():
+@pytest.mark.parametrize(
+    "change, src_file_name, expected",
+    [
+        (
+            "changes/car/change_accelerate.txt",
+            "src/car.py",
+            {"tests/test_car.py::test_acceleration"},
+        ),
+    ],
+)
+def test_tests_from_changed_sourcefiles(change, src_file_name, expected):
     db = DatabaseHelper()
     db.init_conn()
 
-    with open("./src/car.py", "r") as f:
-        lines = f.readlines()
-        code = lines[11]
-        lines[11] = code.strip() + "+1\n"  # change 'acceleration' func
+    subprocess.run(["cp", "-f", change, src_file_name])
 
-    with open("./src/car.py", "w") as f:
-        for line in lines:
-            f.write(line)
-
-    changed_files = git.changed_files_current()
+    changed_files = [src_file_name]
     test_files, src_files = common.split_changes(changed_files, db)
-    src_file_id = src_files[0][0]
     diff_dict = common.file_diff_dict_current(src_files)
 
     (
@@ -28,27 +30,29 @@ def test_tests_from_changed_sourcefiles():
         changed_lines_dict,
         new_line_map_dict,
     ) = common.tests_from_changed_srcfiles(diff_dict, src_files, db)
-
-    assert test_set == {"tests/test_car.py::test_acceleration"}
-    assert changed_lines_dict == {src_file_id: [12]}
-    assert new_line_map_dict == {src_file_id: {}}
     db.close_conn()
 
+    assert test_set == expected
 
-def test_tests_from_changed_testfiles():
+
+@pytest.mark.parametrize(
+    "change, testfile_name, expected",
+    [
+        (
+            "changes/test_shop/change_test_normal_shop_purchase.txt",
+            "tests/test_some_methods.py",
+            {"tests/test_some_methods.py::test_normal_shop_purchase"},
+        ),
+    ],
+)
+def test_tests_from_changed_testfiles(change, testfile_name, expected):
     db = DatabaseHelper()
     db.init_conn()
-    with open("./tests/test_some_methods.py", "r") as f:
-        lines = f.readlines()
-        lines[8] = "\n"  # change 'test_normal_shop_purchase' test func
 
-    with open("./tests/test_some_methods.py", "w") as f:
-        for line in lines:
-            f.write(line)
+    subprocess.run(["cp", "-f", change, testfile_name])
 
-    changed_files = git.changed_files_current()
+    changed_files = [testfile_name]
     test_files, src_files = common.split_changes(changed_files, db)
-    test_file_id = test_files[0][0]
     diff_dict = common.file_diff_dict_current(test_files)
 
     (
@@ -56,114 +60,129 @@ def test_tests_from_changed_testfiles():
         changed_lines_dict,
         new_line_map_dict,
     ) = common.tests_from_changed_testfiles(diff_dict, test_files, db)
-
-    assert test_set == {"tests/test_some_methods.py::test_normal_shop_purchase"}
-    assert changed_lines_dict == {test_file_id: [9]}
-    assert new_line_map_dict == {test_file_id: {}}
     db.close_conn()
 
+    assert test_set == expected
 
-def test_split_changes():
+
+@pytest.mark.parametrize(
+    "change_list, expected_src_names, expected_test_names",
+    [
+        (
+            ["src/car.py", "random_file.txt", "tests/test_car.py"],
+            {"src/car.py"},
+            {"tests/test_car.py"},
+        ),
+    ],
+)
+def test_split_changes(change_list, expected_src_names, expected_test_names):
     db = DatabaseHelper()
     db.init_conn()
 
-    with open("./tests/test_some_methods.py", "w") as f:
-        f.write("nothing")
+    for path in change_list:
+        with open(path, "w") as f:
+            f.write("nothing")
 
-    with open("./src/car.py", "w") as f:
-        f.write("nothing")
-
-    with open("./random_file.txt", "w") as f:
-        f.write("nothing")
-
-    changed_files = git.changed_files_current()
-    test_files, src_files = common.split_changes(changed_files, db)
-
-    assert len(test_files) == 1
-    assert test_files[0][1] == "tests/test_some_methods.py"
-    assert len(src_files) == 1
-    assert src_files[0][1] == "src/car.py"
-    os.remove("./random_file.txt")
+    test_files, src_files = common.split_changes(change_list, db)
     db.close_conn()
 
+    for t in test_files:
+        assert t[1] in expected_test_names
 
-def test_newly_added_tests():
+    for s in src_files:
+        assert s[1] in expected_src_names
+
+
+@pytest.mark.parametrize(
+    "change, testfile_name, expected",
+    [
+        (
+            "changes/test_car/add_test_passengers.txt",
+            "tests/test_car.py",
+            {"tests/test_car.py::test_passengers"},
+        ),
+    ],
+)
+def test_newly_added_tests(change, testfile_name, expected):
     db = DatabaseHelper()
     db.init_conn()
-    with open("./tests/test_new_methods.py", "w") as f:
-        lines = [
-            "import pytest\n",
-            "\n",
-            "def test_new_stuff():\n",
-            "    assert 1 == 1\n",
-        ]
-        for line in lines:
-            f.write(line)
+
+    subprocess.run(["cp", "-f", change, testfile_name])
 
     new_tests = common.read_newly_added_tests(db)
-    assert new_tests == {"tests/test_new_methods.py::test_new_stuff"}
-    os.remove("./tests/test_new_methods.py")
     db.close_conn()
 
+    assert new_tests == expected
 
-def test_line_mapping():
-    with open("./src/car.py", "r") as f:
-        lines = f.readlines()
-        lines[4] = lines[4] + "\n\n\n"
-        lines[12] = lines[12] + "\n\n"
-        lines[19] = " "
 
-    with open("./src/car.py", "w") as f:
-        for line in lines:
-            f.write(line)
+@pytest.mark.parametrize(
+    "change, filename, expected",
+    [
+        (
+            "changes/car/shift_2_forward.txt",
+            "src/car.py",
+            {
+                1: 3,
+                2: 4,
+                3: 5,
+                4: 6,
+                5: 7,
+                6: 8,
+                7: 9,
+                8: 10,
+                9: 11,
+                10: 12,
+                11: 13,
+                12: 14,
+                13: 15,
+                14: 16,
+                15: 17,
+                16: 18,
+                17: 19,
+                18: 20,
+                19: 21,
+                20: 22,
+                21: 23,
+                22: 24,
+                23: 25,
+                24: 26,
+                25: 27,
+            },
+        ),
+    ],
+)
+def test_line_mapping(change, filename, expected):
+    subprocess.run(["cp", "-f", change, filename])
 
-    diff = git.file_diff_data_current("src/car.py", ".")
+    diff = git.file_diff_data_current(filename)
     lines_to_query, updates_to_lines, _ = git.get_test_lines_and_update_lines(diff)
-    line_map = common.line_mapping(updates_to_lines, "src/car.py", ".")
+    line_map = common.line_mapping(updates_to_lines, filename)
 
-    real_lines = {
-        6: 9,
-        7: 10,
-        8: 11,
-        9: 12,
-        10: 13,
-        11: 14,
-        12: 15,
-        13: 16,
-        14: 19,
-        15: 20,
-        16: 21,
-        17: 22,
-        18: 23,
-        19: 24,
-        20: 25,
-        21: 25,
-        22: 26,
-        23: 27,
-        24: 28,
-        25: 29,
-        26: 30,
-        27: 31,
-    }
-
-    assert line_map == real_lines
+    assert line_map == expected
 
 
-def test_function_lines():
-    with open("./src/car.py", "r") as f:
+@pytest.mark.parametrize(
+    "filename, expected",
+    [
+        (
+            "src/car.py",
+            [
+                ("__init__", 4, 7),
+                ("get_speed", 9, 10),
+                ("accelerate", 12, 13),
+                ("get_passengers", 15, 16),
+                ("add_passenger", 18, 20),
+                ("remove_passenger", 22, 0),
+            ],
+        ),
+    ],
+)
+def test_function_lines(filename, expected):
+    with open(filename, "r") as f:
         code = f.read()
         codelines = f.readlines()
 
     parsed_code = ast.parse(code)
     func_lines = common.function_lines(parsed_code, len(codelines))
-    real_func_lines = [
-        ("__init__", 4, 7),
-        ("get_speed", 9, 10),
-        ("accelerate", 12, 13),
-        ("get_passengers", 15, 16),
-        ("add_passenger", 18, 20),
-        ("remove_passenger", 22, 0),
-    ]
 
-    assert len(func_lines) == 6
-    assert func_lines == real_func_lines
+    assert func_lines == expected
