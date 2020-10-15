@@ -7,12 +7,15 @@ from tests_selector.utils.common import (
     calculate_func_lines,
     save_data,
 )
-from tests_selector.utils.git import get_head_and_previous_hash
+from tests_selector.utils.git import get_current_head_hash
 from tests_selector.utils.db import DatabaseHelper
 
 
 class InitPhasePlugin:
+    """Class to handle mapping database initialization"""
+
     def __init__(self):
+        """"Constructor calls database and Coverage.py initialization"""
         self.test_func_lines = {}
         self.cov = coverage.Coverage()
         self.cov._warn_unimported_source = False
@@ -20,10 +23,11 @@ class InitPhasePlugin:
         self.db = DatabaseHelper()
         self.db.init_conn()
         self.db.init_mapping_db()
-        self.head_hash, _ = get_head_and_previous_hash()
-        self.db.save_init_hash(self.head_hash)
+        self.head_hash = get_current_head_hash()
+        self.db.save_last_update_hash(self.head_hash)
 
     def pytest_collection_modifyitems(self, session, config, items):
+        """Calculate function start and end line numbers from testfiles"""
         for item in items:
             testfile = item.nodeid.split("::")[0]
             self.testfiles.add(testfile)
@@ -33,6 +37,7 @@ class InitPhasePlugin:
 
     @pytest.hookimpl(hookwrapper=True)
     def pytest_runtest_protocol(self, item, nextitem):
+        """Start coverage collection for each test function run and save data"""
         if isinstance(item, Function):
             start = timer()
             self.cov.erase()

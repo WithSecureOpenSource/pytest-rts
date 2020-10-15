@@ -15,12 +15,7 @@ def get_git_repo(project_folder):
     return GitRepository(project_folder)
 
 
-def changed_files_branch(project_folder=None):
-    repo = get_git_repo(project_folder)
-    return repo.repo.git.diff("--name-only", "master...").split()
-
-
-def file_changes_between_commits(commit1, commit2, project_folder):
+def changed_files_between_commits(commit1, commit2, project_folder=None):
     repo = get_git_repo(project_folder)
     return repo.repo.git.diff("--name-only", commit1, commit2).split()
 
@@ -30,12 +25,9 @@ def changed_files_current(project_folder=None):
     return repo.repo.git.diff("--name-only").split()
 
 
-def file_diff_data_branch(filename, project_folder=None):
-    repo = get_git_repo(project_folder)
-    return repo.repo.git.diff("-U0", "master...", "--", filename)
-
-
-def file_diff_data_between_commits(filename, commithash1, commithash2, project_folder):
+def file_diff_data_between_commits(
+    filename, commithash1, commithash2, project_folder=None
+):
     repo = get_git_repo(project_folder)
     return repo.repo.git.diff("-U0", commithash1, commithash2, "--", filename)
 
@@ -46,6 +38,7 @@ def file_diff_data_current(filename, project_folder=None):
 
 
 def get_test_lines_and_update_lines(diff):
+    """Parse changed lines, line number updates and new lines from git diff -U0 output"""
     regex = r"[@][@]\s+[-][0-9]+(?:,[0-9]+)?\s+[+][0-9]+(?:,[0-9]+)?\s+[@][@]"
     line_changes = re.findall(regex, diff)
     lines_to_query = []
@@ -94,22 +87,6 @@ def get_test_lines_and_update_lines(diff):
     return lines_to_query, updates_to_lines, new_lines
 
 
-def get_head_and_previous_hash():
-    git_data = get_git_repo(None).repo.git.rev_list("--parents", "-n 1", "HEAD").split()
-    if len(git_data) == 1:
-        head = git_data[0]
-        previous = None
-    else:
-        head = git_data[0]
-        previous = git_data[1]
-    return head, previous
-
-
-def changed_files_since_last_commit(project_folder=None):
-    repo = get_git_repo(project_folder)
-    return repo.repo.git.diff("--name-only", "HEAD^").split()
-
-
-def file_diff_data_since_last_commit(filename, project_folder=None):
-    repo = get_git_repo(project_folder)
-    return repo.repo.git.diff("-U0", "HEAD^", "--", filename)
+def get_current_head_hash():
+    """Return current git HEAD hash"""
+    return get_git_repo(None).repo.head.object.hexsha
