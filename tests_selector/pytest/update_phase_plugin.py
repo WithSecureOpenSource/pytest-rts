@@ -12,7 +12,10 @@ from tests_selector.utils.db import DatabaseHelper
 
 
 class UpdatePhasePlugin:
+    """Class to handle running of selected tests and updating mapping with the results"""
+
     def __init__(self, test_set):
+        """Constructor opens database connection and initializes Coverage.py"""
         self.test_func_lines = {}
         self.test_func_times = {}
         self.cov = coverage.Coverage()
@@ -24,10 +27,19 @@ class UpdatePhasePlugin:
         self.fill_times_dict()
 
     def fill_times_dict(self):
+        """Gets test durations from database used for test prioritization"""
         for testname in self.test_set:
             self.test_func_times[testname] = self.db.get_test_duration(testname)
 
+    def add_missing_testfiles(self):
+        """Checks database for testfile names to prevent them for getting mapped to source code files"""
+        db_test_files, _ = self.db.get_testfiles_and_srcfiles()
+        for t in db_test_files:
+            filename = t[1]
+            self.testfiles.add(filename)
+
     def pytest_collection_modifyitems(self, session, config, items):
+        """Sorts tests based on database duration and calculates test function start and end line numbers"""
         original_length = len(items)
         selected = []
         for item in items:
@@ -43,12 +55,15 @@ class UpdatePhasePlugin:
                 testfile_src_code = coverage.python.get_python_source(testfile)
                 self.test_func_lines[testfile] = calculate_func_lines(testfile_src_code)
 
+        self.add_missing_testfiles()
+
         session.config.hook.pytest_deselected(
             items=([FakeItem(session.config)] * (original_length - len(selected)))
         )
 
     @pytest.hookimpl(hookwrapper=True)
     def pytest_runtest_protocol(self, item, nextitem):
+        """Start coverage collection for each test function run and save data"""
         if isinstance(item, Function):
             start = timer()
             self.cov.erase()
