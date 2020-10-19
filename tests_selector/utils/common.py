@@ -51,7 +51,7 @@ def tests_from_changed_srcfiles(diff_dict, files, db):
     test_set = set()
     changed_lines_dict = {}
     new_line_map_dict = {}
-    warn_newlines_dict = {}
+    files_to_warn = []
     for f in files:
         file_id = f[0]
         filename = f[1]
@@ -65,13 +65,13 @@ def tests_from_changed_srcfiles(diff_dict, files, db):
         new_line_map_dict[file_id] = line_map
 
         if any([not db.mapping_line_exists(file_id, line_id) for line_id in new_lines]):
-            warn_newlines_dict[filename] = True
+            files_to_warn.append(filename)
 
         tests = db.query_tests_srcfile(changed_lines, file_id)
 
         for t in tests:
             test_set.add(t)
-    return test_set, changed_lines_dict, new_line_map_dict, warn_newlines_dict
+    return test_set, changed_lines_dict, new_line_map_dict, files_to_warn
 
 
 def run_tests_and_update_db(test_set, update_tuple, db, project_folder="."):

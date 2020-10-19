@@ -27,7 +27,7 @@ def get_tests_from_changes(diff_dict_test, diff_dict_src, testfiles, srcfiles, d
         src_test_set,
         src_changed_lines_dict,
         src_new_line_map_dict,
-        warn_newlines_dict,
+        files_to_warn,
     ) = tests_from_changed_srcfiles(diff_dict_src, srcfiles, db)
 
     (
@@ -44,7 +44,7 @@ def get_tests_from_changes(diff_dict_test, diff_dict_src, testfiles, srcfiles, d
         src_changed_lines_dict,
         src_new_line_map_dict,
     )
-    return test_set, update_tuple, warn_newlines_dict
+    return test_set, update_tuple, files_to_warn
 
 
 def get_tests_and_data_current(db):
@@ -80,12 +80,11 @@ def get_tests_and_data_committed(db):
     )
 
     new_tests = read_newly_added_tests(db)
-    changes_test_set, update_tuple, warn_newlines_dict = get_tests_from_changes(
+    changes_test_set, update_tuple, files_to_warn = get_tests_from_changes(
         diff_dict_test, diff_dict_src, changed_test_files, changed_src_files, db
     )
     test_set = changes_test_set.union(new_tests)
 
-    files_to_warn = [f for f in warn_newlines_dict.keys()]
     warning_needed = (len(new_tests) == 0) and (len(files_to_warn) > 0)
 
     return (
