@@ -79,14 +79,14 @@ class TestHelper:
         return exists
 
     def change_file(change_path, file_path):
-        subprocess.run(["cp", "-f", change_path, file_path])
+        subprocess.run(["cp", "-f", change_path, file_path], check=True)
 
     def commit_change(filename, message):
-        subprocess.run(["git", "add", filename])
-        subprocess.run(["git", "commit", "-m", message])
+        subprocess.run(["git", "add", filename], check=True)
+        subprocess.run(["git", "commit", "-m", message], check=True)
 
     def run_tool():
-        subprocess.run(["tests_selector"])
+        subprocess.run(["tests_selector"], check=True)
 
     def checkout_new_branch():
-        subprocess.run(["git", "checkout", "-b", "new-branch"])
+        subprocess.run(["git", "checkout", "-b", "new-branch"], check=True)
