@@ -44,9 +44,14 @@ def tests_from_changed_testfiles(diff_dict, files, db):
 
 
 def tests_from_changed_srcfiles(diff_dict, files, db):
+    """
+    Query tests and dictionaries containing changed lines,
+    new line mapping and warning booleans for untested new lines
+    """
     test_set = set()
     changed_lines_dict = {}
     new_line_map_dict = {}
+    warn_newlines_dict = {}
     for f in files:
         file_id = f[0]
         filename = f[1]
@@ -59,14 +64,15 @@ def tests_from_changed_srcfiles(diff_dict, files, db):
         changed_lines_dict[file_id] = changed_lines
         new_line_map_dict[file_id] = line_map
 
+        warn_newlines_dict[filename] = False
         if any([not db.mapping_line_exists(file_id, line_id) for line_id in new_lines]):
-            tests = db.query_all_tests_srcfile(file_id)
-        else:
-            tests = db.query_tests_srcfile(changed_lines, file_id)
+            warn_newlines_dict[filename] = True
+
+        tests = db.query_tests_srcfile(changed_lines, file_id)
 
         for t in tests:
             test_set.add(t)
-    return test_set, changed_lines_dict, new_line_map_dict
+    return test_set, changed_lines_dict, new_line_map_dict, warn_newlines_dict
 
 
 def run_tests_and_update_db(test_set, update_tuple, db, project_folder="."):

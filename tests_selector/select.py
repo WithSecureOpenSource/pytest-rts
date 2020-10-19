@@ -27,6 +27,7 @@ def get_tests_from_changes(diff_dict_test, diff_dict_src, testfiles, srcfiles, d
         src_test_set,
         src_changed_lines_dict,
         src_new_line_map_dict,
+        warn_newlines_dict,
     ) = tests_from_changed_srcfiles(diff_dict_src, srcfiles, db)
 
     (
@@ -43,7 +44,7 @@ def get_tests_from_changes(diff_dict_test, diff_dict_src, testfiles, srcfiles, d
         src_changed_lines_dict,
         src_new_line_map_dict,
     )
-    return test_set, update_tuple
+    return test_set, update_tuple, warn_newlines_dict
 
 
 def get_tests_and_data_current(db):
@@ -54,7 +55,7 @@ def get_tests_and_data_current(db):
     diff_dict_src = file_diff_dict_current(changed_src_files)
     diff_dict_test = file_diff_dict_current(changed_test_files)
 
-    test_set, update_tuple = get_tests_from_changes(
+    test_set, update_tuple, _ = get_tests_from_changes(
         diff_dict_test, diff_dict_src, changed_test_files, changed_src_files, db
     )
 
@@ -79,10 +80,13 @@ def get_tests_and_data_committed(db):
     )
 
     new_tests = read_newly_added_tests(db)
-    changes_test_set, update_tuple = get_tests_from_changes(
+    changes_test_set, update_tuple, warn_newlines_dict = get_tests_from_changes(
         diff_dict_test, diff_dict_src, changed_test_files, changed_src_files, db
     )
     test_set = changes_test_set.union(new_tests)
+
+    files_to_warn = [f for f in warn_newlines_dict.keys() if warn_newlines_dict[f]]
+    warning_needed = (len(new_tests) == 0) and (len(files_to_warn) > 0)
 
     return (
         test_set,
@@ -90,6 +94,8 @@ def get_tests_and_data_committed(db):
         len(changed_test_files),
         len(changed_src_files),
         len(new_tests),
+        warning_needed,
+        files_to_warn,
     )
 
 
@@ -107,12 +113,10 @@ def main():
         workdir_changed_src_files_amount,
     ) = get_tests_and_data_current(db)
 
-    print("")
     print("WORKING DIRECTORY CHANGES")
     print(f"Found {workdir_changed_test_files_amount} changed test files")
     print(f"Found {workdir_changed_src_files_amount} changed src files")
-    print(f"Found {len(workdir_test_set)} tests to execute")
-    print("")
+    print(f"Found {len(workdir_test_set)} tests to execute", end="\n\n")
 
     if len(workdir_test_set) > 0:
         print("Running WORKING DIRECTORY test set and exiting without updating...")
@@ -127,7 +131,7 @@ def main():
         exit()
 
     previous_hash = db.get_last_update_hash()
-    print(f"Comparison: {current_hash} => {previous_hash}")
+    print(f"Comparison: {current_hash} => {previous_hash}", end="\n\n")
 
     (
         commit_test_set,
@@ -135,15 +139,20 @@ def main():
         commit_changed_test_files_amount,
         commit_changed_src_files_amount,
         new_tests_amount,
+        warning_needed,
+        files_to_warn,
     ) = get_tests_and_data_committed(db)
 
-    print("")
     print("COMMITTED CHANGES")
     print(f"Found {commit_changed_test_files_amount} changed test files")
     print(f"Found {commit_changed_src_files_amount} changed src files")
     print(f"Found {new_tests_amount} newly added tests")
-    print(f"Found {len(commit_test_set)} tests to execute")
-    print("")
+    print(f"Found {len(commit_test_set)} tests to execute", end="\n\n")
+    if warning_needed:
+        print(
+            "WARNING: New lines were added to the following files but no new tests discovered:"
+        )
+        print(*files_to_warn, sep="\n", end="\n\n")
 
     print("=> Executing tests (if any) and updating database")
     db.save_last_update_hash(current_hash)
