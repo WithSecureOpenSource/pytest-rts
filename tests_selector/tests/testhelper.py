@@ -16,17 +16,15 @@ class TestHelper:
             sql = "SELECT id from test_file WHERE path = ?"
 
         conn = sqlite3.connect(DB_FILE_NAME)
-        c = conn.cursor()
-        file_id = c.execute(sql, (filename,)).fetchone()[0]
+        file_id = conn.execute(sql, (filename,)).fetchone()[0]
         conn.close()
         return file_id
 
     def get_mapping_lines_for_srcfile(src_file_id):
         conn = sqlite3.connect(DB_FILE_NAME)
-        c = conn.cursor()
         lines = [
             x[0]
-            for x in c.execute(
+            for x in conn.execute(
                 "SELECT line_id FROM test_map WHERE file_id = ?", (src_file_id,)
             ).fetchall()
         ]
@@ -73,9 +71,9 @@ class TestHelper:
 
     def new_test_exists_in_mapping_db(testname):
         conn = sqlite3.connect(DB_FILE_NAME)
-        c = conn.cursor()
         sql = "SELECT EXISTS(SELECT id FROM test_function WHERE context = ?)"
-        exists = bool(c.execute(sql, (testname,)).fetchone()[0])
+        exists = bool(conn.execute(sql, (testname,)).fetchone()[0])
+        conn.close()
         return exists
 
     def change_file(change_path, file_path):
