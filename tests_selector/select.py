@@ -85,7 +85,7 @@ def get_tests_and_data_committed(db):
     )
     test_set = changes_test_set.union(new_tests)
 
-    files_to_warn = [f for f in warn_newlines_dict.keys() if warn_newlines_dict[f]]
+    files_to_warn = [f for f in warn_newlines_dict.keys()]
     warning_needed = (len(new_tests) == 0) and (len(files_to_warn) > 0)
 
     return (

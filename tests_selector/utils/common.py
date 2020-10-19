@@ -64,7 +64,6 @@ def tests_from_changed_srcfiles(diff_dict, files, db):
         changed_lines_dict[file_id] = changed_lines
         new_line_map_dict[file_id] = line_map
 
-        warn_newlines_dict[filename] = False
         if any([not db.mapping_line_exists(file_id, line_id) for line_id in new_lines]):
             warn_newlines_dict[filename] = True
 
