@@ -136,8 +136,8 @@ def test_db_updating_only_once(change, new_mapping, filename, helper):
                 ("changes/test_car/add_test_passengers.txt", "tests/test_car.py"),
             ],
             {
-                "tests/test_some_methods.py::test_normal_shop_purchase2",
-                "tests/test_some_methods.py::test_normal_shop_purchase",
+                "tests/test_shop.py::test_normal_shop_purchase2",
+                "tests/test_shop.py::test_normal_shop_purchase",
                 "tests/test_car.py::test_passengers",
             },
         )

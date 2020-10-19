@@ -39,8 +39,8 @@ def test_tests_from_changed_sourcefiles(change, src_file_name, expected, helper)
     [
         (
             "changes/test_shop/change_test_normal_shop_purchase.txt",
-            "tests/test_some_methods.py",
-            {"tests/test_some_methods.py::test_normal_shop_purchase"},
+            "tests/test_shop.py",
+            {"tests/test_shop.py::test_normal_shop_purchase"},
         ),
     ],
 )
