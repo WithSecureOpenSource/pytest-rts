@@ -1,6 +1,5 @@
 import ast
 import pytest
-import subprocess
 from tests_selector.utils import git, common
 from tests_selector.utils.db import DatabaseHelper
 
@@ -15,11 +14,11 @@ from tests_selector.utils.db import DatabaseHelper
         ),
     ],
 )
-def test_tests_from_changed_sourcefiles(change, src_file_name, expected):
+def test_tests_from_changed_sourcefiles(change, src_file_name, expected, helper):
     db = DatabaseHelper()
     db.init_conn()
 
-    subprocess.run(["cp", "-f", change, src_file_name])
+    helper.change_file(change, src_file_name)
 
     changed_files = [src_file_name]
     test_files, src_files = common.split_changes(changed_files, db)
@@ -45,11 +44,11 @@ def test_tests_from_changed_sourcefiles(change, src_file_name, expected):
         ),
     ],
 )
-def test_tests_from_changed_testfiles(change, testfile_name, expected):
+def test_tests_from_changed_testfiles(change, testfile_name, expected, helper):
     db = DatabaseHelper()
     db.init_conn()
 
-    subprocess.run(["cp", "-f", change, testfile_name])
+    helper.change_file(change, testfile_name)
 
     changed_files = [testfile_name]
     test_files, src_files = common.split_changes(changed_files, db)
@@ -103,11 +102,11 @@ def test_split_changes(change_list, expected_src_names, expected_test_names):
         ),
     ],
 )
-def test_newly_added_tests(change, testfile_name, expected):
+def test_newly_added_tests(change, testfile_name, expected, helper):
     db = DatabaseHelper()
     db.init_conn()
 
-    subprocess.run(["cp", "-f", change, testfile_name])
+    helper.change_file(change, testfile_name)
 
     new_tests = common.read_newly_added_tests(db)
     db.close_conn()
@@ -151,8 +150,8 @@ def test_newly_added_tests(change, testfile_name, expected):
         ),
     ],
 )
-def test_line_mapping(change, filename, expected):
-    subprocess.run(["cp", "-f", change, filename])
+def test_line_mapping(change, filename, expected, helper):
+    helper.change_file(change, filename)
 
     diff = git.file_diff_data_current(filename)
     lines_to_query, updates_to_lines, _ = git.get_test_lines_and_update_lines(diff)

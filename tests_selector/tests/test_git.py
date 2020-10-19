@@ -1,5 +1,4 @@
 import pytest
-import subprocess
 from tests_selector.utils import git
 
 
@@ -17,11 +16,11 @@ from tests_selector.utils import git
         ),
     ],
 )
-def test_changed_files_current(changes, expected):
+def test_changed_files_current(changes, expected, helper):
     for c in changes:
         change = c[0]
         filename = c[1]
-        subprocess.run(["cp", "-f", change, filename])
+        helper.change_file(change, filename)
     assert git.changed_files_current() == expected
 
 
@@ -119,10 +118,9 @@ def test_get_test_lines_and_update_lines_fake_change(
     ],
 )
 def test_get_test_lines_and_update_lines_real_change(
-    change, filename, real_changed_lines, real_line_updates
+    change, filename, real_changed_lines, real_line_updates, helper
 ):
-    subprocess.run(["cp", "-f", change, filename])
-
+    helper.change_file(change, filename)
     diff = git.file_diff_data_current(filename)
     changed_lines, line_updates, _ = git.get_test_lines_and_update_lines(diff)
 
