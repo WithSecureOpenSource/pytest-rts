@@ -67,3 +67,15 @@
 # Development
 
 * ~~Don't forget to run `make install` before you are going to try the latest changes~~ - not needed as all the changes in source files are available immediately, just call the needed command line tool from the package
+
+## Testing / linting with tox
+
+Make sure you have Python version 3.6, 3.7, 3.8, 3.9. Install tox into your
+current Python environment (does not matter which one it is). Run `tox` to run
+linters/tests using different Python versions. To run for only one Python
+versionu, use, for example, `tox -e py36`. To check code formatting with black,
+run `tox -e py38-check-format` (code formatting check is done only with Python
+3.8).
+
+**NB** If you have changed dependencies in `setup.py`, run `tox --recreate`
+once.

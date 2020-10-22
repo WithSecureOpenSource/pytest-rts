@@ -1,16 +1,23 @@
+"""
+Setup harness
+"""
 import subprocess
-from setuptools import setup, find_packages
+
+from setuptools import setup, find_packages  # type: ignore
 
 
-git_version = (
-    subprocess.check_output("git describe --always".split()).strip().decode("ascii")
+GIT_VERSION = (
+    subprocess.check_output("git describe --always".split())
+    .strip()
+    .decode("ascii")
 )
-tests_require = ["pytest-cov"]
-dev_require = ["black"]
+TESTS_REQUIRE = ["pytest-cov", "pytest-socket", "tox"]
+DEV_REQUIRE = ["black", "mypy", "pylint", "safety"]
 
+# pylint: disable=line-too-long
 setup(
     name="tests_selector",
-    version=git_version,
+    version=GIT_VERSION,
     packages=find_packages(),
     entry_points={
         "console_scripts": [
@@ -25,5 +32,8 @@ setup(
         ]
     },
     install_requires=["pydriller", "coverage", "pytest"],
-    extras_require={"tests": tests_require, "dev": tests_require + dev_require},
+    extras_require={
+        "tests": TESTS_REQUIRE,
+        "dev": TESTS_REQUIRE + DEV_REQUIRE,
+    },
 )
