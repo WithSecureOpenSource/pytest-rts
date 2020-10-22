@@ -52,7 +52,6 @@ def random_remove_test(iterations):
     mapping_db = DatabaseHelper()
     mapping_db.init_conn()
 
-
     test_suite_size = mapping_db.get_test_suite_size()
     project_name = ntpath.basename(PROJECT_FOLDER)
     commithash = repo.get_head().hash

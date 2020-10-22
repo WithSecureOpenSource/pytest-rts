@@ -3,6 +3,7 @@ from tests_selector.utils.db import DatabaseHelper
 
 db_name = "mapping.db"
 
+
 def test_delete_ran_lines():
     conn = sqlite3.connect(db_name)
     c = conn.cursor()
@@ -17,7 +18,6 @@ def test_delete_ran_lines():
     db.init_conn()
     db.delete_ran_lines(line_ids, file_id)
     db.close_conn()
-
 
     conn = sqlite3.connect(db_name)
     c = conn.cursor()

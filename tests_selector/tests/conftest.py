@@ -23,7 +23,8 @@ def temp_project_repo(tmpdir_factory):
     subprocess.run(["tests_selector_init"])
     return temp_folder
 
-@pytest.fixture(scope="function",autouse=True)
+
+@pytest.fixture(scope="function", autouse=True)
 def teardown_method():
     yield
     subprocess.run(["git", "restore", "."])
