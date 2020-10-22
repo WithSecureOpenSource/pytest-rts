@@ -70,12 +70,12 @@
 
 ## Testing / linting with tox
 
-Make sure you have Python version 3.6, 3.7, 3.8, 3.9. Install tox into your
-current Python environment (does not matter which one it is). Run `tox` to run
-linters/tests using different Python versions. To run for only one Python
-versionu, use, for example, `tox -e py36`. To check code formatting with black,
-run `tox -e py38-check-format` (code formatting check is done only with Python
-3.8).
+Make sure you have Python versions 3.6, 3.7, 3.8, 3.9 (all of them). Install tox
+into your current Python environment (does not matter which one it is). Run
+`tox` to run linters/tests using different Python versions. To run for only one
+Python version, use, for example, `tox -e py36`. To check code formatting with
+black, run `tox -e py38-check-format` (code formatting check is done only with
+Python 3.8).
 
 **NB** If you have changed dependencies in `setup.py`, run `tox --recreate`
 once.
