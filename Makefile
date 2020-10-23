@@ -18,5 +18,5 @@ clean:
 
 test: install
 	$(PYTHON) -m pytest --cov=tests_selector \
-	                    --cov-report=html \
-	                    --cov-report=term
+                            --cov-report=html \
+                            --cov-report=term

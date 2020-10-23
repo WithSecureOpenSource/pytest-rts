@@ -110,6 +110,5 @@ def test_get_test_lines_and_update_lines_real_change(helper):
     helper.change_file("changes/car/line_shifts_middle.txt", "src/car.py")
     diff = git.file_diff_data_current("src/car.py")
     changed_lines, line_updates, _ = git.get_test_lines_and_update_lines(diff)
-
     assert changed_lines == [11, 17]
     assert line_updates == [(11, 2), (17, 5)]

@@ -7,3 +7,7 @@
 __pycache__
 .coverage
 htmlcov
+
+/.tox/
+# vim
+.*.swp
