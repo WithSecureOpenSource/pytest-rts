@@ -75,14 +75,10 @@ def tests_from_changed_srcfiles(diff_dict, files, db):
 
 
 def run_tests_and_update_db(test_set, update_tuple, db, project_folder="."):
-    changed_lines_test = update_tuple[
-        0
-    ]  # TODO: `changed_lines_test` is not used below!
-    # thinking: no reason to delete the lines / use this
-
-    line_map_test = update_tuple[1]
-    changed_lines_src = update_tuple[2]
-    line_map_src = update_tuple[3]
+    """Remove old data from database, shift existing lines if needed and run test set"""
+    line_map_test = update_tuple.test_new_line_map_dict
+    changed_lines_src = update_tuple.src_changed_lines_dict
+    line_map_src = update_tuple.src_new_line_map_dict
 
     for t in line_map_test.keys():
         # shift test functions
@@ -94,7 +90,7 @@ def run_tests_and_update_db(test_set, update_tuple, db, project_folder="."):
         db.delete_ran_lines(changed_lines_src[f], f)
         db.update_db_from_src_mapping(line_map_src[f], f)
 
-    if len(test_set) > 0:
+    if test_set:
         subprocess.run(["tests_selector_run_and_update"] + list(test_set))
 
 
