@@ -2,6 +2,7 @@ import pytest
 import os
 import subprocess
 import shutil
+from testhelper import TestHelper
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -31,3 +32,7 @@ def teardown_method():
     subprocess.run(["git", "checkout", "master"])
     subprocess.run(["git", "branch", "-D", "new-branch"])
     subprocess.run(["tests_selector_init"])
+
+@pytest.fixture
+def helper():
+    return TestHelper
