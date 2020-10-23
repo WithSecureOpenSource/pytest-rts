@@ -106,23 +106,10 @@ def test_get_test_lines_and_update_lines_fake_change(
     assert line_updates == real_line_updates
 
 
-@pytest.mark.parametrize(
-    "change, filename, real_changed_lines, real_line_updates",
-    [
-        (
-            "changes/car/line_shifts_middle.txt",
-            "src/car.py",
-            [11, 17],
-            [(11, 2), (17, 5)],
-        ),
-    ],
-)
-def test_get_test_lines_and_update_lines_real_change(
-    change, filename, real_changed_lines, real_line_updates, helper
-):
-    helper.change_file(change, filename)
-    diff = git.file_diff_data_current(filename)
+def test_get_test_lines_and_update_lines_real_change(helper):
+    helper.change_file("changes/car/line_shifts_middle.txt", "src/car.py")
+    diff = git.file_diff_data_current("src/car.py")
     changed_lines, line_updates, _ = git.get_test_lines_and_update_lines(diff)
 
-    assert changed_lines == real_changed_lines
-    assert line_updates == real_line_updates
+    assert changed_lines == [11, 17]
+    assert line_updates == [(11, 2), (17, 5)]

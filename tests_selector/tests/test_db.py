@@ -24,8 +24,7 @@ def test_delete_ran_lines():
     assert new_line_ids == []
 
 
-@pytest.mark.parametrize("shift", [5])
-def test_update_db_from_src_mapping(shift):
+def test_update_db_from_src_mapping():
     # shift all lines and compare old and new lines in db
     conn = sqlite3.connect(DB_FILE_NAME)
     c = conn.cursor()
@@ -34,6 +33,7 @@ def test_update_db_from_src_mapping(shift):
     old_line_ids = [x[0] for x in c.execute(sql, (file_id,)).fetchall()]
     conn.close()
 
+    shift = 5
     line_map = {x: x + shift for x in old_line_ids}
 
     db = DatabaseHelper()
@@ -49,8 +49,7 @@ def test_update_db_from_src_mapping(shift):
     assert new_line_ids == [k + shift for k in old_line_ids]
 
 
-@pytest.mark.parametrize("shift", [5])
-def test_update_db_from_test_mapping(shift):
+def test_update_db_from_test_mapping():
     # shift all lines and compare old and new lines in db
     conn = sqlite3.connect(DB_FILE_NAME)
     c = conn.cursor()
@@ -65,6 +64,7 @@ def test_update_db_from_test_mapping(shift):
 
     conn.close()
 
+    shift = 5
     line_count = sum(1 for line in open(testfile_name))
     line_map = {x: x + shift for x in range(1, line_count + 1)}
 
