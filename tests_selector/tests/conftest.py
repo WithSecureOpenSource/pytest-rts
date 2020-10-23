@@ -2,6 +2,7 @@ import pytest
 import os
 import subprocess
 import shutil
+from testhelper import TestHelper
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -23,10 +24,16 @@ def temp_project_repo(tmpdir_factory):
     subprocess.run(["tests_selector_init"])
     return temp_folder
 
-@pytest.fixture(scope="function",autouse=True)
+
+@pytest.fixture(scope="function", autouse=True)
 def teardown_method():
     yield
     subprocess.run(["git", "restore", "."])
     subprocess.run(["git", "checkout", "master"])
     subprocess.run(["git", "branch", "-D", "new-branch"])
     subprocess.run(["tests_selector_init"])
+
+
+@pytest.fixture
+def helper():
+    return TestHelper

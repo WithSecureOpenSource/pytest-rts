@@ -1,3 +1,5 @@
+x = 1
+y = 2
 class Car:
 
     def __init__(self,seats,speed,passengers):
@@ -9,15 +11,14 @@ class Car:
         return self.speed
 
     def accelerate(self, amount):
-        self.speed = self.speed + amount
-
+        self.speed = self.speed + amount + 1 - 1
 
     def get_passengers(self):
         return self.passengers
 
     def add_passenger(self):
         if self.passengers + 1 <= self.seats:
-            self.passengers = self.passengers + 1 - 1 + 1
+            self.passengers = self.passengers + 1
         
     def remove_passenger(self):
         if self.passengers > 0:
