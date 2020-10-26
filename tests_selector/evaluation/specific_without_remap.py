@@ -1,14 +1,11 @@
-import os
-import pytest
+"""This module contains code to capture pytest exitcode for the given test set"""
 import sys
-
+import pytest
 from tests_selector.pytest.capture_specific_plugin import CaptureSpecificPlugin
 
 
 def main():
-    PROJECT_FOLDER = sys.argv[1]
-    os.chdir(os.getcwd() + "/" + PROJECT_FOLDER)
-    test_set = set(sys.argv[2:])
+    test_set = set(sys.argv[1:])
     exit_code = pytest.main(
         ["-p", "no:terminal"], plugins=[CaptureSpecificPlugin(test_set)]
     )
