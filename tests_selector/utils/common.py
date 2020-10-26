@@ -74,11 +74,11 @@ def tests_from_changed_srcfiles(diff_dict, files, db):
     return test_set, changed_lines_dict, new_line_map_dict, files_to_warn
 
 
-def run_tests_and_update_db(test_set, update_tuple, db, project_folder="."):
+def run_tests_and_update_db(test_set, update_data, db, project_folder="."):
     """Remove old data from database, shift existing lines if needed and run test set"""
-    line_map_test = update_tuple.test_new_line_map_dict
-    changed_lines_src = update_tuple.src_changed_lines_dict
-    line_map_src = update_tuple.src_new_line_map_dict
+    line_map_test = update_data.new_line_map_test
+    changed_lines_src = update_data.changed_lines_src
+    line_map_src = update_data.new_line_map_src
 
     for t in line_map_test.keys():
         # shift test functions
