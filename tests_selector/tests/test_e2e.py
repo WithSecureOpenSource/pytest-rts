@@ -14,8 +14,8 @@ def test_full_integration(helper):
     # Get working directory test_set like in tests_selector script
     workdir_test_set = helper.get_tests_from_tool_current()
 
-    # New method addition = test_set should be all tests of that file
-    assert workdir_test_set == set(all_tests_srcfile)
+    # New method addition = no new tests should be found
+    assert workdir_test_set == set()
 
     # Run tests_selector, db shouldn't update
     old_srcfile_lines = helper.get_mapping_lines_for_srcfile(src_file_id)
@@ -30,8 +30,8 @@ def test_full_integration(helper):
     # Get committed changes test_set like in tests_selector script
     commit_test_set = helper.get_tests_from_tool_committed()
 
-    # New method addition = test_set should be all tests of that file
-    assert commit_test_set == set(all_tests_srcfile)
+    # New method addition = no new tests should be found
+    assert commit_test_set == set()
 
     # DB should update after running test selector
     # But no new test tests new method so lines should be the same

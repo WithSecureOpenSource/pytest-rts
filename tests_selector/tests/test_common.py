@@ -18,6 +18,7 @@ def test_tests_from_changed_sourcefiles(helper):
         test_set,
         changed_lines_dict,
         new_line_map_dict,
+        files_to_warn,
     ) = common.tests_from_changed_srcfiles(diff_dict, src_files, db)
     db.close_conn()
 

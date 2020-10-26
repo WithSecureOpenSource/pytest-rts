@@ -34,26 +34,16 @@ class TestHelper:
     def get_tests_from_tool_current():
         db = DatabaseHelper()
         db.init_conn()
-        (
-            test_set,
-            _,
-            _,
-        ) = get_tests_and_data_current(db)
+        change_data = get_tests_and_data_current(db)
         db.close_conn()
-        return test_set
+        return change_data.test_set
 
     def get_tests_from_tool_committed():
         db = DatabaseHelper()
         db.init_conn()
-        (
-            test_set,
-            _,
-            _,
-            _,
-            _,
-        ) = get_tests_and_data_committed(db)
+        change_data = get_tests_and_data_committed(db)
         db.close_conn()
-        return test_set
+        return change_data.test_set
 
     def get_all_tests_for_srcfile(src_file_id):
         db = DatabaseHelper()
