@@ -7,9 +7,9 @@ from testhelper import TestHelper
 
 @pytest.fixture(scope="session", autouse=True)
 def temp_project_repo(tmpdir_factory):
-    temp_folder = tmpdir_factory.mktemp("temp")
+    temp_folder = tmpdir_factory.mktemp("temp") + "/testrepo"
     shutil.copytree(
-        "./tests_selector/tests/helper_project", str(temp_folder), dirs_exist_ok=True
+        "./tests_selector/tests/helper_project", str(temp_folder)
     )
     os.chdir(temp_folder)
 
@@ -19,6 +19,8 @@ def temp_project_repo(tmpdir_factory):
             f.write(line)
 
     subprocess.run(["git", "init"])
+    subprocess.run(["git","config","user.name","pytest"])
+    subprocess.run(["git","config","user.email","pytest"])
     subprocess.run(["git", "add", "."])
     subprocess.run(["git", "commit", "-m", "1"])
     subprocess.run(["tests_selector_init"])
