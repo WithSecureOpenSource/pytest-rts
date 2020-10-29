@@ -1,39 +1,44 @@
-import pytest
+"""This module contains temporary Git repository initialization and teardown for tests"""
 import os
 import subprocess
 import shutil
+import pytest
 from testhelper import TestHelper
 
 
 @pytest.fixture(scope="session", autouse=True)
 def temp_project_repo(tmpdir_factory):
-    temp_folder = tmpdir_factory.mktemp("temp")
-    shutil.copytree(
-        "./tests_selector/tests/helper_project", str(temp_folder), dirs_exist_ok=True
-    )
+    """Create a temporary Git repository and initialize the tool there"""
+    temp_folder = tmpdir_factory.mktemp("temp").join("testrepo")
+    shutil.copytree("./tests_selector/tests/helper_project", temp_folder)
     os.chdir(temp_folder)
 
-    with open(".gitignore", "w") as f:
+    with open(".gitignore", "w") as gitignore:
         lines = ["*.db\n", ".coverage\n", "*__pycache__*\n"]
         for line in lines:
-            f.write(line)
+            gitignore.write(line)
 
-    subprocess.run(["git", "init"])
-    subprocess.run(["git", "add", "."])
-    subprocess.run(["git", "commit", "-m", "1"])
-    subprocess.run(["tests_selector_init"])
+    subprocess.run(["git", "init"], check=True)
+    subprocess.run(["git", "config", "user.name", "pytest"], check=True)
+    subprocess.run(["git", "config", "user.email", "pytest@example.com"], check=True)
+    subprocess.run(["git", "add", "."], check=True)
+    subprocess.run(["git", "commit", "-m", "1"], check=True)
+    subprocess.run(["tests_selector_init"], check=True)
     return temp_folder
 
 
 @pytest.fixture(scope="function", autouse=True)
 def teardown_method():
+    """Reset state of temporary git repository"""
     yield
-    subprocess.run(["git", "restore", "."])
-    subprocess.run(["git", "checkout", "master"])
-    subprocess.run(["git", "branch", "-D", "new-branch"])
-    subprocess.run(["tests_selector_init"])
+    subprocess.run(["git", "restore", "."], check=True)
+    subprocess.run(["git", "checkout", "master"], check=True)
+    subprocess.run(["git", "branch", "-D", "new-branch"], check=False)
+    subprocess.run(["tests_selector_init"], check=True)
+
 
 
 @pytest.fixture
 def helper():
+    """TestHelper as a fixture for tests"""
     return TestHelper
