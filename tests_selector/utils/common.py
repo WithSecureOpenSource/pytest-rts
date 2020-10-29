@@ -44,9 +44,14 @@ def tests_from_changed_testfiles(diff_dict, files, db):
 
 
 def tests_from_changed_srcfiles(diff_dict, files, db):
+    """
+    Query tests and dictionaries containing changed lines,
+    new line mapping and warning booleans for untested new lines
+    """
     test_set = set()
     changed_lines_dict = {}
     new_line_map_dict = {}
+    files_to_warn = []
     for f in files:
         file_id = f[0]
         filename = f[1]
@@ -60,24 +65,20 @@ def tests_from_changed_srcfiles(diff_dict, files, db):
         new_line_map_dict[file_id] = line_map
 
         if any([not db.mapping_line_exists(file_id, line_id) for line_id in new_lines]):
-            tests = db.query_all_tests_srcfile(file_id)
-        else:
-            tests = db.query_tests_srcfile(changed_lines, file_id)
+            files_to_warn.append(filename)
+
+        tests = db.query_tests_srcfile(changed_lines, file_id)
 
         for t in tests:
             test_set.add(t)
-    return test_set, changed_lines_dict, new_line_map_dict
+    return test_set, changed_lines_dict, new_line_map_dict, files_to_warn
 
 
-def run_tests_and_update_db(test_set, update_tuple, db, project_folder="."):
-    changed_lines_test = update_tuple[
-        0
-    ]  # TODO: `changed_lines_test` is not used below!
-    # thinking: no reason to delete the lines / use this
-
-    line_map_test = update_tuple[1]
-    changed_lines_src = update_tuple[2]
-    line_map_src = update_tuple[3]
+def run_tests_and_update_db(test_set, update_data, db, project_folder="."):
+    """Remove old data from database, shift existing lines if needed and run test set"""
+    line_map_test = update_data.new_line_map_test
+    changed_lines_src = update_data.changed_lines_src
+    line_map_src = update_data.new_line_map_src
 
     for t in line_map_test.keys():
         # shift test functions
@@ -89,7 +90,7 @@ def run_tests_and_update_db(test_set, update_tuple, db, project_folder="."):
         db.delete_ran_lines(changed_lines_src[f], f)
         db.update_db_from_src_mapping(line_map_src[f], f)
 
-    if len(test_set) > 0:
+    if test_set:
         subprocess.run(["tests_selector_run_and_update"] + list(test_set))
 
 

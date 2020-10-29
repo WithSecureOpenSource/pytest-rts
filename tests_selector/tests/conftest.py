@@ -33,6 +33,7 @@ def teardown_method():
     subprocess.run(["git", "branch", "-D", "new-branch"])
     subprocess.run(["tests_selector_init"])
 
+
 @pytest.fixture
 def helper():
     return TestHelper

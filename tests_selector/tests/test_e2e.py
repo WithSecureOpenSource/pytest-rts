@@ -7,15 +7,14 @@ def test_full_integration(helper):
     # Add a new method to source file
     helper.change_file("changes/car/add_new_method.txt", "src/car.py")
 
-    # Get changed src file id and set of all tests for that file
+    # Get changed src file id
     src_file_id = helper.get_mapping_id_from_filename("src/car.py", is_srcfile=True)
-    all_tests_srcfile = helper.get_all_tests_for_srcfile(src_file_id)
 
     # Get working directory test_set like in tests_selector script
     workdir_test_set = helper.get_tests_from_tool_current()
 
-    # New method addition = test_set should be all tests of that file
-    assert workdir_test_set == set(all_tests_srcfile)
+    # New method addition = no new tests should be found
+    assert not workdir_test_set
 
     # Run tests_selector, db shouldn't update
     old_srcfile_lines = helper.get_mapping_lines_for_srcfile(src_file_id)
@@ -30,8 +29,8 @@ def test_full_integration(helper):
     # Get committed changes test_set like in tests_selector script
     commit_test_set = helper.get_tests_from_tool_committed()
 
-    # New method addition = test_set should be all tests of that file
-    assert commit_test_set == set(all_tests_srcfile)
+    # New method addition = no new tests should be found
+    assert not commit_test_set
 
     # DB should update after running test selector
     # But no new test tests new method so lines should be the same
@@ -46,7 +45,7 @@ def test_full_integration(helper):
     workdir_test_set2 = helper.get_tests_from_tool_current()
 
     # Changes test_set should be empty
-    assert workdir_test_set2 == set()
+    assert not workdir_test_set2
 
     # Running test_selector should not add new test to database
     helper.run_tool()
