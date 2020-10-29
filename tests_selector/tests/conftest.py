@@ -20,7 +20,7 @@ def temp_project_repo(tmpdir_factory):
 
     subprocess.run(["git", "init"], check=True)
     subprocess.run(["git", "config", "user.name", "pytest"], check=True)
-    subprocess.run(["git", "config", "user.email", "pytest"], check=True)
+    subprocess.run(["git", "config", "user.email", "pytest@example.com"], check=True)
     subprocess.run(["git", "add", "."], check=True)
     subprocess.run(["git", "commit", "-m", "1"], check=True)
     subprocess.run(["tests_selector_init"], check=True)
