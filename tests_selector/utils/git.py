@@ -6,7 +6,7 @@ from pydriller import GitRepository
 
 def get_git_repo(project_folder):
     if not project_folder:
-        res = subprocess.check_output("git rev-parse --show-toplevel".split(" "))
+        res = subprocess.check_output("git rev-parse --show-toplevel".split())
         project_folder = res.decode().strip()
     return GitRepository(project_folder)
 
