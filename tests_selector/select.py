@@ -1,14 +1,14 @@
 import os
 import subprocess
-from typing import NamedTuple, List, Set, Dict
+from typing import Dict, List, NamedTuple, Set
 from tests_selector.utils.common import (
+    file_diff_dict_between_commits,
+    file_diff_dict_current,
+    read_newly_added_tests,
+    run_tests_and_update_db,
     split_changes,
     tests_from_changed_srcfiles,
     tests_from_changed_testfiles,
-    read_newly_added_tests,
-    file_diff_dict_current,
-    file_diff_dict_between_commits,
-    run_tests_and_update_db,
 )
 from tests_selector.utils.git import (
     changed_files_current,
@@ -16,8 +16,8 @@ from tests_selector.utils.git import (
     get_current_head_hash,
 )
 from tests_selector.utils.db import (
-    DB_FILE_NAME,
     DatabaseHelper,
+    DB_FILE_NAME,
 )
 
 

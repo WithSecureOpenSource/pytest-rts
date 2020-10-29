@@ -21,7 +21,7 @@ def test_delete_ran_lines():
     new_line_ids = [x[0] for x in c.execute(sql, (file_id,)).fetchall()]
     conn.close()
 
-    assert new_line_ids == []
+    assert not new_line_ids
 
 
 def test_update_db_from_src_mapping():
