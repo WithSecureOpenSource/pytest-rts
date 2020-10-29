@@ -9,7 +9,7 @@ from testhelper import TestHelper
 @pytest.fixture(scope="session", autouse=True)
 def temp_project_repo(tmpdir_factory):
     """Create a temporary Git repository and initialize the tool there"""
-    temp_folder = tmpdir_factory.mktemp("temp").join("/testrepo")
+    temp_folder = tmpdir_factory.mktemp("temp").join("testrepo")
     shutil.copytree("./tests_selector/tests/helper_project", temp_folder)
     os.chdir(temp_folder)
 
