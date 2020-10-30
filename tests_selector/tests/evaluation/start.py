@@ -2,26 +2,26 @@
 import os
 import subprocess
 from tests_selector.utils.git import (
-    get_test_lines_and_update_lines,
-    file_diff_data_between_commits,
     changed_files_between_commits,
+    file_diff_data_between_commits,
     get_current_head_hash,
+    get_test_lines_and_update_lines,
 )
 from tests_selector.utils.db import (
     DatabaseHelper,
     DB_FILE_NAME,
 )
-from tests_selector.evaluation.results_db import (
+from tests_selector.tests.evaluation.results_db import (
     ResultDatabase,
     RESULTS_DB_FILE_NAME,
 )
-from tests_selector.evaluation.eval_helpers import (
+from tests_selector.tests.evaluation.eval_helpers import (
+    capture_all_exit_code,
+    capture_specific_exit_code,
     checkout_remove_branch,
+    clear_remove_branch,
     delete_random_lines_and_commit,
     full_diff_between_commits,
-    capture_specific_exit_code,
-    capture_all_exit_code,
-    clear_remove_branch,
     print_remove_test_output,
 )
 
