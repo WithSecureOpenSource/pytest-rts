@@ -10,7 +10,7 @@
 
 This tutorial uses [flask](https://github.com/pallets/flask) as an example. At the time of writing, flask has a set of 487 tests with pytest.
 
-1. Clone [flask](https://github.com/pallets/flask) and this repository (**tests-selector**) to their own folders.
+1. Clone [flask](https://github.com/pallets/flask) and this repository to their own folders.
 2. In the root of this repository, run `make install` which creates a virtualenv and activate it with `source .venv/bin/activate`
 3. Go to the flask repository folder and install its dependencies. At the time of writing, this is done with `pip install -e . -r requirements/dev.txt`
 4. Run `tests_selector_init` to initialize the mapping database
