@@ -2,8 +2,9 @@
 
 ## Requirements
 
-* Python 3.8+
-* Git
+- Python 3.6.6
+  - [flask](https://github.com/pallets/flask) might require newer
+- Git
 
 ## Setting up
 
@@ -16,5 +17,5 @@ This tutorial uses [flask](https://github.com/pallets/flask) as an example. At t
 
 ## Usage
 
-* Change some source code file or test file -> run `tests_selector` -> the tool runs tests based on changes in the git working directory
-* Change some source code file or test file -> commit changes -> run `tests_selector` -> the tool runs tests based on changes between the current commit state and the time the mapping database was last updated & updates the database
+- Change some source code file or test file -> run `tests_selector` -> the tool runs tests based on changes in the git working directory
+- Change some source code file or test file -> commit changes -> run `tests_selector` -> the tool runs tests based on changes between the current commit state and the time the mapping database was last updated & updates the database
