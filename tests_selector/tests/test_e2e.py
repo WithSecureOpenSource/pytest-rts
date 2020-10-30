@@ -144,3 +144,27 @@ def test_skipping_commit(helper):
         "tests/test_shop.py::test_normal_shop_purchase",
         "tests/test_car.py::test_passengers",
     }
+
+
+def test_squashing_commits(helper):
+    helper.checkout_new_branch()
+
+    helper.change_file("changes/car/change_accelerate.txt", "src/car.py")
+    helper.commit_change("src/car.py", "commit0")
+
+    helper.change_file("changes/car/add_new_method.txt", "src/car.py")
+    helper.commit_change("src/car.py", "commit1")
+
+    # Run tool -> db updated to commit1 state
+    helper.run_tool()
+
+    helper.change_file("changes/shop/change_get_price.txt", "src/shop.py")
+    helper.commit_change("src/shop.py", "commit2")
+
+    helper.squash_commits(3, "commit3")
+
+    # Tool should find only tests for change introduced in commit1 -> commit2
+    assert helper.get_tests_from_tool_committed() == {
+        "tests/test_shop.py::test_normal_shop_purchase",
+        "tests/test_shop.py::test_normal_shop_purchase2",
+    }

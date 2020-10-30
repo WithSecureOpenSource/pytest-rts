@@ -37,8 +37,7 @@ def teardown_method():
     subprocess.run(["tests_selector_init"], check=True)
 
 
-
 @pytest.fixture
 def helper():
     """TestHelper as a fixture for tests"""
-    return TestHelper
+    return TestHelper()
