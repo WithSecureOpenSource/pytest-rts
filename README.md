@@ -5,7 +5,7 @@
 ### Usage as a module (no source code)
 
 1. Add your public key to github profile
-2. Add `git+ssh://git@github.com/F-Secure/tests-selector.git#egg=tests_selector` as a dependency to `requirements.txt`
+2. Add `git+ssh://git@github.com/F-Secure/pytest-rts.git#egg=pytest-rts` as a dependency to `requirements.txt`
 3. Install dependencies
 4. Run initialization `tests_selector_init`
 
