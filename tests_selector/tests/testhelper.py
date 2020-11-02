@@ -67,7 +67,12 @@ class TestHelper:
         return exists
 
     def change_file(self, change_path, file_path):
-        subprocess.run(["cp", "-f", change_path, file_path], check=True, stdout=None)
+        subprocess.run(
+            ["cp", "-f", change_path, file_path],
+            check=True,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
 
     def commit_change(self, filename, message):
         subprocess.run(
