@@ -1,4 +1,5 @@
 """This module contains evaluation code for the tool"""
+import logging
 import os
 import subprocess
 from tests_selector.utils.git import (
@@ -18,18 +19,20 @@ from tests_selector.tests.evaluation.results_db import (
 from tests_selector.tests.evaluation.eval_helpers import (
     capture_all_exit_code,
     capture_specific_exit_code,
-    checkout_remove_branch,
-    clear_remove_branch,
-    delete_random_lines_and_commit,
+    delete_random_line,
     full_diff_between_commits,
     print_remove_test_output,
+    select_random_file,
+)
+from tests_selector.tests.testhelper import (
+    TestHelper,
 )
 
 
 def random_remove_test(iterations, deletes_per_iteration, max_wait):
     """Delete random lines and evaluate tests sets and pytest exitcodes"""
     if not os.path.isfile(DB_FILE_NAME):
-        print("Running mapping database initialization...")
+        logging.getLogger().info("Running mapping database initialization...")
         subprocess.run(["tests_selector_init"], check=False)
 
     results_db = ResultDatabase()
@@ -49,11 +52,17 @@ def random_remove_test(iterations, deletes_per_iteration, max_wait):
 
     _, src_files = mapping_db.get_testfiles_and_srcfiles()
 
+    testhelper = TestHelper()
+
     for i in range(iterations):
 
         # Remove random lines
-        checkout_remove_branch()
-        delete_random_lines_and_commit(deletes_per_iteration, src_files)
+        testhelper.checkout_new_branch()
+        for j in range(deletes_per_iteration):
+            random_file = select_random_file(src_files)
+            filename = random_file[1]
+            delete_random_line(filename)
+            testhelper.commit_change(filename, str(j + 1))
 
         # Gets tests based on line-level and file-level change
         current_git_hash = get_current_head_hash()
@@ -87,7 +96,9 @@ def random_remove_test(iterations, deletes_per_iteration, max_wait):
         )
         exitcode_all = capture_all_exit_code(max_wait)
 
-        clear_remove_branch()
+        # Clear removal
+        testhelper.checkout_branch("master")
+        testhelper.delete_branch("new-branch")
 
         # Store and print data
         results_db.store_results_data(
@@ -117,7 +128,7 @@ def random_remove_test(iterations, deletes_per_iteration, max_wait):
 
 def main():
     """Evaluation script entrypoint"""
-    print("RANDOM LINE REMOVE TESTING")
+    logging.getLogger().info("RANDOM LINE REMOVE TESTING")
     iterations = int(input("How many iterations? "))
     deletes_per_iteration = int(input("How many line removals per iteration? "))
     max_wait = int(input("Max wait time for test set running (in seconds)? "))

@@ -76,9 +76,15 @@ class TestHelper:
     def run_tool(self):
         subprocess.run(["tests_selector"], check=True)
 
-    def checkout_new_branch(self):
-        subprocess.run(["git", "checkout", "-b", "new-branch"], check=True)
-
     def squash_commits(self, n, new_message):
         subprocess.run(["git", "reset", "--soft", f"HEAD~{n}"], check=True)
         subprocess.run(["git", "commit", "-m", new_message], check=True)
+
+    def checkout_new_branch(self, branchname="new-branch"):
+        subprocess.run(["git", "checkout", "-b", branchname], check=True)
+
+    def checkout_branch(self, branchname):
+        subprocess.run(["git", "checkout", branchname], check=True)
+
+    def delete_branch(self, branchname):
+        subprocess.run(["git", "branch", "-D", branchname], check=True)

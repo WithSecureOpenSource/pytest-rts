@@ -1,22 +1,10 @@
 """Helper functions for evaluation code"""
+import logging
 import subprocess
 import random
 from tests_selector.utils.git import (
     get_git_repo,
 )
-
-
-def checkout_remove_branch():
-    """Create a branch to do random line delete operations in"""
-    repo = get_git_repo(None).repo.git
-    repo.checkout("-b", "random-delete-branch")
-
-
-def clear_remove_branch():
-    """Remove branch used in evaluation"""
-    repo = get_git_repo(None).repo.git
-    repo.checkout("master")
-    repo.branch("-D", "random-delete-branch")
 
 
 def full_diff_between_commits(commit1, commit2):
@@ -46,19 +34,8 @@ def delete_random_line(filename):
                 randomfile.write(line)
 
     except FileNotFoundError:
-        print("can't open selected random file", filename)
+        logging.getLogger().error(f"can't open selected random file {filename}")
         exit(1)
-
-
-def delete_random_lines_and_commit(deletes, src_files):
-    """Delete as many random lines as wanted from the list of given src-code files"""
-    repo = get_git_repo(None).repo.git
-    for i in range(deletes):
-        random_file = select_random_file(src_files)
-        filename = random_file[1]
-        delete_random_line(filename)
-        repo.add(filename)
-        repo.commit("-m", str(i + 1))
 
 
 def capture_specific_exit_code(tests, max_wait):
@@ -105,16 +82,17 @@ def print_remove_test_output(
     db_name,
 ):
     """Print random remove test statistics"""
-    print("============")
-    print("iteration:", i + 1)
-    print("project name:", project_name)
-    print("commit hash:", commithash)
-    print(f"removed {deletes} random src file lines")
-    print("size of full test suite:", full_test_suite_size)
-    print("size of line level test suite:", line_test_suite_size)
-    print("size of file level test suite:", file_test_suite_size)
-    print(
+    logger = logging.getLogger()
+    logger.info("============")
+    logger.info(f"iteration: {i+1}")
+    logger.info(f"project name: {project_name}")
+    logger.info(f"commit hash: {commithash}")
+    logger.info(f"removed {deletes} random src file lines")
+    logger.info(f"size of full test suite: {full_test_suite_size}")
+    logger.info(f"size of line level test suite: {line_test_suite_size}")
+    logger.info(f"size of file level test suite: {file_test_suite_size}")
+    logger.info(
         f"exitcodes: line-level: {exitcode_line}, file-level: {exitcode_file}, all: {exitcode_all}"
     )
-    print("STORING TO DATABASE:", db_name)
-    print("============")
+    logger.info(f"STORING TO DATABASE: {db_name}")
+    logger.info("============")
