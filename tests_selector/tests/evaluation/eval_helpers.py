@@ -1,7 +1,7 @@
 """Helper functions for evaluation code"""
 import logging
-import subprocess
 import random
+import subprocess
 from tests_selector.utils.git import (
     get_git_repo,
 )
@@ -44,7 +44,8 @@ def capture_specific_exit_code(tests, max_wait):
         specific_exit_code = subprocess.run(
             ["tests_selector_specific_without_remap"] + tests,
             timeout=max_wait,
-            capture_output=True,
+            stderr=subprocess.DEVNULL,
+            stdout=subprocess.DEVNULL,
             check=False,
         ).returncode
     except subprocess.TimeoutExpired:
@@ -59,7 +60,8 @@ def capture_all_exit_code(max_wait):
         all_exit_code = subprocess.run(
             ["tests_selector_all_without_remap"],
             timeout=max_wait,
-            capture_output=True,
+            stderr=subprocess.DEVNULL,
+            stdout=subprocess.DEVNULL,
             check=False,
         ).returncode
     except subprocess.TimeoutExpired:
@@ -80,9 +82,9 @@ def print_remove_test_output(
     exitcode_file,
     exitcode_all,
     db_name,
+    logger,
 ):
     """Print random remove test statistics"""
-    logger = logging.getLogger()
     logger.info("============")
     logger.info(f"iteration: {i+1}")
     logger.info(f"project name: {project_name}")

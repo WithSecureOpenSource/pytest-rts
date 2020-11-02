@@ -29,10 +29,10 @@ from tests_selector.tests.testhelper import (
 )
 
 
-def random_remove_test(iterations, deletes_per_iteration, max_wait):
+def random_remove_test(iterations, deletes_per_iteration, max_wait, logger):
     """Delete random lines and evaluate tests sets and pytest exitcodes"""
     if not os.path.isfile(DB_FILE_NAME):
-        logging.getLogger().info("Running mapping database initialization...")
+        logger.info("Running mapping database initialization...")
         subprocess.run(["tests_selector_init"], check=False)
 
     results_db = ResultDatabase()
@@ -123,16 +123,19 @@ def random_remove_test(iterations, deletes_per_iteration, max_wait):
             exitcode_file,
             exitcode_all,
             RESULTS_DB_FILE_NAME,
+            logger,
         )
 
 
 def main():
     """Evaluation script entrypoint"""
-    logging.getLogger().info("RANDOM LINE REMOVE TESTING")
+    logger = logging.getLogger()
+    logging.basicConfig(format="%(message)s", level=logging.INFO)
+    logger.info("RANDOM LINE REMOVE TESTING")
     iterations = int(input("How many iterations? "))
     deletes_per_iteration = int(input("How many line removals per iteration? "))
     max_wait = int(input("Max wait time for test set running (in seconds)? "))
-    random_remove_test(iterations, deletes_per_iteration, max_wait)
+    random_remove_test(iterations, deletes_per_iteration, max_wait, logger)
 
 
 if __name__ == "__main__":
