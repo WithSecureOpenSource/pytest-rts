@@ -1,4 +1,4 @@
-## Material found on regression test selection
+## Overview of regression test selection
 
 ### Tools
 
