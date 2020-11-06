@@ -67,18 +67,54 @@ class TestHelper:
         return exists
 
     def change_file(self, change_path, file_path):
-        subprocess.run(["cp", "-f", change_path, file_path], check=True)
+        subprocess.run(
+            ["cp", "-f", change_path, file_path],
+            check=True,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
 
     def commit_change(self, filename, message):
-        subprocess.run(["git", "add", filename], check=True)
-        subprocess.run(["git", "commit", "-m", message], check=True)
+        subprocess.run(
+            ["git", "add", filename],
+            check=True,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+        subprocess.run(
+            ["git", "commit", "-m", message],
+            check=True,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
 
     def run_tool(self):
         subprocess.run(["tests_selector"], check=True)
 
-    def checkout_new_branch(self):
-        subprocess.run(["git", "checkout", "-b", "new-branch"], check=True)
-
     def squash_commits(self, n, new_message):
         subprocess.run(["git", "reset", "--soft", f"HEAD~{n}"], check=True)
         subprocess.run(["git", "commit", "-m", new_message], check=True)
+
+    def checkout_new_branch(self, branchname="new-branch"):
+        subprocess.run(
+            ["git", "checkout", "-b", branchname],
+            check=True,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+
+    def checkout_branch(self, branchname):
+        subprocess.run(
+            ["git", "checkout", branchname],
+            check=True,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+
+    def delete_branch(self, branchname):
+        subprocess.run(
+            ["git", "branch", "-D", branchname],
+            check=False,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )

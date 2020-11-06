@@ -1,11 +1,8 @@
-import os
+"""This module contains code to capture pytest exitcode for the entire test suite"""
 import pytest
-import sys
 
 
 def main():
-    PROJECT_FOLDER = sys.argv[1]
-    os.chdir(os.getcwd() + "/" + PROJECT_FOLDER)
     exit_code = pytest.main(["-p", "no:terminal"])
     exit(int(exit_code))
 

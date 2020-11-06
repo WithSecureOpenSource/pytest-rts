@@ -1,7 +1,6 @@
 import sqlite3
 
 DB_FILE_NAME = "mapping.db"
-RESULTS_DB_FILE_NAME = "results.db"
 
 
 class DatabaseHelper:
@@ -253,91 +252,3 @@ class DatabaseHelper:
 
     def get_last_update_hash(self):
         return self.db_cursor.execute("SELECT hash FROM last_update_hash").fetchone()[0]
-
-
-class ResultDatabaseHelper:
-    def __init__(self):
-        self.db_conn = None
-        self.db_cursor = None
-
-    def init_conn(self):
-        self.db_conn = sqlite3.connect(RESULTS_DB_FILE_NAME)
-        self.db_cursor = self.db_conn.cursor()
-
-    def close_conn(self):
-        self.db_conn.close()
-        self.db_conn = None
-        self.db_cursor = None
-
-    def init_results_db(self):
-        self.db_cursor.execute(
-            """ CREATE TABLE IF NOT EXISTS project (
-                        id INTEGER PRIMARY KEY,
-                        name TEXT,
-                        commithash TEXT,
-                        test_suite_size INTEGER,
-                        database_size INTEGER,
-                        UNIQUE (name,commithash))"""
-        )
-        self.db_cursor.execute(
-            """ CREATE TABLE IF NOT EXISTS data (
-                        project_id INTEGER,
-                        lines_removed INTEGER,
-                        specific_exit_line INTEGER,
-                        specific_exit_file INTEGER,
-                        all_exit INTEGER,
-                        suite_size_line INTEGER,
-                        suite_size_file INTEGER,
-                        diff TEXT,
-                        FOREIGN KEY (project_id) REFERENCES project(id))"""
-        )
-        self.db_conn.commit()
-
-    def store_results_project(self, project_name, commithash, suite_size, db_size):
-        self.db_cursor.execute(
-            " INSERT OR IGNORE INTO project (name,commithash,test_suite_size,database_size) VALUES (?,?,?,?)",
-            (project_name, commithash, suite_size, db_size),
-        )
-        self.db_conn.commit()
-        project_id = int(
-            self.db_cursor.execute(
-                "SELECT id FROM project WHERE name = ? AND commithash = ?",
-                (project_name, commithash),
-            ).fetchone()[0]
-        )
-        return project_id
-
-    def store_results_data(
-        self,
-        project_id,
-        lines_removed,
-        specific_exit_line,
-        specific_exit_file,
-        all_exit,
-        suite_size_line,
-        suite_size_file,
-        diff,
-    ):
-        self.db_cursor.execute(
-            """ INSERT INTO data (
-                project_id,
-                lines_removed,
-                specific_exit_line,
-                specific_exit_file,
-                all_exit,
-                suite_size_line,
-                suite_size_file,
-                diff)
-                VALUES (?,?,?,?,?,?,?,?)""",
-            (
-                project_id,
-                lines_removed,
-                specific_exit_line,
-                specific_exit_file,
-                all_exit,
-                suite_size_line,
-                suite_size_file,
-                diff,
-            ),
-        )
-        self.db_conn.commit()
