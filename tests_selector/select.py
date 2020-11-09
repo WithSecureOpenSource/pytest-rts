@@ -1,3 +1,4 @@
+import logging
 import os
 import subprocess
 from typing import Dict, List, NamedTuple, Set
@@ -137,8 +138,11 @@ def get_tests_and_data_committed(db) -> TestsAndDataCommitted:
 
 
 def main():
+    logger = logging.getLogger()
+    logging.basicConfig(format="%(message)s", level=logging.INFO)
+
     if not os.path.isfile(DB_FILE_NAME):
-        print("Run tests_selector_init first")
+        logger.info("Run tests_selector_init first")
         exit(1)
 
     db = DatabaseHelper()
@@ -146,40 +150,42 @@ def main():
 
     workdir_data = get_tests_and_data_current(db)
 
-    print("WORKING DIRECTORY CHANGES")
-    print(f"Found {workdir_data.changed_testfiles_amount} changed test files")
-    print(f"Found {workdir_data.changed_srcfiles_amount} changed src files")
-    print(f"Found {len(workdir_data.test_set)} tests to execute\n")
+    logger.info("WORKING DIRECTORY CHANGES")
+    logger.info(f"Found {workdir_data.changed_testfiles_amount} changed test files")
+    logger.info(f"Found {workdir_data.changed_srcfiles_amount} changed src files")
+    logger.info(f"Found {len(workdir_data.test_set)} tests to execute\n")
 
     if workdir_data.test_set:
-        print("Running WORKING DIRECTORY test set and exiting without updating...")
+        logger.info(
+            "Running WORKING DIRECTORY test set and exiting without updating..."
+        )
         subprocess.run(["tests_selector_run"] + list(workdir_data.test_set))
         exit()
 
-    print("No WORKING DIRECTORY tests to run, checking COMMITTED changes...")
+    logger.info("No WORKING DIRECTORY tests to run, checking COMMITTED changes...")
     current_hash = get_current_head_hash()
     if db.is_last_update_hash(current_hash):
-        print("Database is updated to the current commit state")
-        print("=> Skipping test discovery, execution and updating")
+        logger.info("Database is updated to the current commit state")
+        logger.info("=> Skipping test discovery, execution and updating")
         exit()
 
     previous_hash = db.get_last_update_hash()
-    print(f"Comparison: {current_hash} => {previous_hash}\n")
+    logger.info(f"Comparison: {current_hash} => {previous_hash}\n")
 
     committed_data = get_tests_and_data_committed(db)
 
-    print("COMMITTED CHANGES")
-    print(f"Found {committed_data.changed_testfiles_amount} changed test files")
-    print(f"Found {committed_data.changed_srcfiles_amount} changed src files")
-    print(f"Found {committed_data.new_tests_amount} newly added tests")
-    print(f"Found {len(committed_data.test_set)} tests to execute\n")
+    logger.info("COMMITTED CHANGES")
+    logger.info(f"Found {committed_data.changed_testfiles_amount} changed test files")
+    logger.info(f"Found {committed_data.changed_srcfiles_amount} changed src files")
+    logger.info(f"Found {committed_data.new_tests_amount} newly added tests")
+    logger.info(f"Found {len(committed_data.test_set)} tests to execute\n")
     if committed_data.warning_needed:
-        print(
+        logger.info(
             "WARNING: New lines were added to the following files but no new tests discovered:"
         )
-        print(*committed_data.files_to_warn, sep="\n", end="\n\n")
+        logger.info("\n".join(committed_data.files_to_warn))
 
-    print("=> Executing tests (if any) and updating database")
+    logger.info("=> Executing tests (if any) and updating database")
     db.save_last_update_hash(current_hash)
     run_tests_and_update_db(committed_data.test_set, committed_data.update_data, db)
 
