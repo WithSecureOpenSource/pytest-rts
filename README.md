@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="https://github.com/F-Secure/pytest-rts/raw/master/pytest-rts-logo.png" alt="angular-logo" width="120px" height="120px"/>
+</p>
+
 # Change based tests selection for Python
 
 ## Usage
@@ -33,16 +37,19 @@
 
 # Development
 
-- ~~Don't forget to run `make install` before you are going to try the latest changes~~ - not needed as all the changes in source files are available immediately, just call the needed command line tool from the package
+See [DEVELOPER.md](developer) for more info
 
-## Testing / linting with tox
+## Contributing
 
-Make sure you have Python versions 3.6, 3.7, 3.8, 3.9 (all of them). Install tox
-into your current Python environment (does not matter which one it is). Run
-`tox` to run linters/tests using different Python versions. To run for only one
-Python version, use, for example, `tox -e py36`. To check code formatting with
-black, run `tox -e py38-check-format` (code formatting check is done only with
-Python 3.8).
+### Contributing Guidelines
 
-**NB** If you have changed dependencies in `setup.py`, run `tox --recreate`
-once.
+Read through our [contributing guidelines][contributing] to learn about our submission process, coding rules and more.
+
+### Code of Conduct
+
+Help us keep the project open and inclusive. Please read and follow our [Code of Conduct][codeofconduct].
+
+
+[developer]: https://github.com/F-Secure/pytest-rts/tree/master/docs/DEVELOPER.md
+[contributing]: https://github.com/F-Secure/pytest-rts/tree/master/docs/CONTRIBUTING.md
+[codeofconduct]: https://github.com/F-Secure/pytest-rts/tree/master/docs/CODE_OF_CONDUCT.md
