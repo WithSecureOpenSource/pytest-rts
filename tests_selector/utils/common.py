@@ -1,3 +1,4 @@
+"""This module contains fuctions for test selecting operations"""
 import ast
 import os
 import subprocess
@@ -21,109 +22,115 @@ def file_diff_dict_between_commits(files, commithash1, commithash2):
     }
 
 
-def tests_from_changed_testfiles(diff_dict, files, db):
+def tests_from_changed_testfiles(diff_dict, files, db_helper):
+    """Calculate test set and update data from changes to a testfile"""
     test_set = set()
-    changed_lines_dict = {}
-    new_line_map_dict = {}
-    for f in files:
-        file_id = f[0]
-        filename = f[1]
-        file_diff = diff_dict[file_id]
-        changed_lines, updates_to_lines, new_lines = get_test_lines_and_update_lines(
-            file_diff
+    changed_lines_map = {}
+    new_line_map = {}
+    for testfile in files:
+        file_id = testfile[0]
+        filename = testfile[1]
+        changed_lines, updates_to_lines, _ = get_test_lines_and_update_lines(
+            diff_dict[file_id]
         )
-        line_map = line_mapping(updates_to_lines, filename)
 
-        changed_lines_dict[file_id] = changed_lines
-        new_line_map_dict[file_id] = line_map
-        tests = db.query_tests_testfile(changed_lines, file_id)
+        changed_lines_map[file_id] = changed_lines
+        new_line_map[file_id] = line_mapping(updates_to_lines, filename)
+        tests = db_helper.query_tests_testfile(changed_lines, file_id)
 
-        for t in tests:
-            test_set.add(t)
-    return test_set, changed_lines_dict, new_line_map_dict
+        for test in tests:
+            test_set.add(test)
+    return test_set, changed_lines_map, new_line_map
 
 
-def tests_from_changed_srcfiles(diff_dict, files, db):
+def tests_from_changed_srcfiles(diff_dict, files, db_helper):
     """
-    Query tests and dictionaries containing changed lines,
-    new line mapping and warning booleans for untested new lines
+    Calculate test set,
+    update data
+    and warning for untested new lines from changes to a source code file
     """
     test_set = set()
-    changed_lines_dict = {}
-    new_line_map_dict = {}
+    changed_lines_map = {}
+    new_line_map = {}
     files_to_warn = []
-    for f in files:
-        file_id = f[0]
-        filename = f[1]
-        file_diff = diff_dict[file_id]
+    for srcfile in files:
+        file_id = srcfile[0]
+        filename = srcfile[1]
         changed_lines, updates_to_lines, new_lines = get_test_lines_and_update_lines(
-            file_diff
+            diff_dict[file_id]
         )
-        line_map = line_mapping(updates_to_lines, filename)
 
-        changed_lines_dict[file_id] = changed_lines
-        new_line_map_dict[file_id] = line_map
+        changed_lines_map[file_id] = changed_lines
+        new_line_map[file_id] = line_mapping(updates_to_lines, filename)
 
-        if any([not db.mapping_line_exists(file_id, line_id) for line_id in new_lines]):
+        if any(
+            [
+                not db_helper.mapping_line_exists(file_id, line_id)
+                for line_id in new_lines
+            ]
+        ):
             files_to_warn.append(filename)
 
-        tests = db.query_tests_srcfile(changed_lines, file_id)
+        tests = db_helper.query_tests_srcfile(changed_lines, file_id)
 
-        for t in tests:
-            test_set.add(t)
-    return test_set, changed_lines_dict, new_line_map_dict, files_to_warn
+        for test in tests:
+            test_set.add(test)
+    return test_set, changed_lines_map, new_line_map, files_to_warn
 
 
-def run_tests_and_update_db(test_set, update_data, db, project_folder="."):
+def run_tests_and_update_db(test_set, update_data, db_helper):
     """Remove old data from database, shift existing lines if needed and run test set"""
     line_map_test = update_data.new_line_map_test
     changed_lines_src = update_data.changed_lines_src
     line_map_src = update_data.new_line_map_src
 
-    for t in line_map_test.keys():
+    for testfile_id in line_map_test.keys():
         # shift test functions
-        db.update_db_from_test_mapping(line_map_test[t], t)
+        db_helper.update_db_from_test_mapping(line_map_test[testfile_id], testfile_id)
 
-    for f in changed_lines_src.keys():
+    for srcfile_id in changed_lines_src.keys():
         # delete ran lines of src file mapping to be remapped by coverage collection
         # shift affected lines by correct amount
-        db.delete_ran_lines(changed_lines_src[f], f)
-        db.update_db_from_src_mapping(line_map_src[f], f)
+        db_helper.delete_ran_lines(changed_lines_src[srcfile_id], srcfile_id)
+        db_helper.update_db_from_src_mapping(line_map_src[srcfile_id], srcfile_id)
 
     if test_set:
-        subprocess.run(["tests_selector_run_and_update"] + list(test_set))
+        subprocess.run(["tests_selector_run_and_update"] + list(test_set), check=True)
 
 
-def split_changes(changed_files, db):
+def split_changes(changed_files, db_helper):
+    """Split given changed files into changed testfiles and source code files"""
     changed_tests = []
     changed_sources = []
-    db_test_files, db_src_files = db.get_testfiles_and_srcfiles()
+    db_test_files, db_src_files = db_helper.get_testfiles_and_srcfiles()
 
     for changed_file in changed_files:
-        for sf in db_src_files:
-            path_to_file = sf[1]
+        for srcfile in db_src_files:
+            path_to_file = srcfile[1]
             if changed_file == path_to_file:
-                changed_sources.append(sf)
-        for tf in db_test_files:
-            path_to_file = tf[1]
+                changed_sources.append(srcfile)
+        for testfile in db_test_files:
+            path_to_file = testfile[1]
             if changed_file == path_to_file:
-                changed_tests.append(tf)
+                changed_tests.append(testfile)
 
     return changed_tests, changed_sources
 
 
-def read_newly_added_tests(db, project_folder="."):
-    subprocess.run(["tests_selector_collect", project_folder])
-    return db.read_newly_added_tests()
+def read_newly_added_tests(db_helper, project_folder="."):
+    """Run collect plugin and read collected new tests from database"""
+    subprocess.run(["tests_selector_collect", project_folder], check=True)
+    return db_helper.read_newly_added_tests()
 
 
 def line_mapping(updates_to_lines, filename, project_folder="."):
+    """Calculate new line numbers from given changes"""
     try:
         line_count = sum(1 for line in open("./" + project_folder + "/" + filename))
     except OSError:
         return {}
-    line_mapping = {}
-    for i in range(len(updates_to_lines)):
+    new_line_mapping = {}
+    for i, _ in enumerate(updates_to_lines):
         if i + 1 >= len(updates_to_lines):
             next_point = line_count
         else:
@@ -135,12 +142,14 @@ def line_mapping(updates_to_lines, filename, project_folder="."):
         if diff == 0:
             continue
         for k in range(current + 1, next_point + 1):
-            line_mapping[k] = k + diff
+            new_line_mapping[k] = k + diff
 
-    return line_mapping
+    return new_line_mapping
 
 
 def function_lines(node, end):
+    """Calculate start and end line numbers for python functions"""
+
     def _next_lineno(i, end):
         try:
             return node[i + 1].decorator_list[0].lineno - 1
@@ -160,7 +169,7 @@ def function_lines(node, end):
         if node.__class__.__name__ == "FunctionDef":
             result.append((node.name, node.body[0].lineno, end))
 
-        for field_name, field_value in ast.iter_fields(node):
+        for _, field_value in ast.iter_fields(node):
             result.extend(function_lines(field_value, end))
 
     elif isinstance(node, list):
@@ -170,17 +179,33 @@ def function_lines(node, end):
     return result
 
 
-def save_data(item, elapsed, test_func_lines, cov_data, testfiles, db):
+def parse_testfile_from_pytest_item(item):
+    """Return testfile path from pytest item"""
     testname = item.nodeid
-    func_name = item.name
     testfile = testname.split("::")[0]
+    return testfile
+
+
+def parse_testfunc_from_pytest_item(item):
+    """Return test function name from pytest item"""
+    func_name = item.name
     func_name_no_params = func_name.split("[")[0]
-    line_tuple = test_func_lines[testfile][func_name_no_params]
-    func_start = line_tuple[0]
-    func_end = line_tuple[1]
-    test_file_id, test_function_id = db.save_testfile_and_func(
-        testfile, testname, func_name, func_start, func_end, elapsed
+    return func_name_no_params
+
+
+def save_testfile_and_func_data(item, elapsed_time, test_func_lines, db_helper):
+    """Save testfile and test function"""
+    testname = item.nodeid
+    testfile = parse_testfile_from_pytest_item(item)
+    func_name = parse_testfunc_from_pytest_item(item)
+    testfile_id, test_function_id = db_helper.save_testfile_and_func(
+        testfile, testname, test_func_lines[testfile][func_name], elapsed_time
     )
+    return testfile_id, test_function_id
+
+
+def save_mapping_data(test_function_id, cov_data, testfiles, db_helper):
+    """Save mapping database srcfile and lines covered"""
     for filename in cov_data.measured_files():
         src_file = os.path.relpath(filename, os.getcwd())
         conditions = [
@@ -194,17 +219,18 @@ def save_data(item, elapsed, test_func_lines, cov_data, testfiles, db):
         ]
         if any(conditions):
             continue
-        src_id = db.save_src_file(src_file)
-        db.save_mapping_lines(src_id, test_function_id, cov_data.lines(filename))
+        src_id = db_helper.save_src_file(src_file)
+        db_helper.save_mapping_lines(src_id, test_function_id, cov_data.lines(filename))
 
 
 def calculate_func_lines(src_code):
+    """Calculate start and end line numbers for all functions in given code string"""
     parsed_src_code = ast.parse(src_code)
     func_lines = function_lines(parsed_src_code, len(src_code.splitlines()))
-    lower_dict = {}
-    for t in func_lines:
-        func = t[0]
-        start = t[1]
-        end = t[2]
-        lower_dict[func] = (start, end)
-    return lower_dict
+    func_mapping = {}
+    for line in func_lines:
+        func = line[0]
+        start = line[1]
+        end = line[2]
+        func_mapping[func] = (start, end)
+    return func_mapping
