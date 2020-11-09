@@ -4,6 +4,7 @@ on: [push]
 
 jobs:
   check:
+    name: Check commit message
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -12,6 +13,7 @@ jobs:
         uses: adityaa30/check-commit@master
   
   test:
+    name: Lint and test
     runs-on: ubuntu-latest
     strategy:
       max-parallel: 4
