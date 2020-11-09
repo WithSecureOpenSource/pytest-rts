@@ -29,6 +29,4 @@ jobs:
       - name: Install Tox
         run: pip install tox
       - name: Lint and test
-        run: |
-          python -m pip install --upgrade pip
-          tox -e py -- --exitfirst
+        run: tox -e py -- --exitfirst
