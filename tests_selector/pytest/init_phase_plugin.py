@@ -1,11 +1,12 @@
+"""This module contains code for initializing the mapping database"""
+from timeit import default_timer as timer
 import coverage
 import pytest
 from _pytest.python import Function
-from timeit import default_timer as timer
 from tests_selector.utils.common import (
-    function_lines,
     calculate_func_lines,
-    save_data,
+    save_mapping_data,
+    save_testfile_and_func_data,
 )
 from tests_selector.utils.git import get_current_head_hash
 from tests_selector.utils.db import DatabaseHelper
@@ -20,14 +21,15 @@ class InitPhasePlugin:
         self.cov = coverage.Coverage()
         self.cov._warn_unimported_source = False
         self.testfiles = set()
-        self.db = DatabaseHelper()
-        self.db.init_conn()
-        self.db.init_mapping_db()
+        self.database = DatabaseHelper()
+        self.database.init_conn()
+        self.database.init_mapping_db()
         self.head_hash = get_current_head_hash()
-        self.db.save_last_update_hash(self.head_hash)
+        self.database.save_last_update_hash(self.head_hash)
 
     def pytest_collection_modifyitems(self, session, config, items):
         """Calculate function start and end line numbers from testfiles"""
+        del session, config
         for item in items:
             testfile = item.nodeid.split("::")[0]
             self.testfiles.add(testfile)
@@ -38,6 +40,7 @@ class InitPhasePlugin:
     @pytest.hookimpl(hookwrapper=True)
     def pytest_runtest_protocol(self, item, nextitem):
         """Start coverage collection for each test function run and save data"""
+        del nextitem
         if isinstance(item, Function):
             start = timer()
             self.cov.erase()
@@ -47,13 +50,14 @@ class InitPhasePlugin:
             self.cov.save()
             end = timer()
             elapsed = round(end - start, 4)
-            save_data(
-                item,
-                elapsed,
-                self.test_func_lines,
+            _, test_function_id = save_testfile_and_func_data(
+                item, elapsed, self.test_func_lines, self.database
+            )
+            save_mapping_data(
+                test_function_id,
                 self.cov.get_data(),
                 self.testfiles,
-                self.db,
+                self.database,
             )
         else:
             yield
