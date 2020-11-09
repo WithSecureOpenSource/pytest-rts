@@ -9,7 +9,7 @@ from setuptools import setup, find_packages  # type: ignore
 GIT_VERSION = (
     subprocess.check_output("git describe --always".split()).strip().decode("ascii")
 )
-TESTS_REQUIRE = ["pytest-cov", "pytest-socket", "tox"]
+TESTS_REQUIRE = ["pytest-cov", "pytest-socket", "tox", "tox-gh-actions"]
 DEV_REQUIRE = ["black", "mypy", "pylint", "safety"]
 
 # pylint: disable=line-too-long
