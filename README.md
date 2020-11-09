@@ -4,7 +4,11 @@
 
 # Change based tests selection for Python
 
-## Usage
+ - [Usage](#usage)
+ - [Development](#dev)
+ - [Contributing](#contrib)
+
+## <a name="usage"></a> Usage
 
 ### Usage as a module (no source code)
 
@@ -35,11 +39,11 @@
 
 1. execute `tests_selector_eval` in target project directory
 
-# Development
+## <a name="dev"></a> Development
 
 See [DEVELOPER.md](developer) for more info
 
-## Contributing
+## <a name="contrib"></a> Contributing
 
 ### Contributing Guidelines
 
