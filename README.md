@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://github.com/F-Secure/pytest-rts/raw/master/pytest-rts-logo.png" alt="angular-logo" width="120px" height="120px"/>
+  <img src="https://github.com/F-Secure/pytest-rts/raw/master/pytest-rts-logo.png" width="120px" height="120px"/>
 </p>
 
 # Change based tests selection for Python
