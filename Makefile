@@ -10,4 +10,4 @@ install: venv
 
 clean:
 	rm -rf $(VENV_DIR)
-	rm -rf tests_selector.egg-info
+	rm -rf pytest_rts.egg-info

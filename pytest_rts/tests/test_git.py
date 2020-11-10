@@ -1,5 +1,5 @@
 import pytest
-from tests_selector.utils import git
+from pytest_rts.utils import git
 
 
 @pytest.mark.parametrize(

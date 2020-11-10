@@ -1,7 +1,7 @@
 import ast
 import pytest
-from tests_selector.utils import git, common
-from tests_selector.utils.db import DatabaseHelper
+from pytest_rts.utils import git, common
+from pytest_rts.utils.db import DatabaseHelper
 
 
 def test_tests_from_changed_sourcefiles(helper):

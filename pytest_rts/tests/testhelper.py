@@ -1,11 +1,11 @@
 import sqlite3
 import subprocess
-from tests_selector.utils.db import DatabaseHelper, DB_FILE_NAME
-from tests_selector.select import (
+from pytest_rts.utils.db import DatabaseHelper, DB_FILE_NAME
+from pytest_rts.select import (
     get_tests_and_data_committed,
     get_tests_and_data_current,
 )
-from tests_selector.utils.common import read_newly_added_tests
+from pytest_rts.utils.common import read_newly_added_tests
 
 
 class TestHelper:
@@ -89,7 +89,7 @@ class TestHelper:
         )
 
     def run_tool(self):
-        subprocess.run(["tests_selector"], check=True)
+        subprocess.run(["pytest_rts"], check=True)
 
     def squash_commits(self, n, new_message):
         subprocess.run(["git", "reset", "--soft", f"HEAD~{n}"], check=True)

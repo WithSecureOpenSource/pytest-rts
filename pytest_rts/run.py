@@ -1,7 +1,7 @@
 """This module contains code for running pytest with NormalPhasePlugin"""
 import sys
 import pytest
-from tests_selector.pytest.normal_phase_plugin import NormalPhasePlugin
+from pytest_rts.pytest.normal_phase_plugin import NormalPhasePlugin
 
 
 def main():

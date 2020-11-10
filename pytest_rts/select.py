@@ -4,7 +4,7 @@ import os
 import subprocess
 import sys
 from typing import Dict, List, NamedTuple, Set
-from tests_selector.utils.common import (
+from pytest_rts.utils.common import (
     file_diff_dict_between_commits,
     file_diff_dict_current,
     read_newly_added_tests,
@@ -13,12 +13,12 @@ from tests_selector.utils.common import (
     tests_from_changed_srcfiles,
     tests_from_changed_testfiles,
 )
-from tests_selector.utils.git import (
+from pytest_rts.utils.git import (
     changed_files_current,
     changed_files_between_commits,
     get_current_head_hash,
 )
-from tests_selector.utils.db import (
+from pytest_rts.utils.db import (
     DatabaseHelper,
     DB_FILE_NAME,
 )
@@ -169,7 +169,7 @@ def main():
     logging.basicConfig(format="%(message)s", level=logging.INFO)
 
     if not os.path.isfile(DB_FILE_NAME):
-        logger.info("Run tests_selector_init first")
+        logger.info("Run pytest_rts_init first")
         sys.exit()
 
     db_helper = DatabaseHelper()
@@ -186,7 +186,7 @@ def main():
         logger.info(
             "Running WORKING DIRECTORY test set and exiting without updating..."
         )
-        subprocess.run(["tests_selector_run"] + list(workdir_data.test_set), check=True)
+        subprocess.run(["pytest_rts_run"] + list(workdir_data.test_set), check=True)
         sys.exit()
 
     logger.info("No WORKING DIRECTORY tests to run, checking COMMITTED changes...")
