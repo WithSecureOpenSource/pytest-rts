@@ -3,9 +3,9 @@ from timeit import default_timer as timer
 import coverage
 import pytest
 from _pytest.python import Function
-from tests_selector.utils.db import DatabaseHelper
-from tests_selector.pytest.fake_item import FakeItem
-from tests_selector.utils.common import (
+from pytest_rts.utils.db import DatabaseHelper
+from pytest_rts.pytest.fake_item import FakeItem
+from pytest_rts.utils.common import (
     calculate_func_lines,
     save_mapping_data,
     save_testfile_and_func_data,

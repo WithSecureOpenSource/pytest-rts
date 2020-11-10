@@ -1,6 +1,6 @@
 """This module contains code for running pytest with InitPhasePlugin"""
 import pytest
-from tests_selector.pytest.init_phase_plugin import InitPhasePlugin
+from pytest_rts.pytest.init_phase_plugin import InitPhasePlugin
 
 
 def main():

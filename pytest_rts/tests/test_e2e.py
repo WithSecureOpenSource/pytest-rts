@@ -10,13 +10,13 @@ def test_full_integration(helper):
     # Get changed src file id
     src_file_id = helper.get_mapping_id_from_filename("src/car.py", is_srcfile=True)
 
-    # Get working directory test_set like in tests_selector script
+    # Get working directory test_set like in pytest_rts script
     workdir_test_set = helper.get_tests_from_tool_current()
 
     # New method addition = no new tests should be found
     assert not workdir_test_set
 
-    # Run tests_selector, db shouldn't update
+    # Run pytest_rts, db shouldn't update
     old_srcfile_lines = helper.get_mapping_lines_for_srcfile(src_file_id)
     helper.run_tool()
     new_srcfile_lines = helper.get_mapping_lines_for_srcfile(src_file_id)
@@ -26,7 +26,7 @@ def test_full_integration(helper):
     # Commit changes
     helper.commit_change("src/car.py", "new_method_src")
 
-    # Get committed changes test_set like in tests_selector script
+    # Get committed changes test_set like in pytest_rts script
     commit_test_set = helper.get_tests_from_tool_committed()
 
     # New method addition = no new tests should be found
@@ -41,13 +41,13 @@ def test_full_integration(helper):
     # Add a new test method
     helper.change_file("changes/test_car/add_test_passengers.txt", "tests/test_car.py")
 
-    # Get working directory diffs and test_set like in tests_selector script
+    # Get working directory diffs and test_set like in pytest_rts script
     workdir_test_set2 = helper.get_tests_from_tool_current()
 
     # Changes test_set should be empty
     assert not workdir_test_set2
 
-    # Running test_selector should not add new test to database
+    # Running pytest_rts should not add new test to database
     helper.run_tool()
     assert not helper.new_test_exists_in_mapping_db(
         "tests/test_car.py::test_passengers"
@@ -56,7 +56,7 @@ def test_full_integration(helper):
     # Commit changes
     helper.commit_change("tests/test_car.py", "new_test_method")
 
-    # Get committed changes test_set like in tests_selector script
+    # Get committed changes test_set like in pytest_rts script
     commit_test_set2 = helper.get_tests_from_tool_committed()
 
     # Test_set should now include all tests from changes between this commit and previous
@@ -67,7 +67,7 @@ def test_full_integration(helper):
     new_tests = helper.get_newly_added_tests_from_tool()
     assert new_tests == {"tests/test_car.py::test_passengers"}
 
-    # Running tests_selector should now update database = new test function should be found in db
+    # Running pytest_rts should now update database = new test function should be found in db
     helper.run_tool()
     assert helper.new_test_exists_in_mapping_db("tests/test_car.py::test_passengers")
 
@@ -85,7 +85,7 @@ def test_db_updating_only_once(helper):
     # Change src file
     helper.change_file(change, filename)
 
-    # Changes in working directory, run tests_selector
+    # Changes in working directory, run pytest_rts
     # Shouldn't update db
     helper.run_tool()
     new_lines = helper.get_mapping_lines_for_srcfile(src_file_id)
@@ -94,7 +94,7 @@ def test_db_updating_only_once(helper):
     # Commit changes
     helper.commit_change(filename, "commit1")
 
-    # Committed changes, run tests_selector
+    # Committed changes, run pytest_rts
     # Should update db
     helper.run_tool()
     new_lines = helper.get_mapping_lines_for_srcfile(src_file_id)

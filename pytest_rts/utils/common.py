@@ -2,7 +2,7 @@
 import ast
 import os
 import subprocess
-from tests_selector.utils.git import (
+from pytest_rts.utils.git import (
     file_diff_data_between_commits,
     file_diff_data_current,
     get_test_lines_and_update_lines,
@@ -95,7 +95,7 @@ def run_tests_and_update_db(test_set, update_data, db_helper):
         db_helper.update_db_from_src_mapping(line_map_src[srcfile_id], srcfile_id)
 
     if test_set:
-        subprocess.run(["tests_selector_run_and_update"] + list(test_set), check=True)
+        subprocess.run(["pytest_rts_run_and_update"] + list(test_set), check=True)
 
 
 def split_changes(changed_files, db_helper):
@@ -119,7 +119,7 @@ def split_changes(changed_files, db_helper):
 
 def read_newly_added_tests(db_helper, project_folder="."):
     """Run collect plugin and read collected new tests from database"""
-    subprocess.run(["tests_selector_collect", project_folder], check=True)
+    subprocess.run(["pytest_rts_collect", project_folder], check=True)
     return db_helper.read_newly_added_tests()
 
 
@@ -209,7 +209,7 @@ def save_mapping_data(test_function_id, cov_data, testfiles, db_helper):
     for filename in cov_data.measured_files():
         src_file = os.path.relpath(filename, os.getcwd())
         conditions = [
-            "tests-selector" in filename,
+            "pytest-rts" in filename,
             ("/tmp/" in filename) and ("/tmp/" not in os.getcwd()),
             "/.venv/" in filename,
             src_file in testfiles,

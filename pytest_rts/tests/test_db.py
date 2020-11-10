@@ -1,6 +1,6 @@
 import sqlite3
 import pytest
-from tests_selector.utils.db import DatabaseHelper, DB_FILE_NAME
+from pytest_rts.utils.db import DatabaseHelper, DB_FILE_NAME
 
 
 def test_delete_ran_lines():

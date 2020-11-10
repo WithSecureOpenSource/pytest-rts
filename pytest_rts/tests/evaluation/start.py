@@ -2,21 +2,21 @@
 import logging
 import os
 import subprocess
-from tests_selector.utils.git import (
+from pytest_rts.utils.git import (
     changed_files_between_commits,
     file_diff_data_between_commits,
     get_current_head_hash,
     get_test_lines_and_update_lines,
 )
-from tests_selector.utils.db import (
+from pytest_rts.utils.db import (
     DatabaseHelper,
     DB_FILE_NAME,
 )
-from tests_selector.tests.evaluation.results_db import (
+from pytest_rts.tests.evaluation.results_db import (
     ResultDatabase,
     RESULTS_DB_FILE_NAME,
 )
-from tests_selector.tests.evaluation.eval_helpers import (
+from pytest_rts.tests.evaluation.eval_helpers import (
     capture_all_exit_code,
     capture_specific_exit_code,
     delete_random_line,
@@ -24,7 +24,7 @@ from tests_selector.tests.evaluation.eval_helpers import (
     print_remove_test_output,
     select_random_file,
 )
-from tests_selector.tests.testhelper import (
+from pytest_rts.tests.testhelper import (
     TestHelper,
 )
 
@@ -33,7 +33,7 @@ def random_remove_test(iterations, deletes_per_iteration, max_wait, logger):
     """Delete random lines and evaluate tests sets and pytest exitcodes"""
     if not os.path.isfile(DB_FILE_NAME):
         logger.info("Running mapping database initialization...")
-        subprocess.run(["tests_selector_init"], check=False)
+        subprocess.run(["pytest_rts_init"], check=False)
 
     results_db = ResultDatabase()
     results_db.init_conn()

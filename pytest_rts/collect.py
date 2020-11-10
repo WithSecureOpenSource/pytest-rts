@@ -2,8 +2,8 @@
 import os
 import sys
 import pytest
-from tests_selector.pytest.collect_plugin import CollectPlugin
-from tests_selector.utils.db import DatabaseHelper
+from pytest_rts.pytest.collect_plugin import CollectPlugin
+from pytest_rts.utils.db import DatabaseHelper
 
 PROJECT_FOLDER = sys.argv[1]
 

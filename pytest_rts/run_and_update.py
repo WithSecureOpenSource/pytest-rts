@@ -1,7 +1,7 @@
 """This module contains code for running pytest with UpdatePhasePlugin"""
 import sys
 import pytest
-from tests_selector.pytest.update_phase_plugin import UpdatePhasePlugin
+from pytest_rts.pytest.update_phase_plugin import UpdatePhasePlugin
 
 
 def main():

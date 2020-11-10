@@ -2,7 +2,7 @@
 import logging
 import random
 import subprocess
-from tests_selector.utils.git import (
+from pytest_rts.utils.git import (
     get_git_repo,
 )
 
@@ -42,7 +42,7 @@ def capture_specific_exit_code(tests, max_wait):
     """Run pytest with a given test set and capture exit code"""
     try:
         specific_exit_code = subprocess.run(
-            ["tests_selector_specific_without_remap"] + tests,
+            ["pytest_rts_specific_without_remap"] + tests,
             timeout=max_wait,
             stderr=subprocess.DEVNULL,
             stdout=subprocess.DEVNULL,
@@ -58,7 +58,7 @@ def capture_all_exit_code(max_wait):
     """Run entire pytest test suite and capture exit code"""
     try:
         all_exit_code = subprocess.run(
-            ["tests_selector_all_without_remap"],
+            ["pytest_rts_all_without_remap"],
             timeout=max_wait,
             stderr=subprocess.DEVNULL,
             stdout=subprocess.DEVNULL,

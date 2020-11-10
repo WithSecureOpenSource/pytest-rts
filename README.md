@@ -1,6 +1,4 @@
-<p align="center">
-  <img src="https://github.com/F-Secure/pytest-rts/raw/master/pytest-rts-logo.png" width="120px" height="120px"/>
-</p>
+<img src="https://github.com/F-Secure/pytest-rts/raw/master/docs/pytest-rts-logo.png" width="120px" height="120px"/>
 
 # Change based tests selection for Python
 
@@ -15,7 +13,7 @@
 1. Add your public key to github profile
 2. Add `git+ssh://git@github.com/F-Secure/pytest-rts.git#egg=pytest-rts` as a dependency to `requirements.txt`
 3. Install dependencies
-4. Run initialization `tests_selector_init`
+4. Run initialization `pytest_rts_init`
 
 ### Usage from source code
 
@@ -25,19 +23,19 @@
 2. In project directory run `make install` - that will:
    - create virtual environment
    - download all the dependencies
-   - install `tests_selector` as a tool
+   - install `pytest_rts` as a tool
 3. Switch to directory with target project
-4. Install all the dependencies needed for testing (should be installed into the same tests_selector virtual environment)
-5. Execute `tests_selector_init`
+4. Install all the dependencies needed for testing (should be installed into the same pytest_rts virtual environment)
+5. Execute `pytest_rts_init`
 
 #### Running tests related to the changes
 
 1. switch to directory with target project
-2. execute `tests_selector`
+2. execute `pytest_rts`
 
 #### Running evaluation code
 
-1. execute `tests_selector_eval` in target project directory
+1. execute `pytest_rts_eval` in target project directory
 
 ## <a name="dev"></a> Development
 

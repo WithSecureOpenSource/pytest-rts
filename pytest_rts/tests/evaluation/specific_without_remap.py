@@ -1,7 +1,7 @@
 """This module contains code to capture pytest exitcode for the given test set"""
 import sys
 import pytest
-from tests_selector.pytest.capture_specific_plugin import CaptureSpecificPlugin
+from pytest_rts.pytest.capture_specific_plugin import CaptureSpecificPlugin
 
 
 def main():

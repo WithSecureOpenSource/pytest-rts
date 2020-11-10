@@ -1,6 +1,6 @@
 """This module contains code for running a specific test set without mapping database updating"""
-from tests_selector.utils.db import DatabaseHelper
-from tests_selector.pytest.fake_item import FakeItem
+from pytest_rts.utils.db import DatabaseHelper
+from pytest_rts.pytest.fake_item import FakeItem
 
 
 class NormalPhasePlugin:
