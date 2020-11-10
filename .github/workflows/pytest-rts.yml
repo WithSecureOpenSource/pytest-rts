@@ -11,7 +11,7 @@ jobs:
         uses: actions/checkout@v2
       - name: Check commit message
         uses: adityaa30/check-commit@master
-  
+
   test:
     name: Lint and test
     runs-on: ubuntu-latest
@@ -30,3 +30,46 @@ jobs:
         run: |
           pip install tox
           tox -e py -- --exitfirst
+
+  evaluation:
+    needs: test
+    name: Run evaluation
+    runs-on: ubuntu-latest
+    steps:
+      - name: Clone target repo
+        run: |
+          cd ../../.
+          git clone https://github.com/willmcgugan/rich.git
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          path: "./tool"
+
+      - name: Setup Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.8
+
+      - name: Install tool
+        run: |
+          cd tool/
+          pip install -e .[dev]
+      - name: Install target project
+        run: |
+          cd ../../rich/
+          pip install . -r requirements-dev.txt
+      - name: Run evaluation
+        run: |
+          cd ../../rich/
+          git config user.name evaluation
+          git config user.email evaluation@actions
+          pytest_rts_eval 5 1 20
+          mkdir evaluation_results
+          mv random_remove_info.csv evaluation_results/random_remove_info.csv
+          mv random_remove_data.csv evaluation_results/random_remove_data.csv
+      - name: "Upload results"
+        uses: actions/upload-artifact@v2
+        with:
+          name: Results
+          path: |
+            /home/runner/work/rich/evaluation_results/

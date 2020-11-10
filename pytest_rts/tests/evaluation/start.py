@@ -1,7 +1,10 @@
 """This module contains evaluation code for the tool"""
+import base64
 import logging
 import os
 import subprocess
+import sys
+from typing import NamedTuple
 from pytest_rts.utils.git import (
     changed_files_between_commits,
     file_diff_data_between_commits,
@@ -12,10 +15,7 @@ from pytest_rts.utils.db import (
     DatabaseHelper,
     DB_FILE_NAME,
 )
-from pytest_rts.tests.evaluation.results_db import (
-    ResultDatabase,
-    RESULTS_DB_FILE_NAME,
-)
+
 from pytest_rts.tests.evaluation.eval_helpers import (
     capture_all_exit_code,
     capture_specific_exit_code,
@@ -23,10 +23,29 @@ from pytest_rts.tests.evaluation.eval_helpers import (
     full_diff_between_commits,
     print_remove_test_output,
     select_random_file,
+    write_results_to_csv,
+    write_results_info_to_csv,
 )
 from pytest_rts.tests.testhelper import (
     TestHelper,
 )
+
+
+class RandomRemoveData(NamedTuple):
+    line_test_suite_size: int
+    file_test_suite_size: int
+    exitcode_line: int
+    exitcode_file: int
+    exitcode_all: int
+    full_diff: str
+
+
+class RandomRemoveInfo(NamedTuple):
+    test_suite_size: int
+    iterations: int
+    deletes_per_iteration: int
+    commit_hash: int
+    mapping_db_size: int
 
 
 def random_remove_test(iterations, deletes_per_iteration, max_wait, logger):
@@ -35,22 +54,24 @@ def random_remove_test(iterations, deletes_per_iteration, max_wait, logger):
         logger.info("Running mapping database initialization...")
         subprocess.run(["pytest_rts_init"], check=False)
 
-    results_db = ResultDatabase()
-    results_db.init_conn()
-    results_db.init_results_db()
-
     mapping_db = DatabaseHelper()
     mapping_db.init_conn()
 
     test_suite_size = mapping_db.get_test_suite_size()
-    project_name = os.getcwd()
+
     init_hash = mapping_db.get_last_update_hash()
     db_size = os.path.getsize("./mapping.db")
-    project_id = results_db.store_results_project(
-        project_name, init_hash, test_suite_size, db_size
-    )
 
     _, src_files = mapping_db.get_testfiles_and_srcfiles()
+
+    info_data = RandomRemoveInfo(
+        test_suite_size=test_suite_size,
+        iterations=iterations,
+        deletes_per_iteration=deletes_per_iteration,
+        commit_hash=init_hash,
+        mapping_db_size=db_size,
+    )
+    write_results_info_to_csv(info_data)
 
     testhelper = TestHelper()
 
@@ -100,20 +121,17 @@ def random_remove_test(iterations, deletes_per_iteration, max_wait, logger):
         testhelper.checkout_branch("master")
         testhelper.delete_branch("new-branch")
 
-        # Store and print data
-        results_db.store_results_data(
-            project_id,
-            deletes_per_iteration,
-            exitcode_line,
-            exitcode_file,
-            exitcode_all,
-            len(tests_line_level),
-            len(tests_file_level),
-            full_diff,
+        result_data = RandomRemoveData(
+            line_test_suite_size=len(tests_line_level),
+            file_test_suite_size=len(tests_file_level),
+            exitcode_line=exitcode_line,
+            exitcode_file=exitcode_file,
+            exitcode_all=exitcode_all,
+            full_diff=base64.b64encode(full_diff.encode()).decode(),
         )
+
         print_remove_test_output(
             i,
-            project_name,
             init_hash,
             deletes_per_iteration,
             test_suite_size,
@@ -122,9 +140,10 @@ def random_remove_test(iterations, deletes_per_iteration, max_wait, logger):
             exitcode_line,
             exitcode_file,
             exitcode_all,
-            RESULTS_DB_FILE_NAME,
             logger,
         )
+
+        write_results_to_csv(result_data)
 
 
 def main():
@@ -132,9 +151,11 @@ def main():
     logger = logging.getLogger()
     logging.basicConfig(format="%(message)s", level=logging.INFO)
     logger.info("RANDOM LINE REMOVE TESTING")
-    iterations = int(input("How many iterations? "))
-    deletes_per_iteration = int(input("How many line removals per iteration? "))
-    max_wait = int(input("Max wait time for test set running (in seconds)? "))
+
+    iterations = int(sys.argv[1])
+    deletes_per_iteration = int(sys.argv[2])
+    max_wait = int(sys.argv[3])
+
     random_remove_test(iterations, deletes_per_iteration, max_wait, logger)
 
 

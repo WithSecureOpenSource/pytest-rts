@@ -1,7 +1,9 @@
 """Helper functions for evaluation code"""
 import logging
+import os
 import random
 import subprocess
+import pandas as pd
 from pytest_rts.utils.git import (
     get_git_repo,
 )
@@ -72,7 +74,6 @@ def capture_all_exit_code(max_wait):
 
 def print_remove_test_output(
     i,
-    project_name,
     commithash,
     deletes,
     full_test_suite_size,
@@ -81,13 +82,11 @@ def print_remove_test_output(
     exitcode_line,
     exitcode_file,
     exitcode_all,
-    db_name,
     logger,
 ):
     """Print random remove test statistics"""
     logger.info("============")
     logger.info(f"iteration: {i+1}")
-    logger.info(f"project name: {project_name}")
     logger.info(f"commit hash: {commithash}")
     logger.info(f"removed {deletes} random src file lines")
     logger.info(f"size of full test suite: {full_test_suite_size}")
@@ -96,5 +95,19 @@ def print_remove_test_output(
     logger.info(
         f"exitcodes: line-level: {exitcode_line}, file-level: {exitcode_file}, all: {exitcode_all}"
     )
-    logger.info(f"STORING TO DATABASE: {db_name}")
+    logger.info("saving to csv file: random_remove_data.csv")
     logger.info("============")
+
+
+def write_results_to_csv(result_data):
+    df = pd.DataFrame([result_data])
+    filename = "random_remove_data.csv"
+    write_header = not os.path.exists(filename)
+    df.to_csv(filename, mode="a", header=write_header, index=False)
+
+
+def write_results_info_to_csv(info_data):
+    filename = "random_remove_info.csv"
+    if not os.path.exists(filename):
+        df = pd.DataFrame([info_data])
+        df.to_csv(filename, index=False)
