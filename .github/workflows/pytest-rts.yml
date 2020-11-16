@@ -3,73 +3,141 @@ name: pytest-rts
 on: [push]
 
 jobs:
-  check:
-    name: Check commit message
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v2
-      - name: Check commit message
-        uses: adityaa30/check-commit@master
-
-  test:
-    name: Lint and test
-    runs-on: ubuntu-latest
-    strategy:
-      max-parallel: 4
-      matrix:
-        python: [3.6, 3.7, 3.8, 3.9]
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v2
-      - name: Setup Python
-        uses: actions/setup-python@v2
-        with:
-          python-version: ${{ matrix.python }}
-      - name: Lint and test
-        run: |
-          pip install tox
-          tox -e py -- --exitfirst
-
   evaluation:
-    needs: test
-    name: Run evaluation
     runs-on: ubuntu-latest
     steps:
-      - name: Clone target repo
-        run: |
-          cd ../../.
-          git clone https://github.com/willmcgugan/rich.git
-      - name: Checkout
-        uses: actions/checkout@v2
-        with:
-          path: "./tool"
-
       - name: Setup Python
         uses: actions/setup-python@v2
         with:
           python-version: 3.8
 
-      - name: Install tool
+      - name: Setup evaluation
         run: |
-          cd tool/
-          pip install -e .[dev]
-      - name: Install target project
-        run: |
-          cd ../../rich/
-          pip install . -r requirements-dev.txt
-      - name: Run evaluation
-        run: |
-          cd ../../rich/
-          git config user.name evaluation
-          git config user.email evaluation@actions
-          pytest_rts_eval 5 1 20
+          pip install -e git+https://github.com/F-Secure/pytest-rts.git@$GITHUB_SHA#egg=pytest-rts[dev]
+          git config --global user.name evaluation
+          git config --global user.email evaluation@actions
           mkdir evaluation_results
-          mv random_remove_info.csv evaluation_results/random_remove_info.csv
-          mv random_remove_data.csv evaluation_results/random_remove_data.csv
-      - name: "Upload results"
-        uses: actions/upload-artifact@v2
-        with:
-          name: Results
-          path: |
-            /home/runner/work/rich/evaluation_results/
+
+      - name: Evaluate rich
+        run: |
+          cd ../../.
+          git clone https://github.com/willmcgugan/rich.git
+          cd rich/
+          pip install . -r requirements-dev.txt
+          pytest_rts_eval
+          mv *.csv ../pytest-rts/pytest-rts/evaluation_results/
+          cd ..
+          rm -rf rich/
+
+      - name: Evaluate dateutil
+        run: |
+          cd ../../.
+          git clone https://github.com/dateutil/dateutil.git
+          cd dateutil/
+          pip install -e . -r requirements-dev.txt
+          pytest_rts_eval
+          mv *.csv ../pytest-rts/pytest-rts/evaluation_results/
+          cd ..
+          rm -rf dateutil/
+
+      - name: Evaluate wheel
+        run: |
+          cd ../../.
+          git clone https://github.com/pypa/wheel.git
+          cd wheel/
+          pip install -e .[test]
+          pytest_rts_eval
+          mv *.csv ../pytest-rts/pytest-rts/evaluation_results/
+          cd ..
+          rm -rf wheel/
+
+      - name: Evaluate python-rsa
+        run: |
+          cd ../../.
+          git clone https://github.com/sybrenstuvel/python-rsa.git
+          cd python-rsa/
+          pip install pipenv
+          pipenv install --dev --deploy
+          rm tox.ini
+          pytest_rts_eval
+          mv *.csv ../pytest-rts/pytest-rts/evaluation_results/
+          cd ..
+          rm -rf python-rsa/
+
+      - name: checking
+        run: |
+          cd evaluation_results/
+          ls
+
+# pip install -e git+ssh://git@github.com/F-Secure/pytest-rts.git@GITHUB_SHA#egg=pytest-rts[dev]
+# jobs:
+#   check:
+#     name: Check commit message
+#     runs-on: ubuntu-latest
+#     steps:
+#       - name: Checkout
+#         uses: actions/checkout@v2
+#       - name: Check commit message
+#         uses: adityaa30/check-commit@master
+
+#   test:
+#     name: Lint and test
+#     runs-on: ubuntu-latest
+#     strategy:
+#       max-parallel: 4
+#       matrix:
+#         python: [3.6, 3.7, 3.8, 3.9]
+#     steps:
+#       - name: Checkout
+#         uses: actions/checkout@v2
+#       - name: Setup Python
+#         uses: actions/setup-python@v2
+#         with:
+#           python-version: ${{ matrix.python }}
+#       - name: Lint and test
+#         run: |
+#           pip install tox
+#           tox -e py -- --exitfirst
+
+#   evaluation:
+#     needs: test
+#     name: Run evaluation
+#     runs-on: ubuntu-latest
+#     steps:
+#       - name: Clone target repo
+#         run: |
+#           cd ../../.
+#           git clone https://github.com/willmcgugan/rich.git
+#       - name: Checkout
+#         uses: actions/checkout@v2
+#         with:
+#           path: "./tool"
+
+#       - name: Setup Python
+#         uses: actions/setup-python@v2
+#         with:
+#           python-version: 3.8
+
+#       - name: Install tool
+#         run: |
+#           cd tool/
+#           pip install -e .[dev]
+#       - name: Install target project
+#         run: |
+#           cd ../../rich/
+#           pip install . -r requirements-dev.txt
+#       - name: Run evaluation
+#         run: |
+#           cd ../../rich/
+#           git config user.name evaluation
+#           git config user.email evaluation@actions
+#           pytest_rts_eval 5 1 20
+#           mkdir evaluation_results
+#           mv random_remove_info.csv evaluation_results/random_remove_info.csv
+#           mv random_remove_data.csv evaluation_results/random_remove_data.csv
+#       - name: "Upload results"
+#         uses: actions/upload-artifact@v2
+#         with:
+#           name: Results
+#           path: |
+#             /home/runner/work/rich/evaluation_results/

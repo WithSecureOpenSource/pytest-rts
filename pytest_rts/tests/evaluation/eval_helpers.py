@@ -1,9 +1,9 @@
 """Helper functions for evaluation code"""
+import csv
 import logging
 import os
 import random
 import subprocess
-import pandas as pd
 from pytest_rts.utils.git import (
     get_git_repo,
 )
@@ -74,7 +74,6 @@ def capture_all_exit_code(max_wait):
 
 def print_remove_test_output(
     i,
-    commithash,
     deletes,
     full_test_suite_size,
     line_test_suite_size,
@@ -87,7 +86,6 @@ def print_remove_test_output(
     """Print random remove test statistics"""
     logger.info("============")
     logger.info(f"iteration: {i+1}")
-    logger.info(f"commit hash: {commithash}")
     logger.info(f"removed {deletes} random src file lines")
     logger.info(f"size of full test suite: {full_test_suite_size}")
     logger.info(f"size of line level test suite: {line_test_suite_size}")
@@ -95,19 +93,24 @@ def print_remove_test_output(
     logger.info(
         f"exitcodes: line-level: {exitcode_line}, file-level: {exitcode_file}, all: {exitcode_all}"
     )
-    logger.info("saving to csv file: random_remove_data.csv")
     logger.info("============")
 
 
-def write_results_to_csv(result_data):
-    df = pd.DataFrame([result_data])
-    filename = "random_remove_data.csv"
-    write_header = not os.path.exists(filename)
-    df.to_csv(filename, mode="a", header=write_header, index=False)
+def write_results_to_csv(result_data, start_time):
+    project_name = os.path.basename(os.getcwd())
+    filename = "rr_data-" + project_name + "-" + start_time + ".csv"
+    with open(filename, "w") as csvfile:
+        writer = csv.DictWriter(csvfile, fieldnames=list(result_data[0].keys()))
+        writer.writeheader()
+        for row in result_data:
+            writer.writerow(row)
 
 
-def write_results_info_to_csv(info_data):
-    filename = "random_remove_info.csv"
-    if not os.path.exists(filename):
-        df = pd.DataFrame([info_data])
-        df.to_csv(filename, index=False)
+def write_results_info_to_csv(info_data, start_time):
+    project_name = os.path.basename(os.getcwd())
+    filename = "rr_info-" + project_name + "-" + start_time + ".csv"
+
+    with open(filename, "w") as csvfile:
+        writer = csv.DictWriter(csvfile, fieldnames=list(info_data.keys()))
+        writer.writeheader()
+        writer.writerow(info_data)

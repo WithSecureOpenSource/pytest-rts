@@ -1,10 +1,11 @@
 """This module contains evaluation code for the tool"""
 import base64
+import configparser
+import datetime
 import logging
 import os
 import subprocess
 import sys
-from typing import NamedTuple
 from pytest_rts.utils.git import (
     changed_files_between_commits,
     file_diff_data_between_commits,
@@ -31,23 +32,6 @@ from pytest_rts.tests.testhelper import (
 )
 
 
-class RandomRemoveData(NamedTuple):
-    line_test_suite_size: int
-    file_test_suite_size: int
-    exitcode_line: int
-    exitcode_file: int
-    exitcode_all: int
-    full_diff: str
-
-
-class RandomRemoveInfo(NamedTuple):
-    test_suite_size: int
-    iterations: int
-    deletes_per_iteration: int
-    commit_hash: int
-    mapping_db_size: int
-
-
 def random_remove_test(iterations, deletes_per_iteration, max_wait, logger):
     """Delete random lines and evaluate tests sets and pytest exitcodes"""
     if not os.path.isfile(DB_FILE_NAME):
@@ -64,16 +48,19 @@ def random_remove_test(iterations, deletes_per_iteration, max_wait, logger):
 
     _, src_files = mapping_db.get_testfiles_and_srcfiles()
 
-    info_data = RandomRemoveInfo(
+    info_data = dict(
         test_suite_size=test_suite_size,
         iterations=iterations,
         deletes_per_iteration=deletes_per_iteration,
         commit_hash=init_hash,
         mapping_db_size=db_size,
     )
-    write_results_info_to_csv(info_data)
+
+    start_time = str(datetime.datetime.now()).replace(" ", "_")
+    write_results_info_to_csv(info_data, start_time)
 
     testhelper = TestHelper()
+    results = []
 
     for i in range(iterations):
 
@@ -121,7 +108,7 @@ def random_remove_test(iterations, deletes_per_iteration, max_wait, logger):
         testhelper.checkout_branch("master")
         testhelper.delete_branch("new-branch")
 
-        result_data = RandomRemoveData(
+        result_data = dict(
             line_test_suite_size=len(tests_line_level),
             file_test_suite_size=len(tests_file_level),
             exitcode_line=exitcode_line,
@@ -132,7 +119,6 @@ def random_remove_test(iterations, deletes_per_iteration, max_wait, logger):
 
         print_remove_test_output(
             i,
-            init_hash,
             deletes_per_iteration,
             test_suite_size,
             len(tests_line_level),
@@ -143,18 +129,23 @@ def random_remove_test(iterations, deletes_per_iteration, max_wait, logger):
             logger,
         )
 
-        write_results_to_csv(result_data)
+        results.append(result_data)
+
+    write_results_to_csv(results, start_time)
 
 
 def main():
     """Evaluation script entrypoint"""
+    config = configparser.ConfigParser()
+    config.read(os.path.join(os.path.dirname(__file__), "eval.ini"))
+
     logger = logging.getLogger()
     logging.basicConfig(format="%(message)s", level=logging.INFO)
     logger.info("RANDOM LINE REMOVE TESTING")
 
-    iterations = int(sys.argv[1])
-    deletes_per_iteration = int(sys.argv[2])
-    max_wait = int(sys.argv[3])
+    iterations = int(config["rr_settings"]["iterations"])
+    deletes_per_iteration = int(config["rr_settings"]["deletes_per_iteration"])
+    max_wait = int(config["rr_settings"]["max_wait"])
 
     random_remove_test(iterations, deletes_per_iteration, max_wait, logger)
 

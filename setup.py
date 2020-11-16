@@ -10,7 +10,7 @@ GIT_VERSION = (
     subprocess.check_output("git describe --always".split()).strip().decode("ascii")
 )
 TESTS_REQUIRE = ["pytest-cov", "pytest-socket", "tox"]
-DEV_REQUIRE = ["black", "mypy", "pylint", "safety", "pandas"]
+DEV_REQUIRE = ["black", "mypy", "pylint", "safety"]
 
 # pylint: disable=line-too-long
 setup(
