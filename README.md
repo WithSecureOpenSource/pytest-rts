@@ -1,4 +1,4 @@
-<img src="https://github.com/F-Secure/pytest-rts/raw/master/docs/pytest-rts-logo.png" width="120px" height="120px"/>
+<img src="https://github.com/F-Secure/pytest-rts/raw/master/docs/imgs/pytest-rts-logo.png" width="120px" height="120px"/>
 
 # Change based tests selection for Python
 
@@ -39,7 +39,7 @@
 
 ## <a name="dev"></a> Development
 
-See [DEVELOPER.md](developer) for more info
+See [DEVELOPER.md][developer] for more info
 
 ## <a name="contrib"></a> Contributing
 
