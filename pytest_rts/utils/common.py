@@ -213,7 +213,6 @@ def save_mapping_data(test_function_id, cov_data, testfiles, db_helper):
             ("/tmp/" in filename) and ("/tmp/" not in os.getcwd()),
             "/.venv/" in filename,
             src_file in testfiles,
-            src_file.endswith("__init__.py"),
             src_file.endswith("conftest.py"),
             not src_file.endswith(".py"),
         ]
