@@ -168,3 +168,8 @@ def test_squashing_commits(helper):
         "tests/test_shop.py::test_normal_shop_purchase",
         "tests/test_shop.py::test_normal_shop_purchase2",
     }
+
+
+def test_init_code_tracked(helper):
+    helper.change_file("changes/init/change_function_one.txt", "src/__init__.py")
+    assert helper.get_tests_from_tool_current() == {"tests/test_init.py::test_one"}
