@@ -173,3 +173,13 @@ def test_squashing_commits(helper):
 def test_init_code_tracked(helper):
     helper.change_file("changes/init/change_function_one.txt", "src/__init__.py")
     assert helper.get_tests_from_tool_current() == {"tests/test_init.py::test_one"}
+
+
+def test_decorated_tracked(helper):
+    """Test that changes in the decorator switch on the test using decorated
+    function.
+    """
+    helper.change_file("changes/decorated/change_decorator.txt", "src/decorators.py")
+    assert helper.get_tests_from_tool_current() == {
+        "tests/test_decorated.py::test_decorated"
+    }
