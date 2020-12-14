@@ -14,9 +14,6 @@ from pytest_rts.utils.git import get_current_head_hash
 def pytest_addoption(parser):
     """Register pytest flags"""
     parser.addoption("--rts", action="store_true", default=False, help="run rts")
-    parser.addoption(
-        "--rts-init", action="store_true", default=False, help="run rts init"
-    )
 
 
 def pytest_configure(config):
@@ -24,13 +21,11 @@ def pytest_configure(config):
     logger = logging.getLogger()
     logging.basicConfig(format="%(message)s", level=logging.INFO)
 
-    if config.option.rts_init:
-        config.pluginmanager.register(InitPhasePlugin())
-
-    elif config.option.rts:
-
+    if config.option.rts:
         if not os.path.isfile(DB_FILE_NAME):
-            pytest.exit("Run mapping database initialization first")
+            logger.info("No mapping database detected, starting initialization...")
+            config.pluginmanager.register(InitPhasePlugin())
+            return
 
         db_helper = DatabaseHelper()
         db_helper.init_conn()
