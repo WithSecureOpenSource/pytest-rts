@@ -3,6 +3,7 @@ import os
 import subprocess
 import shutil
 import pytest
+from pytest_rts.utils.db import DB_FILE_NAME
 from testhelper import TestHelper
 
 
@@ -23,7 +24,7 @@ def temp_project_repo(tmpdir_factory):
     subprocess.run(["git", "config", "user.email", "pytest@example.com"], check=True)
     subprocess.run(["git", "add", "."], check=True)
     subprocess.run(["git", "commit", "-m", "1"], check=True)
-    subprocess.run(["pytest_rts_init"], check=True)
+    subprocess.run(["pytest", "--rts"], check=True)
     return temp_folder
 
 
@@ -34,7 +35,8 @@ def teardown_method():
     subprocess.run(["git", "restore", "."], check=True)
     subprocess.run(["git", "checkout", "master"], check=True)
     subprocess.run(["git", "branch", "-D", "new-branch"], check=False)
-    subprocess.run(["pytest_rts_init"], check=True)
+    os.remove(DB_FILE_NAME)
+    subprocess.run(["pytest", "--rts"], check=True)
 
 
 @pytest.fixture

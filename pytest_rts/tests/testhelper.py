@@ -89,7 +89,7 @@ class TestHelper:
         )
 
     def run_tool(self):
-        subprocess.run(["pytest_rts"], check=True)
+        subprocess.run(["pytest", "--rts"], check=True)
 
     def squash_commits(self, n, new_message):
         subprocess.run(["git", "reset", "--soft", f"HEAD~{n}"], check=True)

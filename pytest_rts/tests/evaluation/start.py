@@ -33,7 +33,7 @@ def random_remove_test(iterations, deletes_per_iteration, max_wait, logger):
     """Delete random lines and evaluate tests sets and pytest exitcodes"""
     if not os.path.isfile(DB_FILE_NAME):
         logger.info("Running mapping database initialization...")
-        subprocess.run(["pytest_rts_init"], check=False)
+        subprocess.run(["pytest", "--rts"], check=False)
 
     results_db = ResultDatabase()
     results_db.init_conn()
