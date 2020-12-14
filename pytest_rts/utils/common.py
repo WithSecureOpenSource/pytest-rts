@@ -78,26 +78,6 @@ def tests_from_changed_srcfiles(diff_dict, files, db_helper):
     return test_set, changed_lines_map, new_line_map, files_to_warn
 
 
-def run_tests_and_update_db(test_set, update_data, db_helper):
-    """Remove old data from database, shift existing lines if needed and run test set"""
-    line_map_test = update_data.new_line_map_test
-    changed_lines_src = update_data.changed_lines_src
-    line_map_src = update_data.new_line_map_src
-
-    for testfile_id in line_map_test.keys():
-        # shift test functions
-        db_helper.update_db_from_test_mapping(line_map_test[testfile_id], testfile_id)
-
-    for srcfile_id in changed_lines_src.keys():
-        # delete ran lines of src file mapping to be remapped by coverage collection
-        # shift affected lines by correct amount
-        db_helper.delete_ran_lines(changed_lines_src[srcfile_id], srcfile_id)
-        db_helper.update_db_from_src_mapping(line_map_src[srcfile_id], srcfile_id)
-
-    if test_set:
-        subprocess.run(["pytest_rts_run_and_update"] + list(test_set), check=True)
-
-
 def split_changes(changed_files, db_helper):
     """Split given changed files into changed testfiles and source code files"""
     changed_tests = []

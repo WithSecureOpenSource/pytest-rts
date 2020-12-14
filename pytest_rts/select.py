@@ -1,14 +1,9 @@
 """This module contains code for the main functionality of the RTS tool"""
-import logging
-import os
-import subprocess
-import sys
 from typing import Dict, List, NamedTuple, Set
 from pytest_rts.utils.common import (
     file_diff_dict_between_commits,
     file_diff_dict_current,
     read_newly_added_tests,
-    run_tests_and_update_db,
     split_changes,
     tests_from_changed_srcfiles,
     tests_from_changed_testfiles,
@@ -17,10 +12,6 @@ from pytest_rts.utils.git import (
     changed_files_current,
     changed_files_between_commits,
     get_current_head_hash,
-)
-from pytest_rts.utils.db import (
-    DatabaseHelper,
-    DB_FILE_NAME,
 )
 
 # https://github.com/PyCQA/pylint/issues/3876
@@ -161,68 +152,3 @@ def get_tests_and_data_committed(db_helper) -> TestsAndDataCommitted:
         warning_needed=warning_needed,
         files_to_warn=changes.files_to_warn,
     )
-
-
-def main():
-    """Run tool by first checking git working directory changes and then committed changes"""
-    logger = logging.getLogger()
-    logging.basicConfig(format="%(message)s", level=logging.INFO)
-
-    if not os.path.isfile(DB_FILE_NAME):
-        logger.info("Run pytest_rts_init first")
-        sys.exit()
-
-    db_helper = DatabaseHelper()
-    db_helper.init_conn()
-
-    workdir_data = get_tests_and_data_current(db_helper)
-
-    logger.info("WORKING DIRECTORY CHANGES")
-    logger.info("Found %s changed test files", workdir_data.changed_testfiles_amount)
-    logger.info("Found %s changed src files", workdir_data.changed_srcfiles_amount)
-    logger.info("Found %s tests to execute\n", len(workdir_data.test_set))
-
-    if workdir_data.test_set:
-        logger.info(
-            "Running WORKING DIRECTORY test set and exiting without updating..."
-        )
-        subprocess.run(["pytest_rts_run"] + list(workdir_data.test_set), check=True)
-        sys.exit()
-
-    logger.info("No WORKING DIRECTORY tests to run, checking COMMITTED changes...")
-    current_hash = get_current_head_hash()
-    if db_helper.is_last_update_hash(current_hash):
-        logger.info("Database is updated to the current commit state")
-        logger.info("=> Skipping test discovery, execution and updating")
-        sys.exit()
-
-    previous_hash = db_helper.get_last_update_hash()
-    logger.info("Comparison: %s\n", " => ".join([current_hash, previous_hash]))
-
-    committed_data = get_tests_and_data_committed(db_helper)
-
-    logger.info("COMMITTED CHANGES")
-    logger.info("Found %s changed test files", committed_data.changed_testfiles_amount)
-    logger.info("Found %s changed src files", committed_data.changed_srcfiles_amount)
-    logger.info(
-        "Found %s newly added tests",
-        committed_data.new_tests_amount,
-    )
-    logger.info("Found %s tests to execute\n", len(committed_data.test_set))
-    if committed_data.warning_needed:
-        logger.info(
-            "WARNING: New lines were added to the following files but no new tests discovered:"
-        )
-        logger.info("\n".join(committed_data.files_to_warn))
-
-    logger.info("=> Executing tests (if any) and updating database")
-    db_helper.save_last_update_hash(current_hash)
-    run_tests_and_update_db(
-        committed_data.test_set, committed_data.update_data, db_helper
-    )
-
-    db_helper.close_conn()
-
-
-if __name__ == "__main__":
-    main()
