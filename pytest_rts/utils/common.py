@@ -97,9 +97,9 @@ def split_changes(changed_files, db_helper):
     return changed_tests, changed_sources
 
 
-def read_newly_added_tests(db_helper, project_folder="."):
+def read_newly_added_tests(db_helper):
     """Run collect plugin and read collected new tests from database"""
-    subprocess.run(["pytest_rts_collect", project_folder], check=True)
+    subprocess.run(["pytest_rts_collect"], check=True)
     return db_helper.read_newly_added_tests()
 
 

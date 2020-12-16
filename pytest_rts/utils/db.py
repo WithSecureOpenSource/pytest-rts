@@ -1,4 +1,5 @@
 """This module contains code for database actions"""
+# pylint: disable=too-many-public-methods
 import sqlite3
 
 DB_FILE_NAME = "mapping.db"
@@ -284,3 +285,28 @@ class DatabaseHelper:
     def get_last_update_hash(self):
         """Return latest update hash"""
         return self.db_cursor.execute("SELECT hash FROM last_update_hash").fetchone()[0]
+
+    def get_existing_tests(self):
+        """Return all currently mapped pytest test function names"""
+        existing_tests = set()
+        for test in [
+            x[0]
+            for x in self.db_cursor.execute(
+                "SELECT context FROM test_function"
+            ).fetchall()
+        ]:
+            existing_tests.add(test)
+        return existing_tests
+
+    def clear_new_tests(self):
+        """Clear the new_tests table"""
+        self.db_cursor.execute("DELETE FROM new_tests")
+        self.db_conn.commit()
+
+    def add_new_tests(self, test_set):
+        """Add entries to the new_tests table"""
+        for test in test_set:
+            self.db_cursor.execute(
+                "INSERT INTO new_tests (context) VALUES (?)", (test,)
+            )
+        self.db_conn.commit()

@@ -86,3 +86,60 @@ def test_update_db_from_test_mapping():
         new_func_linenumbers = new_func_line_dict[key]
         assert old_func_linenumbers[0] + shift == new_func_linenumbers[0]
         assert old_func_linenumbers[1] + shift == new_func_linenumbers[1]
+
+
+def test_add_new_tests():
+    new_tests = {"tests/test_car.py::test_acceleration"}
+
+    db = DatabaseHelper()
+    db.init_conn()
+    db.add_new_tests(new_tests)
+    db.close_conn()
+
+    conn = sqlite3.connect(DB_FILE_NAME)
+    c = conn.cursor()
+    new_tests_in_db = {
+        x[0] for x in c.execute("SELECT context FROM new_tests").fetchall()
+    }
+    conn.close()
+
+    assert new_tests == new_tests_in_db
+
+
+def test_get_existing_tests():
+    db = DatabaseHelper()
+    db.init_conn()
+    existing_tests = db.get_existing_tests()
+    db.close_conn()
+
+    conn = sqlite3.connect(DB_FILE_NAME)
+    c = conn.cursor()
+    all_tests_in_db = {
+        x[0] for x in c.execute("SELECT context FROM test_function").fetchall()
+    }
+    conn.close()
+
+    assert existing_tests == all_tests_in_db
+
+
+def test_clear_new_tests():
+    conn = sqlite3.connect(DB_FILE_NAME)
+    c = conn.cursor()
+    c.execute(
+        "INSERT INTO new_tests (context) VALUES ('tests/test_car.py::test_acceleration')"
+    )
+    conn.close()
+
+    db = DatabaseHelper()
+    db.init_conn()
+    db.clear_new_tests()
+    db.close_conn()
+
+    conn = sqlite3.connect(DB_FILE_NAME)
+    c = conn.cursor()
+    new_tests_in_db = {
+        x[0] for x in c.execute("SELECT context FROM new_tests").fetchall()
+    }
+    conn.close()
+
+    assert not new_tests_in_db
