@@ -1,4 +1,6 @@
-"""This module contains code for the main functionality of the RTS tool"""
+"""This module contains code for the test selection functionality of the RTS tool"""
+# pylint: disable=inherit-non-class
+# pylint: disable=too-few-public-methods
 from typing import Dict, List, NamedTuple, Set
 from pytest_rts.utils.common import (
     file_diff_dict_between_commits,
@@ -14,9 +16,7 @@ from pytest_rts.utils.git import (
     get_current_head_hash,
 )
 
-# https://github.com/PyCQA/pylint/issues/3876
-# pylint: disable=inherit-non-class
-# pylint: disable=too-few-public-methods
+
 class UpdateData(NamedTuple):
     """NamedTuple for mapping database update data"""
 
@@ -26,8 +26,6 @@ class UpdateData(NamedTuple):
     new_line_map_src: Dict[int, int]
 
 
-# pylint: disable=inherit-non-class
-# pylint: disable=too-few-public-methods
 class TestsAndDataFromChanges(NamedTuple):
     """NamedTuple for tests and update data from changes"""
 
@@ -36,8 +34,6 @@ class TestsAndDataFromChanges(NamedTuple):
     files_to_warn: List[str]
 
 
-# pylint: disable=inherit-non-class
-# pylint: disable=too-few-public-methods
 class TestsAndDataCurrent(NamedTuple):
     """NamedTuple for tests and statistics data from working directory changes"""
 
@@ -46,8 +42,6 @@ class TestsAndDataCurrent(NamedTuple):
     changed_srcfiles_amount: int
 
 
-# pylint: disable=inherit-non-class
-# pylint: disable=too-few-public-methods
 class TestsAndDataCommitted(NamedTuple):
     """NamedTuple for tests, statistics and update data from committed changes"""
 
