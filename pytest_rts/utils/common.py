@@ -190,7 +190,8 @@ def save_mapping_data(test_function_id, cov_data, testfiles, db_helper):
     for filename in cov_data.measured_files():
         src_file = os.path.relpath(filename, os.getcwd())
         conditions = [
-            "pytest-rts" in filename,
+            "init_phase_plugin.py" in filename,
+            "update_phase_plugin.py" in filename,
             ("/tmp/" in filename) and ("/tmp/" not in os.getcwd()),
             "/.venv/" in filename,
             src_file in testfiles,
