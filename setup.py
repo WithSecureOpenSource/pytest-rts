@@ -20,8 +20,7 @@ setup(
     entry_points={
         "console_scripts": [
             "pytest_rts_eval=pytest_rts.tests.evaluation.start:main",
-            "pytest_rts_specific_without_remap=pytest_rts.tests.evaluation.specific_without_remap:main",
-            "pytest_rts_all_without_remap=pytest_rts.tests.evaluation.all_without_remap:main",
+            "pytest_rts_capture_exitcode=pytest_rts.tests.evaluation.exitcode:main",
             "pytest_rts_collect=pytest_rts.collect:main",
         ],
         "pytest11": [
