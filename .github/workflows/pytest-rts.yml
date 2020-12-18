@@ -1,6 +1,11 @@
 name: pytest-rts
 
-on: [push]
+on:
+  push:
+    branches:
+      - '**'
+    tags-ignore:
+      - '**'
 
 jobs:
   check:
@@ -47,4 +52,4 @@ jobs:
       - name: Publish
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: make install publish
+        run: make publish

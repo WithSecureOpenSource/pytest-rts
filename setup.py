@@ -6,6 +6,11 @@ import subprocess
 from setuptools import setup, find_packages  # type: ignore
 
 
+def _read_long_description():
+    with open("README.md") as readme:
+        return readme.read()
+
+
 GIT_VERSION = subprocess.check_output("git describe --always".split()).strip().decode("ascii")
 DEV_REQUIRE = [
     "pytest-cov", "pytest-socket", "tox", "python-semantic-release", "black", "mypy",
@@ -15,8 +20,11 @@ DEV_REQUIRE = [
 # pylint: disable=line-too-long
 setup(
     name="pytest_rts",
+    description="Coverage-based regression test selection (RTS) plugin for pytest",
+    long_description=_read_long_description(),
+    author="Eero Kauhanen, Matvey Pashkovskiy, Alexey Vyskubov",
     version=GIT_VERSION,
-    packages=find_packages(),
+    packages=find_packages(exclude=["tests", "tests.*"]),
     entry_points={
         "console_scripts": [
             "pytest_rts_eval=pytest_rts.tests.evaluation.start:main",
@@ -29,7 +37,13 @@ setup(
         ],
     },
     install_requires=["pydriller", "coverage", "pytest"],
-    extras_require={
-        "dev": DEV_REQUIRE,
-    },
+    extras_require={"dev": DEV_REQUIRE},
+    classifiers=[
+        "Programming Language :: Python",
+        "Programming Language :: Python :: 3",
+        "Programming Language :: Python :: 3.6",
+        "Programming Language :: Python :: 3.7",
+        "Programming Language :: Python :: 3.8",
+        "Programming Language :: Python :: 3.9",
+    ],
 )
