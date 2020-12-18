@@ -6,11 +6,8 @@ import subprocess
 from setuptools import setup, find_packages  # type: ignore
 
 
-GIT_VERSION = (
-    subprocess.check_output("git describe --always".split()).strip().decode("ascii")
-)
-TESTS_REQUIRE = ["pytest-cov", "pytest-socket", "tox"]
-DEV_REQUIRE = ["black", "mypy", "pylint", "safety"]
+GIT_VERSION = subprocess.check_output("git describe --always".split()).strip().decode("ascii")
+DEV_REQUIRE = ["pytest-cov", "pytest-socket", "tox", "python-semantic-release", "black", "mypy", "pylint", "safety"]
 
 # pylint: disable=line-too-long
 setup(
@@ -30,7 +27,6 @@ setup(
     },
     install_requires=["pydriller", "coverage", "pytest"],
     extras_require={
-        "tests": TESTS_REQUIRE,
         "dev": TESTS_REQUIRE + DEV_REQUIRE,
     },
 )
