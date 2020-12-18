@@ -1,6 +1,6 @@
 <img src="https://github.com/F-Secure/pytest-rts/raw/master/docs/imgs/pytest-rts-logo.png" width="120px" height="120px"/>
 
-# Change based tests selection for Python
+# Coverage-based regression test selection (RTS) plugin for pytest
 
 - [Usage](#usage)
 - [Development](#dev)

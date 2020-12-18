@@ -12,8 +12,8 @@ clean:
 	rm -rf $(VENV_DIR)
 	rm -rf pytest_rts.egg-info
 
-publish:
-	semantic-release publish -D \
-		version_variable=pytest_rts/__init__.py:__version__ \
-		upload_to_pypi=false \
-		upload_to_release=false
+publish: install
+	$(VENV_DIR)/bin/semantic-release publish \
+		-D version_variable=pytest_rts/__init__.py:__version__ \
+		-D upload_to_pypi=false \
+		-D upload_to_release=false
