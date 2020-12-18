@@ -48,10 +48,11 @@ jobs:
         uses: actions/checkout@v2
         with:
           fetch-depth: 0
-
-      - name: Publish
+      - name: Setup Python
+        uses: actions/setup-python@v2
         with:
           python-version: 3.6
+      - name: Publish
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
