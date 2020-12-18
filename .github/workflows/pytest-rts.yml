@@ -52,4 +52,7 @@ jobs:
       - name: Publish
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: make publish
+        run: |
+          git config user.email "actions@github.com"
+          git config user.name "GitHub Actions"
+          make publish
