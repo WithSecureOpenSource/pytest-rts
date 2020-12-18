@@ -13,6 +13,7 @@ jobs:
         uses: adityaa30/check-commit@master
   
   test:
+    needs: check
     name: Lint and test
     runs-on: ubuntu-latest
     strategy:
