@@ -27,6 +27,6 @@ setup(
     },
     install_requires=["pydriller", "coverage", "pytest"],
     extras_require={
-        "dev": TESTS_REQUIRE + DEV_REQUIRE,
+        "dev": DEV_REQUIRE,
     },
 )
