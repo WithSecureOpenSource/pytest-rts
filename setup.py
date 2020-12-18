@@ -24,7 +24,7 @@ setup(
     long_description=_read_long_description(),
     author="Eero Kauhanen, Matvey Pashkovskiy, Alexey Vyskubov",
     version=GIT_VERSION,
-    packages=find_packages(exclude=("tests",)),
+    packages=find_packages(exclude=("tests.*",)),
     entry_points={
         "console_scripts": [
             "pytest_rts_eval=pytest_rts.tests.evaluation.start:main",
