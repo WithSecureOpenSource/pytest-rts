@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v1.1.1 (2020-12-18)
+### Fix
+* Linter errors ([`b0f2ac0`](https://github.com/F-Secure/pytest-rts/commit/b0f2ac04937d3a36ba9697001949fb9cc12946c9))
+
 ## v1.1.0 (2020-12-18)
 ### Feature
 * Create a pytest plugin ([#67](https://github.com/F-Secure/pytest-rts/issues/67)) ([`1ed34e3`](https://github.com/F-Secure/pytest-rts/commit/1ed34e3f6591f627f93dbacad213236f08237258))
