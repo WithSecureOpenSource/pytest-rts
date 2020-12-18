@@ -3,7 +3,7 @@ Setup harness
 """
 import subprocess
 
-from setuptools import setup, find_packages  # type: ignore
+from setuptools import setup, find_packages
 
 
 def _read_long_description():
@@ -11,19 +11,25 @@ def _read_long_description():
         return readme.read()
 
 
-GIT_VERSION = subprocess.check_output("git describe --always".split()).strip().decode("ascii")
+GIT_VERSION = (
+    subprocess
+    .check_output("git describe --always".split())
+    .strip()
+    .decode("ascii")
+    .replace("v", "", 1)
+)
 DEV_REQUIRE = [
     "pytest-cov", "pytest-socket", "tox", "python-semantic-release", "black", "mypy",
     "pylint", "safety"
 ]
-
-# pylint: disable=line-too-long
 NAME = "pytest_rts"
+
 setup(
     name=NAME,
     description="Coverage-based regression test selection (RTS) plugin for pytest",
     long_description=_read_long_description(),
     author="Eero Kauhanen, Matvey Pashkovskiy, Alexey Vyskubov",
+    url=f"https://github.com/F-Secure/{NAME}",
     version=GIT_VERSION,
     packages=find_packages(exclude=[f"{NAME}.tests", f"{NAME}.tests.*"]),
     entry_points={
