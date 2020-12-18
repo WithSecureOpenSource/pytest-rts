@@ -18,22 +18,23 @@ DEV_REQUIRE = [
 ]
 
 # pylint: disable=line-too-long
+name = "pytest_rts"
 setup(
-    name="pytest_rts",
+    name=name,
     description="Coverage-based regression test selection (RTS) plugin for pytest",
     long_description=_read_long_description(),
     author="Eero Kauhanen, Matvey Pashkovskiy, Alexey Vyskubov",
     version=GIT_VERSION,
-    packages=find_packages(exclude=["tests", "tests.*"]),
+    packages=find_packages(exclude=[f"{name}.tests", f"{name}.tests.*"]),
     entry_points={
         "console_scripts": [
-            "pytest_rts_eval=pytest_rts.tests.evaluation.start:main",
-            "pytest_rts_specific_without_remap=pytest_rts.tests.evaluation.specific_without_remap:main",
-            "pytest_rts_all_without_remap=pytest_rts.tests.evaluation.all_without_remap:main",
-            "pytest_rts_collect=pytest_rts.collect:main",
+            f"{name}_eval={name}.tests.evaluation.start:main",
+            f"{name}_specific_without_remap={name}.tests.evaluation.specific_without_remap:main",
+            f"{name}_all_without_remap={name}.tests.evaluation.all_without_remap:main",
+            f"{name}_collect={name}.collect:main",
         ],
         "pytest11": [
-            "pytest-rts=pytest_rts.plugin",
+            f"pytest-rts={name}.plugin",
         ],
     },
     install_requires=["pydriller", "coverage", "pytest"],

@@ -11,3 +11,6 @@ htmlcov
 /.tox/
 # vim
 .*.swp
+
+build
+dist
