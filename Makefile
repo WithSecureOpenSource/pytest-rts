@@ -14,5 +14,4 @@ clean:
 
 publish: install
 	$(VENV_DIR)/bin/semantic-release publish \
-		-D version_variable=pytest_rts/__init__.py:__version__ \
-		-D upload_to_pypi=false
+		-D version_variable=pytest_rts/__init__.py:__version__
