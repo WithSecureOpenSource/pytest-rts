@@ -1,6 +1,4 @@
 """This module contains code for the test selection functionality of the RTS tool"""
-# pylint: disable=inherit-non-class
-# pylint: disable=too-few-public-methods
 from typing import Dict, List, NamedTuple, Set
 from pytest_rts.utils.common import (
     file_diff_dict_between_commits,
@@ -17,41 +15,48 @@ from pytest_rts.utils.git import (
 )
 
 
-class UpdateData(NamedTuple):
-    """NamedTuple for mapping database update data"""
+UpdateData = NamedTuple(
+    "UpdateData",
+    [
+        ("changed_lines_test", Dict[str, List[int]]),
+        ("new_line_map_test", Dict[int, int]),
+        ("changed_lines_src", Dict[str, List[int]]),
+        ("new_line_map_src", Dict[int, int]),
+    ],
+)
 
-    changed_lines_test: Dict[str, List[int]]
-    new_line_map_test: Dict[int, int]
-    changed_lines_src: Dict[str, List[int]]
-    new_line_map_src: Dict[int, int]
-
-
-class TestsAndDataFromChanges(NamedTuple):
-    """NamedTuple for tests and update data from changes"""
-
-    test_set: Set[str]
-    update_data: UpdateData
-    files_to_warn: List[str]
-
-
-class TestsAndDataCurrent(NamedTuple):
-    """NamedTuple for tests and statistics data from working directory changes"""
-
-    test_set: Set[str]
-    changed_testfiles_amount: int
-    changed_srcfiles_amount: int
+TestsAndDataFromChanges = NamedTuple(
+    "TestsAndDataFromChanges",
+    [
+        ("test_set", Set[str]),
+        ("update_data", UpdateData),
+        ("files_to_warn", List[str]),
+    ],
+)
 
 
-class TestsAndDataCommitted(NamedTuple):
-    """NamedTuple for tests, statistics and update data from committed changes"""
+TestsAndDataCurrent = NamedTuple(
+    "TestsAndDataCurrent",
+    [
+        ("test_set", Set[str]),
+        ("changed_testfiles_amount", int),
+        ("changed_srcfiles_amount", int),
+    ],
+)
 
-    test_set: Set[str]
-    update_data: UpdateData
-    changed_testfiles_amount: int
-    changed_srcfiles_amount: int
-    new_tests_amount: int
-    warning_needed: bool
-    files_to_warn: List[str]
+
+TestsAndDataCommitted = NamedTuple(
+    "TestsAndDataCommitted",
+    [
+        ("test_set", Set[str]),
+        ("update_data", UpdateData),
+        ("changed_testfiles_amount", int),
+        ("changed_srcfiles_amount", int),
+        ("new_tests_amount", int),
+        ("warning_needed", bool),
+        ("files_to_warn", List[str]),
+    ],
+)
 
 
 def get_tests_from_changes(
