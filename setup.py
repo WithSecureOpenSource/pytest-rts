@@ -31,6 +31,8 @@ setup(
     long_description=_read_long_description(),
     author="Eero Kauhanen, Matvey Pashkovskiy, Alexey Vyskubov",
     url=f"https://github.com/F-Secure/{NAME_DASHED}",
+    license='Apache License 2.0',
+    platforms='any',
     version=GIT_VERSION,
     packages=find_packages(exclude=[f"{NAME}.tests", f"{NAME}.tests.*"]),
     entry_points={
