@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v1.1.9 (2020-12-21)
+### Fix
+* Minor ([`891c743`](https://github.com/F-Secure/pytest-rts/commit/891c743332cf7c5248f6ec1b28140c4381a72ef6))
+
 ## v1.1.8 (2020-12-21)
 ### Fix
 * Pypi long description ([`efb1c37`](https://github.com/F-Secure/pytest-rts/commit/efb1c3734f4b04f1e2e3dd6d677957fbe2507a4c))
