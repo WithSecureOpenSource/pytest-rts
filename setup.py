@@ -23,13 +23,14 @@ DEV_REQUIRE = [
     "pylint", "safety"
 ]
 NAME = "pytest_rts"
+NAME_DASHED = NAME.replace("_", "-")
 
 setup(
     name=NAME,
     description="Coverage-based regression test selection (RTS) plugin for pytest",
     long_description=_read_long_description(),
     author="Eero Kauhanen, Matvey Pashkovskiy, Alexey Vyskubov",
-    url=f"https://github.com/F-Secure/{NAME}",
+    url=f"https://github.com/F-Secure/{NAME_DASHED}",
     version=GIT_VERSION,
     packages=find_packages(exclude=[f"{NAME}.tests", f"{NAME}.tests.*"]),
     entry_points={
@@ -40,7 +41,7 @@ setup(
             f"{NAME}_collect={NAME}.collect:main",
         ],
         "pytest11": [
-            f"pytest-rts={NAME}.plugin",
+            f"{NAME_DASHED}={NAME}.plugin",
         ],
     },
     install_requires=["pydriller", "coverage", "pytest"],
