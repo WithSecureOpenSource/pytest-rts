@@ -3,33 +3,58 @@ Setup harness
 """
 import subprocess
 
-from setuptools import setup, find_packages  # type: ignore
+from setuptools import setup, find_packages
+
+
+def _read_long_description():
+    with open("README.md") as readme:
+        return readme.read()
 
 
 GIT_VERSION = (
-    subprocess.check_output("git describe --always".split()).strip().decode("ascii")
+    subprocess.check_output("git describe --always".split())
+    .strip()
+    .decode("ascii")
+    .replace("v", "", 1)
 )
-TESTS_REQUIRE = ["pytest-cov", "pytest-socket", "tox"]
-DEV_REQUIRE = ["black", "mypy", "pylint", "safety"]
+DEV_REQUIRE = [
+    "pytest-cov",
+    "pytest-socket",
+    "tox",
+    "python-semantic-release",
+    "black",
+    "mypy",
+    "pylint",
+    "safety",
+]
+NAME = "pytest_rts"
 
-# pylint: disable=line-too-long
 setup(
-    name="pytest_rts",
+    name=NAME,
+    description="Coverage-based regression test selection (RTS) plugin for pytest",
+    long_description=_read_long_description(),
+    author="Eero Kauhanen, Matvey Pashkovskiy, Alexey Vyskubov",
+    url=f"https://github.com/F-Secure/{NAME}",
     version=GIT_VERSION,
-    packages=find_packages(),
+    packages=find_packages(exclude=[f"{NAME}.tests", f"{NAME}.tests.*"]),
     entry_points={
         "console_scripts": [
-            "pytest_rts_eval=pytest_rts.tests.evaluation.start:main",
-            "pytest_rts_capture_exitcode=pytest_rts.tests.evaluation.exitcode:main",
-            "pytest_rts_collect=pytest_rts.collect:main",
+            f"{NAME}_eval={NAME}.tests.evaluation.start:main",
+            f"{NAME}_capture_exitcode={NAME}.tests.evaluation.exitcode:main",
+            f"{NAME}_collect={NAME}.collect:main",
         ],
         "pytest11": [
-            "pytest-rts=pytest_rts.plugin",
+            f"pytest-rts={NAME}.plugin",
         ],
     },
     install_requires=["pydriller", "coverage", "pytest"],
-    extras_require={
-        "tests": TESTS_REQUIRE,
-        "dev": TESTS_REQUIRE + DEV_REQUIRE,
-    },
+    extras_require={"dev": DEV_REQUIRE},
+    classifiers=[
+        "Programming Language :: Python",
+        "Programming Language :: Python :: 3",
+        "Programming Language :: Python :: 3.6",
+        "Programming Language :: Python :: 3.7",
+        "Programming Language :: Python :: 3.8",
+        "Programming Language :: Python :: 3.9",
+    ],
 )

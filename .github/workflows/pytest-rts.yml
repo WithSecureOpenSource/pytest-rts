@@ -1,6 +1,11 @@
 name: pytest-rts
 
-on: [push]
+on:
+  push:
+    branches:
+      - '**'
+    tags-ignore:
+      - '**'
 
 jobs:
   check:
@@ -11,8 +16,11 @@ jobs:
         uses: actions/checkout@v2
       - name: Check commit message
         uses: adityaa30/check-commit@master
+        with:
+          max-header-length: 255
   
   test:
+    needs: check
     name: Lint and test
     runs-on: ubuntu-latest
     strategy:
@@ -30,3 +38,26 @@ jobs:
         run: |
           pip install tox
           tox -e py -- --exitfirst
+
+  release:
+    needs: test
+    if: github.ref == 'refs/heads/master'
+    name: Publish
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - name: Setup Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.6
+      - name: Publish
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git config user.email "semantic-release"
+          git config user.name "semantic-release"
+          make publish
