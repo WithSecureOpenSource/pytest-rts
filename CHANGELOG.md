@@ -2,6 +2,14 @@
 
 <!--next-version-placeholder-->
 
+## v1.1.2 (2020-12-21)
+### Fix
+* Pypi upload ([`7cde1be`](https://github.com/F-Secure/pytest-rts/commit/7cde1be414b980ecb5fb45eac24d7696aacf0b28))
+
+### Documentation
+* Fix module name in setup.py ([`7f18303`](https://github.com/F-Secure/pytest-rts/commit/7f183036384bccd45fb93203a26a0ae3198b80e3))
+* Added license ([`ebfdd66`](https://github.com/F-Secure/pytest-rts/commit/ebfdd6624606201976df03463248106cfdb5b964))
+
 ## v1.1.1 (2020-12-18)
 ### Fix
 * Linter errors ([`b0f2ac0`](https://github.com/F-Secure/pytest-rts/commit/b0f2ac04937d3a36ba9697001949fb9cc12946c9))
