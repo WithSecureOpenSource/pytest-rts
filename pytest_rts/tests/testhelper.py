@@ -2,7 +2,7 @@ import sqlite3
 import subprocess
 from pytest_rts.utils.db import DatabaseHelper, DB_FILE_NAME
 from pytest_rts.utils.common import read_newly_added_tests
-from pytest_rts.utils.test_selection import (
+from pytest_rts.utils.selection import (
     get_tests_and_data_committed,
     get_tests_and_data_current,
 )

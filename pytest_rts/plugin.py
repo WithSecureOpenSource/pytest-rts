@@ -8,7 +8,7 @@ from pytest_rts.pytest.update_phase_plugin import UpdatePhasePlugin
 from pytest_rts.utils.common import update_mapping_db
 from pytest_rts.utils.db import DatabaseHelper, DB_FILE_NAME
 from pytest_rts.utils.git import get_current_head_hash
-from pytest_rts.utils.test_selection import (
+from pytest_rts.utils.selection import (
     get_tests_and_data_committed,
     get_tests_and_data_current,
 )
