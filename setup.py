@@ -20,7 +20,7 @@ GIT_VERSION = (
 )
 DEV_REQUIRE = [
     "pytest-cov", "pytest-socket", "tox", "python-semantic-release", "black", "mypy",
-    "pylint", "safety"
+    "pylint", "safety", "wheel"
 ]
 NAME = "pytest_rts"
 NAME_DASHED = NAME.replace("_", "-")
