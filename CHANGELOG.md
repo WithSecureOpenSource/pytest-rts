@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v1.1.6 (2020-12-21)
+### Fix
+* Pypi upload ([`537d270`](https://github.com/F-Secure/pytest-rts/commit/537d2706a599455e40e6836b4bd3a308ae36160b))
+
 ## v1.1.5 (2020-12-21)
 ### Fix
 * Pypi upload ([`d7778c8`](https://github.com/F-Secure/pytest-rts/commit/d7778c8b23777411b288af2a739e0f3e3ab3b7e6))
