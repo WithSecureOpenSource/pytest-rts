@@ -29,6 +29,7 @@ setup(
     name=NAME_DASHED,
     description="Coverage-based regression test selection (RTS) plugin for pytest",
     long_description=_read_long_description(),
+    long_description_content_type="text/markdown",
     author="Eero Kauhanen, Matvey Pashkovskiy, Alexey Vyskubov",
     url=f"https://github.com/F-Secure/{NAME_DASHED}",
     license='Apache License 2.0',
