@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v1.1.8 (2020-12-21)
+### Fix
+* Pypi long description ([`efb1c37`](https://github.com/F-Secure/pytest-rts/commit/efb1c3734f4b04f1e2e3dd6d677957fbe2507a4c))
+
 ## v1.1.7 (2020-12-21)
 ### Fix
 * Pypi upload ([`f82e20c`](https://github.com/F-Secure/pytest-rts/commit/f82e20c43ec2936531e7a661560e8e98f089f164))
