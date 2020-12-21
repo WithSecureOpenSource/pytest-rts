@@ -286,17 +286,15 @@ class DatabaseHelper:
         """Return latest update hash"""
         return self.db_cursor.execute("SELECT hash FROM last_update_hash").fetchone()[0]
 
-    def get_existing_tests(self):
-        """Return all currently mapped pytest test function names"""
-        existing_tests = set()
-        for test in [
+    @property
+    def existing_tests(self):
+        """All currently mapped pytest test function names"""
+        return {
             x[0]
             for x in self.db_cursor.execute(
                 "SELECT context FROM test_function"
             ).fetchall()
-        ]:
-            existing_tests.add(test)
-        return existing_tests
+        }
 
     def clear_new_tests(self):
         """Clear the new_tests table"""

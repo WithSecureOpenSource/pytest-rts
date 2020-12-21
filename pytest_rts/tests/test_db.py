@@ -106,10 +106,10 @@ def test_add_new_tests():
     assert new_tests == new_tests_in_db
 
 
-def test_get_existing_tests():
+def test_existing_tests():
     db = DatabaseHelper()
     db.init_conn()
-    existing_tests = db.get_existing_tests()
+    existing_tests = db.existing_tests
     db.close_conn()
 
     conn = sqlite3.connect(DB_FILE_NAME)

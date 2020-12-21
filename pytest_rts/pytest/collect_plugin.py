@@ -11,7 +11,7 @@ class CollectPlugin:
         self.collected = set()
         self.database = DatabaseHelper()
         self.database.init_conn()
-        self.existing_tests = self.database.get_existing_tests()
+        self.existing_tests = self.database.existing_tests
         self.database.clear_new_tests()
 
     def pytest_collection_modifyitems(self, session, config, items):
