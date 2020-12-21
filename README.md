@@ -50,7 +50,15 @@ Read through our [contributing guidelines][contributing] to learn about our subm
 
 Help us keep the project open and inclusive. Please read and follow our [Code of Conduct][codeofconduct].
 
+## Acknowledgement
+
+The package was developed by [F-Secure Corporation][f-secure] and [University of Helsinki][hy] in scope of [IVVES project][ivves]. This work was labelled by [ITEA3][itea3] and funded by local authorities under grant agreement “ITEA-2019-18022-IVVES”
+
 [tutorial]: https://github.com/F-Secure/pytest-rts/tree/master/docs/tutorial.md
 [developer]: https://github.com/F-Secure/pytest-rts/tree/master/docs/DEVELOPER.md
 [contributing]: https://github.com/F-Secure/pytest-rts/tree/master/docs/CONTRIBUTING.md
 [codeofconduct]: https://github.com/F-Secure/pytest-rts/tree/master/docs/CODE_OF_CONDUCT.md
+[ivves]: http://ivves.eu/
+[itea3]: https://itea3.org/
+[f-secure]: https://www.f-secure.com/en
+[hy]: https://www.helsinki.fi/en/computer-science
