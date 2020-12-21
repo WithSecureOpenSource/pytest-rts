@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v1.1.4 (2020-12-21)
+### Fix
+* Pypi upload ([`0f7339c`](https://github.com/F-Secure/pytest-rts/commit/0f7339c54dee32595280b42b118f06145067c29f))
+
 ## v1.1.3 (2020-12-21)
 ### Fix
 * Merge branch 'master' of github.com:F-Secure/pytest-rts ([`97ab69d`](https://github.com/F-Secure/pytest-rts/commit/97ab69de2ce6447b638978017ba74a3ab9db94c8))
