@@ -11,7 +11,7 @@ def decrement(func: Callable[[int], int]) -> Callable[[int], int]:
     """
     @wraps(func)
     def _wrapper(num):
-        return func(num) + 1
+        return func(num) - 1
 
     return _wrapper
 
@@ -23,7 +23,7 @@ def modify_by(delta: int):
     def decorator(func: Callable[[int], int]) -> Callable[[int], int]:
         @wraps(func)
         def _wrapper(num):
-            return func(num) + delta
+            return func(num) * delta
         return _wrapper
     return decorator
 
