@@ -14,6 +14,4 @@ clean:
 	rm -rf pytest_rts.egg-info
 
 publish: install
-	pip install --upgrade pip
-	pip install wheel
-	$(VENV_DIR)/bin/semantic-release publish -D version_variable=pytest_rts/__init__.py:__version__
+	. $(VENV_DIR)/bin/activate; $(VENV_DIR)/bin/semantic-release publish -D version_variable=pytest_rts/__init__.py:__version__
