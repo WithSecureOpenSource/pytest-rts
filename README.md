@@ -10,10 +10,10 @@
 
 ### Usage as a module (no source code)
 
-1. Add your public key to github profile
-2. Add `git+ssh://git@github.com/F-Secure/pytest-rts.git#egg=pytest-rts` as a dependency to `requirements.txt`
-3. Install dependencies
-4. Use the tool with `pytest --rts`
+1. Install the module with `pip install pytest-rts`
+2. Use the tool with `pytest --rts`
+
+More detailed usage is described in the [tutorial][tutorial]
 
 ### Usage from source code
 
@@ -50,6 +50,7 @@ Read through our [contributing guidelines][contributing] to learn about our subm
 
 Help us keep the project open and inclusive. Please read and follow our [Code of Conduct][codeofconduct].
 
+[tutorial]: https://github.com/F-Secure/pytest-rts/tree/master/docs/tutorial.md
 [developer]: https://github.com/F-Secure/pytest-rts/tree/master/docs/DEVELOPER.md
 [contributing]: https://github.com/F-Secure/pytest-rts/tree/master/docs/CONTRIBUTING.md
 [codeofconduct]: https://github.com/F-Secure/pytest-rts/tree/master/docs/CODE_OF_CONDUCT.md
