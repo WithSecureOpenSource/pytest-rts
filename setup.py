@@ -26,7 +26,7 @@ NAME = "pytest_rts"
 NAME_DASHED = NAME.replace("_", "-")
 
 setup(
-    name=NAME,
+    name=NAME_DASHED,
     description="Coverage-based regression test selection (RTS) plugin for pytest",
     long_description=_read_long_description(),
     author="Eero Kauhanen, Matvey Pashkovskiy, Alexey Vyskubov",
