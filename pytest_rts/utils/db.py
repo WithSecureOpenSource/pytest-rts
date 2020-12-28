@@ -1,5 +1,4 @@
 """This module contains code for database actions"""
-# pylint: disable=too-many-public-methods
 import sqlite3
 
 DB_FILE_NAME = "mapping.db"
@@ -108,21 +107,6 @@ class DatabaseHelper:
                 tests.append(test)
         return tests
 
-    def query_all_tests_srcfile(self, file_id):
-        """Query all tests for a source code file"""
-        tests = []
-        data = self.db_cursor.execute(
-            """ SELECT DISTINCT context
-                FROM test_function
-                JOIN test_map ON test_function.id == test_map.test_function_id
-                WHERE test_map.file_id = ? """,
-            (file_id,),
-        )
-        for line in data:
-            test = line[0]
-            tests.append(test)
-        return tests
-
     def query_tests_testfile(self, lines_to_query, file_id):
         """Query tests for a test file based on line numbers"""
         tests = []
@@ -151,13 +135,6 @@ class DatabaseHelper:
             for x in self.db_cursor.execute("SELECT id,path FROM src_file").fetchall()
         ]
         return test_files, src_files
-
-    def get_test_suite_size(self):
-        """Query how many tests are in mapping database"""
-        size = int(
-            self.db_cursor.execute("SELECT count() FROM test_function").fetchone()[0]
-        )
-        return size
 
     def init_mapping_db(self):
         """Initialize mapping database tables"""
@@ -274,13 +251,6 @@ class DatabaseHelper:
         self.db_cursor.execute("DELETE FROM last_update_hash")
         self.db_cursor.execute("INSERT INTO last_update_hash VALUES (?)", (commithash,))
         self.db_conn.commit()
-
-    def is_last_update_hash(self, commithash):
-        """Return whether a given commit hash is the last update hash"""
-        db_hash = self.db_cursor.execute(
-            "SELECT hash FROM last_update_hash"
-        ).fetchone()[0]
-        return db_hash == commithash
 
     def get_last_update_hash(self):
         """Return latest update hash"""

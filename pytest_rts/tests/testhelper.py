@@ -45,13 +45,6 @@ class TestHelper:
         db.close_conn()
         return change_data.test_set
 
-    def get_all_tests_for_srcfile(self, src_file_id):
-        db = DatabaseHelper()
-        db.init_conn()
-        all_tests = db.query_all_tests_srcfile(src_file_id)
-        db.close_conn()
-        return all_tests
-
     def get_newly_added_tests_from_tool(self):
         db = DatabaseHelper()
         db.init_conn()

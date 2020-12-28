@@ -1,9 +1,13 @@
 """Helper functions for evaluation code"""
 import logging
 import random
+import sqlite3
 import subprocess
+from pytest_rts.utils.db import DB_FILE_NAME
 from pytest_rts.utils.git import (
     get_git_repo,
+    get_current_head_hash,
+    changed_files_between_commits,
 )
 
 
@@ -18,10 +22,10 @@ def select_random_file(files):
     return random.choice(files)
 
 
-def delete_random_line(filename):
+def delete_random_line(filepath):
     """Replace a random line containing code to a newline"""
     try:
-        with open(filename, "r") as randomfile:
+        with open(filepath, "r") as randomfile:
             data = randomfile.readlines()
             while True:
                 rand_line = random.randint(0, len(data) - 1)
@@ -29,12 +33,12 @@ def delete_random_line(filename):
                     break
             data[rand_line] = "\n"  # replace random line with newline.
 
-        with open(filename, "w") as randomfile:
+        with open(filepath, "w") as randomfile:
             for line in data:
                 randomfile.write(line)
 
     except FileNotFoundError:
-        logging.getLogger().error(f"can't open selected random file {filename}")
+        logging.getLogger().error(f"can't open selected random file {filepath}")
         exit(1)
 
 
@@ -98,3 +102,65 @@ def print_remove_test_output(
     )
     logger.info(f"STORING TO DATABASE: {db_name}")
     logger.info("============")
+
+
+def get_test_suite_size():
+    """Query how many tests are in mapping database"""
+    conn = sqlite3.connect(DB_FILE_NAME)
+    size = int(conn.execute("SELECT count() FROM test_function").fetchone()[0])
+    conn.close()
+    return size
+
+
+def get_all_tests_for_srcfile(file_id):
+    """Query all tests for a source code file"""
+    conn = sqlite3.connect(DB_FILE_NAME)
+    tests = []
+    data = conn.execute(
+        """ SELECT DISTINCT context
+                FROM test_function
+                JOIN test_map ON test_function.id == test_map.test_function_id
+                WHERE test_map.file_id = ? """,
+        (file_id,),
+    )
+    for line in data:
+        test = line[0]
+        tests.append(test)
+    conn.close()
+    return tests
+
+
+def get_srcfile_id(path):
+    """Get the id in the mapping database for a source code file"""
+    conn = sqlite3.connect(DB_FILE_NAME)
+    src_id = conn.execute(
+        "SELECT id FROM src_file WHERE path == ?", (path,)
+    ).fetchone()[0]
+    conn.close()
+    return src_id
+
+
+def get_file_level_tests_between_commits(commit1, commit2):
+    """Get the file-level granularity test set between git commits"""
+    tests_file_level = set()
+    changed_files = changed_files_between_commits(commit1, commit2)
+    for path in changed_files:
+        srcfile_id = get_srcfile_id(path)
+        tests_file_level.update(get_all_tests_for_srcfile(srcfile_id))
+    return tests_file_level
+
+
+def get_mapping_srcfiles():
+    """Get all the tool's covered source code files"""
+    conn = sqlite3.connect(DB_FILE_NAME)
+    srcfiles = [x[0] for x in conn.execute("SELECT path FROM src_file").fetchall()]
+    conn.close()
+    return srcfiles
+
+
+def get_mapping_init_hash():
+    """Get the git commit hash for initial state of the mapping database"""
+    conn = sqlite3.connect(DB_FILE_NAME)
+    init_hash = conn.execute("SELECT hash FROM last_update_hash").fetchone()[0]
+    conn.close()
+    return init_hash

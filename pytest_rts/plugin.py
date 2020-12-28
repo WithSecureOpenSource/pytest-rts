@@ -52,10 +52,10 @@ def pytest_configure(config):
         logger.info("No WORKING DIRECTORY tests to run, checking COMMITTED changes...")
 
         current_hash = get_current_head_hash()
-        if db_helper.is_last_update_hash(current_hash):
+        previous_hash = db_helper.get_last_update_hash()
+        if current_hash == previous_hash:
             pytest.exit("Database is updated to the current commit state", 0)
 
-        previous_hash = db_helper.get_last_update_hash()
         logger.info("Comparison: %s\n", " => ".join([current_hash, previous_hash]))
 
         committed_data = get_tests_and_data_committed(db_helper)
