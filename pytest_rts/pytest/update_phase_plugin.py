@@ -26,6 +26,7 @@ class UpdatePhasePlugin:
         self.database = DatabaseHelper()
         self.database.init_conn()
         self.fill_times_dict()
+        self.excluded_srcfiles = set()
 
     def fill_times_dict(self):
         """Gets test durations from database used for test prioritization"""
@@ -84,11 +85,13 @@ class UpdatePhasePlugin:
             _, test_function_id = save_testfile_and_func_data(
                 item, elapsed, self.test_func_lines, self.database
             )
-            save_mapping_data(
-                test_function_id,
-                self.cov.get_data(),
-                self.testfiles,
-                self.database,
+            self.excluded_srcfiles.update(
+                save_mapping_data(
+                    test_function_id,
+                    self.cov.get_data(),
+                    self.testfiles,
+                    self.database,
+                )
             )
         else:
             yield

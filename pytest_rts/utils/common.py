@@ -186,22 +186,19 @@ def save_testfile_and_func_data(item, elapsed_time, test_func_lines, db_helper):
 
 
 def save_mapping_data(test_function_id, cov_data, testfiles, db_helper):
-    """Save mapping database srcfile and lines covered"""
+    """Save mapping database srcfile and lines covered
+    and return the file paths that were excluded from source code file mapping
+    for logging
+    """
+    exluded_srcfiles = set()
     for filename in cov_data.measured_files():
         src_file = os.path.relpath(filename, os.getcwd())
-        conditions = [
-            "init_phase_plugin.py" in filename,
-            "update_phase_plugin.py" in filename,
-            ("/tmp/" in filename) and ("/tmp/" not in os.getcwd()),
-            "/.venv/" in filename,
-            src_file in testfiles,
-            src_file.endswith("conftest.py"),
-            not src_file.endswith(".py"),
-        ]
-        if any(conditions):
+        if src_file in testfiles:
+            exluded_srcfiles.add(src_file)
             continue
         src_id = db_helper.save_src_file(src_file)
         db_helper.save_mapping_lines(src_id, test_function_id, cov_data.lines(filename))
+    return exluded_srcfiles
 
 
 def calculate_func_lines(src_code):

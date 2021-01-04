@@ -24,7 +24,7 @@ def pytest_configure(config):
     if config.option.rts:
         if not os.path.isfile(DB_FILE_NAME):
             logger.info("No mapping database detected, starting initialization...")
-            config.pluginmanager.register(InitPhasePlugin())
+            config.pluginmanager.register(InitPhasePlugin(), "rts-init-plugin")
             return
 
         db_helper = DatabaseHelper()
@@ -82,7 +82,35 @@ def pytest_configure(config):
         update_mapping_db(committed_data.update_data, db_helper)
 
         if committed_data.test_set:
-            config.pluginmanager.register(UpdatePhasePlugin(committed_data.test_set))
+            config.pluginmanager.register(
+                UpdatePhasePlugin(committed_data.test_set), "rts-update-plugin"
+            )
             return
 
         pytest.exit("No tests to run", 0)
+
+
+def pytest_unconfigure(config):
+    """Log the files that were excluded from source code file mapping"""
+    logger = logging.getLogger()
+    logging.basicConfig(format="%(message)s", level=logging.INFO)
+
+    init_plugin = config.pluginmanager.getplugin("rts-init-plugin")
+    update_plugin = config.pluginmanager.getplugin("rts-update-plugin")
+    if init_plugin:
+        excluded_srcfiles = init_plugin.excluded_srcfiles
+    elif update_plugin:
+        excluded_srcfiles = update_plugin.excluded_srcfiles
+    else:
+        excluded_srcfiles = None
+
+    if excluded_srcfiles:
+        msg = " ".join(
+            [
+                "The following files were excluded from being mapped",
+                "as source code files because",
+                "they were considered as test code files:",
+            ]
+        )
+        logger.info(msg)
+        logger.info("\n".join(excluded_srcfiles))

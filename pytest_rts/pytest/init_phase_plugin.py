@@ -26,6 +26,7 @@ class InitPhasePlugin:
         self.database.init_mapping_db()
         self.head_hash = get_current_head_hash()
         self.database.save_last_update_hash(self.head_hash)
+        self.excluded_srcfiles = set()
 
     def pytest_collection_modifyitems(self, session, config, items):
         """Calculate function start and end line numbers from testfiles"""
@@ -53,11 +54,13 @@ class InitPhasePlugin:
             _, test_function_id = save_testfile_and_func_data(
                 item, elapsed, self.test_func_lines, self.database
             )
-            save_mapping_data(
-                test_function_id,
-                self.cov.get_data(),
-                self.testfiles,
-                self.database,
+            self.excluded_srcfiles.update(
+                save_mapping_data(
+                    test_function_id,
+                    self.cov.get_data(),
+                    self.testfiles,
+                    self.database,
+                )
             )
         else:
             yield

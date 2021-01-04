@@ -86,22 +86,3 @@ def test_update_db_from_test_mapping():
         new_func_linenumbers = new_func_line_dict[key]
         assert old_func_linenumbers[0] + shift == new_func_linenumbers[0]
         assert old_func_linenumbers[1] + shift == new_func_linenumbers[1]
-
-
-def test_tool_files_not_mapped():
-    conn = sqlite3.connect(DB_FILE_NAME)
-    tool_files_mapped = bool(
-        conn.execute(
-            """SELECT EXISTS(
-                SELECT * FROM src_file 
-                  WHERE 
-                    path LIKE '%/init_phase_plugin.py' 
-                    OR 
-                    path LIKE '%/update_phase_plugin.py'
-               )
-            """
-        ).fetchone()[0]
-    )
-    conn.close()
-
-    assert not tool_files_mapped
