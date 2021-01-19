@@ -1,11 +1,13 @@
 import sqlite3
 import subprocess
-from pytest_rts.utils.db import DatabaseHelper, DB_FILE_NAME
-from pytest_rts.utils.common import read_newly_added_tests
+from pytest_rts.plugin import DB_FILE_NAME
+from pytest_rts.utils.common import run_new_test_collection
 from pytest_rts.utils.selection import (
     get_tests_and_data_committed,
     get_tests_and_data_current,
 )
+from pytest_rts.utils.mappinghelper import MappingHelper
+from pytest_rts.utils.testgetter import TestGetter
 
 
 class TestHelper:
@@ -32,24 +34,30 @@ class TestHelper:
         return lines
 
     def get_tests_from_tool_current(self):
-        db = DatabaseHelper()
-        db.init_conn()
-        change_data = get_tests_and_data_current(db)
-        db.close_conn()
+        conn = sqlite3.connect(DB_FILE_NAME)
+        mappinghelper = MappingHelper(conn)
+        testgetter = TestGetter(conn)
+        change_data = get_tests_and_data_current(mappinghelper, testgetter)
+        conn.close()
         return change_data.test_set
 
     def get_tests_from_tool_committed(self):
-        db = DatabaseHelper()
-        db.init_conn()
-        change_data = get_tests_and_data_committed(db)
-        db.close_conn()
+        conn = sqlite3.connect(DB_FILE_NAME)
+        mappinghelper = MappingHelper(conn)
+        testgetter = TestGetter(conn)
+        change_data = get_tests_and_data_committed(
+            mappinghelper,
+            testgetter,
+        )
+        conn.close()
         return change_data.test_set
 
     def get_newly_added_tests_from_tool(self):
-        db = DatabaseHelper()
-        db.init_conn()
-        new_tests = read_newly_added_tests(db)
-        db.close_conn()
+        run_new_test_collection()
+        conn = sqlite3.connect(DB_FILE_NAME)
+        testgetter = TestGetter(conn)
+        new_tests = testgetter.newly_added_tests
+        conn.close()
         return new_tests
 
     def new_test_exists_in_mapping_db(self, testname):

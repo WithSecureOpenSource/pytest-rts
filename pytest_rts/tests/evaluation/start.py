@@ -2,7 +2,7 @@
 import logging
 import os
 import subprocess
-from pytest_rts.utils.db import DB_FILE_NAME
+from pytest_rts.utils.plugin import DB_FILE_NAME
 from pytest_rts.utils.git import (
     get_current_head_hash,
 )

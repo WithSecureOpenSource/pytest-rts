@@ -1,6 +1,8 @@
 """This module contains code for collecting newly added tests"""
 # pylint: disable=too-few-public-methods
-from pytest_rts.utils.db import DatabaseHelper
+import sqlite3
+from pytest_rts.plugin import DB_FILE_NAME
+from pytest_rts.utils.testgetter import TestGetter
 
 
 class CollectPlugin:
@@ -9,10 +11,10 @@ class CollectPlugin:
     def __init__(self):
         """Query existing test functions from database before collection"""
         self.collected = set()
-        self.database = DatabaseHelper()
-        self.database.init_conn()
-        self.existing_tests = self.database.existing_tests
-        self.database.clear_new_tests()
+        self.conn = sqlite3.connect(DB_FILE_NAME)
+        self.testgetter = TestGetter(self.conn)
+        self.existing_tests = self.testgetter.existing_tests
+        self.testgetter.delete_newly_added_tests()
 
     def pytest_collection_modifyitems(self, session, config, items):
         """Select tests that have not been previously seen"""
@@ -20,4 +22,6 @@ class CollectPlugin:
         for item in items:
             if item.nodeid not in self.existing_tests:
                 self.collected.add(item.nodeid)
-        self.database.add_new_tests(self.collected)
+        self.testgetter.set_newly_added_tests(self.collected)
+        self.conn.commit()
+        self.conn.close()

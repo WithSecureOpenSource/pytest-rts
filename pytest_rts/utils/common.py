@@ -22,8 +22,9 @@ def file_diff_dict_between_commits(files, commithash1, commithash2):
     }
 
 
-def tests_from_changed_testfiles(diff_dict, files, db_helper):
+def tests_from_changed_testfiles(diff_dict, files, testgetter):
     """Calculate test set and update data from changes to a testfile"""
+
     test_set = set()
     changed_lines_map = {}
     new_line_map = {}
@@ -36,19 +37,21 @@ def tests_from_changed_testfiles(diff_dict, files, db_helper):
 
         changed_lines_map[file_id] = changed_lines
         new_line_map[file_id] = line_mapping(updates_to_lines, filename)
-        tests = db_helper.query_tests_testfile(changed_lines, file_id)
+
+        tests = testgetter.get_tests_from_testfiles(changed_lines, file_id)
 
         for test in tests:
             test_set.add(test)
     return test_set, changed_lines_map, new_line_map
 
 
-def tests_from_changed_srcfiles(diff_dict, files, db_helper):
+def tests_from_changed_srcfiles(diff_dict, files, mappinghelper, testgetter):
     """
     Calculate test set,
     update data
     and warning for untested new lines from changes to a source code file
     """
+
     test_set = set()
     changed_lines_map = {}
     new_line_map = {}
@@ -65,42 +68,41 @@ def tests_from_changed_srcfiles(diff_dict, files, db_helper):
 
         if any(
             [
-                not db_helper.mapping_line_exists(file_id, line_id)
-                for line_id in new_lines
+                not mappinghelper.line_exists(file_id, line_number)
+                for line_number in new_lines
             ]
         ):
             files_to_warn.append(filename)
 
-        tests = db_helper.query_tests_srcfile(changed_lines, file_id)
+        test_set.update(testgetter.get_tests_from_srcfiles(changed_lines, file_id))
 
-        for test in tests:
-            test_set.add(test)
     return test_set, changed_lines_map, new_line_map, files_to_warn
 
 
-def split_changes(changed_files, db_helper):
+def split_changes(changed_files, mappinghelper):
     """Split given changed files into changed testfiles and source code files"""
-    changed_tests = []
-    changed_sources = []
-    db_test_files, db_src_files = db_helper.get_testfiles_and_srcfiles()
+    changed_testfiles = []
+    changed_srcfiles = []
+
+    db_testfiles = mappinghelper.testfiles
+    db_srcfiles = mappinghelper.srcfiles
 
     for changed_file in changed_files:
-        for srcfile in db_src_files:
+        for srcfile in db_srcfiles:
             path_to_file = srcfile[1]
             if changed_file == path_to_file:
-                changed_sources.append(srcfile)
-        for testfile in db_test_files:
+                changed_srcfiles.append(srcfile)
+        for testfile in db_testfiles:
             path_to_file = testfile[1]
             if changed_file == path_to_file:
-                changed_tests.append(testfile)
+                changed_testfiles.append(testfile)
 
-    return changed_tests, changed_sources
+    return changed_testfiles, changed_srcfiles
 
 
-def read_newly_added_tests(db_helper):
-    """Run collect plugin and read collected new tests from database"""
+def run_new_test_collection():
+    """Run collect plugin"""
     subprocess.run(["pytest_rts_collect"], check=True)
-    return db_helper.read_newly_added_tests()
 
 
 def line_mapping(updates_to_lines, filename, project_folder="."):
@@ -147,7 +149,10 @@ def function_lines(node, end):
     result = []
 
     if isinstance(node, ast.AST):
-        if node.__class__.__name__ == "FunctionDef":
+        if (
+            node.__class__.__name__ == "FunctionDef"
+            or node.__class__.__name__ == "AsyncFunctionDef"
+        ):
             result.append((node.name, node.body[0].lineno, end))
 
         for _, field_value in ast.iter_fields(node):
@@ -158,49 +163,6 @@ def function_lines(node, end):
             result.extend(function_lines(item, _next_lineno(i, end)))
 
     return result
-
-
-def parse_testfile_from_pytest_item(item):
-    """Return testfile path from pytest item"""
-    testname = item.nodeid
-    testfile = testname.split("::")[0]
-    return testfile
-
-
-def parse_testfunc_from_pytest_item(item):
-    """Return test function name from pytest item"""
-    func_name = item.name
-    func_name_no_params = func_name.split("[")[0]
-    return func_name_no_params
-
-
-def save_testfile_and_func_data(item, elapsed_time, test_func_lines, db_helper):
-    """Save testfile and test function"""
-    testname = item.nodeid
-    testfile = parse_testfile_from_pytest_item(item)
-    func_name = parse_testfunc_from_pytest_item(item)
-    testfile_id, test_function_id = db_helper.save_testfile_and_func(
-        testfile, testname, test_func_lines[testfile][func_name], elapsed_time
-    )
-    return testfile_id, test_function_id
-
-
-def save_mapping_data(test_function_id, cov_data, testfiles, db_helper):
-    """Save mapping database srcfile and lines covered"""
-    for filename in cov_data.measured_files():
-        src_file = os.path.relpath(filename, os.getcwd())
-        conditions = [
-            "pytest-rts" in filename,
-            ("/tmp/" in filename) and ("/tmp/" not in os.getcwd()),
-            "/.venv/" in filename,
-            src_file in testfiles,
-            src_file.endswith("conftest.py"),
-            not src_file.endswith(".py"),
-        ]
-        if any(conditions):
-            continue
-        src_id = db_helper.save_src_file(src_file)
-        db_helper.save_mapping_lines(src_id, test_function_id, cov_data.lines(filename))
 
 
 def calculate_func_lines(src_code):
@@ -214,20 +176,3 @@ def calculate_func_lines(src_code):
         end = line[2]
         func_mapping[func] = (start, end)
     return func_mapping
-
-
-def update_mapping_db(update_data, db_helper):
-    """Remove old data from database and shift existing lines if needed"""
-    line_map_test = update_data.new_line_map_test
-    changed_lines_src = update_data.changed_lines_src
-    line_map_src = update_data.new_line_map_src
-
-    for testfile_id in line_map_test.keys():
-        # shift test functions
-        db_helper.update_db_from_test_mapping(line_map_test[testfile_id], testfile_id)
-
-    for srcfile_id in changed_lines_src.keys():
-        # delete ran lines of src file mapping to be remapped by coverage collection
-        # shift affected lines by correct amount
-        db_helper.delete_ran_lines(changed_lines_src[srcfile_id], srcfile_id)
-        db_helper.update_db_from_src_mapping(line_map_src[srcfile_id], srcfile_id)

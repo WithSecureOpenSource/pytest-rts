@@ -3,7 +3,7 @@ import logging
 import random
 import sqlite3
 import subprocess
-from pytest_rts.utils.db import DB_FILE_NAME
+from pytest_rts.utils.plugin import DB_FILE_NAME
 from pytest_rts.utils.git import (
     get_git_repo,
     get_current_head_hash,
