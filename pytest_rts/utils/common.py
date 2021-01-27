@@ -2,6 +2,8 @@
 import ast
 import os
 import subprocess
+from typing import Dict, List, Set, Tuple
+
 from pytest_rts.utils.git import (
     file_diff_data_between_commits,
     file_diff_data_current,
@@ -9,12 +11,12 @@ from pytest_rts.utils.git import (
 )
 
 
-def file_diff_dict_current(files):
+def file_diff_dict_current(files) -> Dict[int, str]:
     """Returns a dictionary with file id as key and git diff as value"""
     return {file_id: file_diff_data_current(filename) for file_id, filename in files}
 
 
-def file_diff_dict_between_commits(files, commithash1, commithash2):
+def file_diff_dict_between_commits(files, commithash1, commithash2) -> Dict[int, str]:
     """Returns a dictionary with file id as key and git diff as value"""
     return {
         file_id: file_diff_data_between_commits(filename, commithash1, commithash2)
@@ -22,12 +24,14 @@ def file_diff_dict_between_commits(files, commithash1, commithash2):
     }
 
 
-def tests_from_changed_testfiles(diff_dict, files, testgetter):
+def tests_from_changed_testfiles(
+    diff_dict, files, testgetter
+) -> Tuple[Set[str], Dict[int, List[int]], Dict[int, Dict[int, int]]]:
     """Calculate test set and update data from changes to a testfile"""
 
-    test_set = set()
-    changed_lines_map = {}
-    new_line_map = {}
+    test_set: Set[str] = set()
+    changed_lines_map: Dict[int, List[int]] = {}
+    new_line_map: Dict[int, Dict[int, int]] = {}
     for testfile in files:
         file_id = testfile[0]
         filename = testfile[1]
@@ -38,24 +42,24 @@ def tests_from_changed_testfiles(diff_dict, files, testgetter):
         changed_lines_map[file_id] = changed_lines
         new_line_map[file_id] = line_mapping(updates_to_lines, filename)
 
-        tests = testgetter.get_tests_from_testfiles(changed_lines, file_id)
+        test_set.update(testgetter.get_tests_from_testfiles(changed_lines, file_id))
 
-        for test in tests:
-            test_set.add(test)
     return test_set, changed_lines_map, new_line_map
 
 
-def tests_from_changed_srcfiles(diff_dict, files, mappinghelper, testgetter):
+def tests_from_changed_srcfiles(
+    diff_dict, files, mappinghelper, testgetter
+) -> Tuple[Set[str], Dict[int, List[int]], Dict[int, Dict[int, int]], List[str]]:
     """
     Calculate test set,
     update data
     and warning for untested new lines from changes to a source code file
     """
 
-    test_set = set()
-    changed_lines_map = {}
-    new_line_map = {}
-    files_to_warn = []
+    test_set: Set[str] = set()
+    changed_lines_map: Dict[int, List[int]] = {}
+    new_line_map: Dict[int, Dict[int, int]] = {}
+    files_to_warn: List[str] = []
     for srcfile in files:
         file_id = srcfile[0]
         filename = srcfile[1]
@@ -66,9 +70,9 @@ def tests_from_changed_srcfiles(diff_dict, files, mappinghelper, testgetter):
         changed_lines_map[file_id] = changed_lines
         new_line_map[file_id] = line_mapping(updates_to_lines, filename)
 
-        if any(
+        if not all(
             [
-                not mappinghelper.line_exists(file_id, line_number)
+                mappinghelper.line_exists(file_id, line_number)
                 for line_number in new_lines
             ]
         ):
@@ -79,24 +83,12 @@ def tests_from_changed_srcfiles(diff_dict, files, mappinghelper, testgetter):
     return test_set, changed_lines_map, new_line_map, files_to_warn
 
 
-def split_changes(changed_files, mappinghelper):
-    """Split given changed files into changed testfiles and source code files"""
-    changed_testfiles = []
-    changed_srcfiles = []
-
-    db_testfiles = mappinghelper.testfiles
-    db_srcfiles = mappinghelper.srcfiles
-
-    for changed_file in changed_files:
-        for srcfile in db_srcfiles:
-            path_to_file = srcfile[1]
-            if changed_file == path_to_file:
-                changed_srcfiles.append(srcfile)
-        for testfile in db_testfiles:
-            path_to_file = testfile[1]
-            if changed_file == path_to_file:
-                changed_testfiles.append(testfile)
-
+def split_changes(
+    changed_files, mappinghelper
+) -> Tuple[List[Tuple[int, str]], List[Tuple[int, str]]]:
+    """Split given changed files into changed testfiles and source code files by comparing paths"""
+    changed_testfiles = [x for x in mappinghelper.testfiles if x[1] in changed_files]
+    changed_srcfiles = [x for x in mappinghelper.srcfiles if x[1] in changed_files]
     return changed_testfiles, changed_srcfiles
 
 
@@ -105,7 +97,7 @@ def run_new_test_collection():
     subprocess.run(["pytest_rts_collect"], check=True)
 
 
-def line_mapping(updates_to_lines, filename, project_folder="."):
+def line_mapping(updates_to_lines, filename, project_folder=".") -> Dict[int, int]:
     """Calculate new line numbers from given changes"""
     try:
         with open(os.path.join(".", project_folder, filename)) as filetoread:
@@ -165,14 +157,8 @@ def function_lines(node, end):
     return result
 
 
-def calculate_func_lines(src_code):
+def calculate_func_lines(src_code) -> Dict[str, Tuple[int, int]]:
     """Calculate start and end line numbers for all functions in given code string"""
     parsed_src_code = ast.parse(src_code)
     func_lines = function_lines(parsed_src_code, len(src_code.splitlines()))
-    func_mapping = {}
-    for line in func_lines:
-        func = line[0]
-        start = line[1]
-        end = line[2]
-        func_mapping[func] = (start, end)
-    return func_mapping
+    return {x[0]: (x[1], x[2]) for x in func_lines}

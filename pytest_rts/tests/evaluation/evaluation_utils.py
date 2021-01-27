@@ -1,9 +1,12 @@
 """Helper functions for evaluation code"""
+from functools import wraps
 import logging
 import random
 import sqlite3
 import subprocess
-from pytest_rts.utils.plugin import DB_FILE_NAME
+from typing import List, Set
+
+from pytest_rts.plugin import DB_FILE_NAME
 from pytest_rts.utils.git import (
     get_git_repo,
     get_current_head_hash,
@@ -11,13 +14,25 @@ from pytest_rts.utils.git import (
 )
 
 
-def full_diff_between_commits(commit1, commit2):
+def with_connection(func):
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        conn = sqlite3.connect(DB_FILE_NAME)
+        try:
+            return func(*args, **kwargs, conn=conn)
+        finally:
+            conn.close()
+
+    return wrapper
+
+
+def full_diff_between_commits(commit1, commit2) -> str:
     """Git diff between commits"""
     repo = get_git_repo(None).repo.git
     return repo.diff(commit1, commit2)
 
 
-def select_random_file(files):
+def select_random_file(files) -> str:
     """Select a random source file from list"""
     return random.choice(files)
 
@@ -42,7 +57,7 @@ def delete_random_line(filepath):
         exit(1)
 
 
-def capture_specific_exit_code(tests, max_wait):
+def capture_specific_exit_code(tests, max_wait) -> int:
     """Run pytest with a given test set and capture exit code"""
     try:
         specific_exit_code = subprocess.run(
@@ -58,7 +73,7 @@ def capture_specific_exit_code(tests, max_wait):
     return specific_exit_code
 
 
-def capture_all_exit_code(max_wait):
+def capture_all_exit_code(max_wait) -> int:
     """Run entire pytest test suite and capture exit code"""
     try:
         all_exit_code = subprocess.run(
@@ -104,63 +119,51 @@ def print_remove_test_output(
     logger.info("============")
 
 
-def get_test_suite_size():
+@with_connection
+def get_test_suite_size(conn=None) -> int:
     """Query how many tests are in mapping database"""
-    conn = sqlite3.connect(DB_FILE_NAME)
-    size = int(conn.execute("SELECT count() FROM test_function").fetchone()[0])
-    conn.close()
-    return size
+    return int(conn.execute("SELECT count() FROM test_function").fetchone()[0])
 
 
-def get_all_tests_for_srcfile(file_id):
+@with_connection
+def get_all_tests_for_srcfile(file_id, conn=None) -> List[str]:
     """Query all tests for a source code file"""
-    conn = sqlite3.connect(DB_FILE_NAME)
-    tests = []
-    data = conn.execute(
-        """ SELECT DISTINCT context
+    return [
+        line[0]
+        for line in conn.execute(
+            """ SELECT DISTINCT context
                 FROM test_function
                 JOIN test_map ON test_function.id == test_map.test_function_id
                 WHERE test_map.file_id = ? """,
-        (file_id,),
-    )
-    for line in data:
-        test = line[0]
-        tests.append(test)
-    conn.close()
-    return tests
+            (file_id,),
+        )
+    ]
 
 
-def get_srcfile_id(path):
+@with_connection
+def get_srcfile_id(path, conn=None) -> int:
     """Get the id in the mapping database for a source code file"""
-    conn = sqlite3.connect(DB_FILE_NAME)
-    src_id = conn.execute(
-        "SELECT id FROM src_file WHERE path == ?", (path,)
-    ).fetchone()[0]
-    conn.close()
-    return src_id
+    return conn.execute("SELECT id FROM src_file WHERE path == ?", (path,)).fetchone()[
+        0
+    ]
 
 
-def get_file_level_tests_between_commits(commit1, commit2):
+def get_file_level_tests_between_commits(commit1, commit2) -> Set[str]:
     """Get the file-level granularity test set between git commits"""
-    tests_file_level = set()
-    changed_files = changed_files_between_commits(commit1, commit2)
-    for path in changed_files:
-        srcfile_id = get_srcfile_id(path)
-        tests_file_level.update(get_all_tests_for_srcfile(srcfile_id))
-    return tests_file_level
+    return {
+        test
+        for path in changed_files_between_commits(commit1, commit2)
+        for test in get_all_tests_for_srcfile(get_srcfile_id(path))
+    }
 
 
-def get_mapping_srcfiles():
+@with_connection
+def get_mapping_srcfiles(conn=None) -> List[str]:
     """Get all the tool's covered source code files"""
-    conn = sqlite3.connect(DB_FILE_NAME)
-    srcfiles = [x[0] for x in conn.execute("SELECT path FROM src_file").fetchall()]
-    conn.close()
-    return srcfiles
+    return [x[0] for x in conn.execute("SELECT path FROM src_file")]
 
 
-def get_mapping_init_hash():
+@with_connection
+def get_mapping_init_hash(conn=None) -> str:
     """Get the git commit hash for initial state of the mapping database"""
-    conn = sqlite3.connect(DB_FILE_NAME)
-    init_hash = conn.execute("SELECT hash FROM last_update_hash").fetchone()[0]
-    conn.close()
-    return init_hash
+    return conn.execute("SELECT hash FROM last_update_hash").fetchone()[0]

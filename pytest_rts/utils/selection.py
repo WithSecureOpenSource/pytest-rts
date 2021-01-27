@@ -20,10 +20,10 @@ from pytest_rts.utils.testgetter import TestGetter
 UpdateData = NamedTuple(
     "UpdateData",
     [
-        ("changed_lines_test", Dict[str, List[int]]),
-        ("new_line_map_test", Dict[int, int]),
-        ("changed_lines_src", Dict[str, List[int]]),
-        ("new_line_map_src", Dict[int, int]),
+        ("changed_lines_test", Dict[int, List[int]]),
+        ("new_line_map_test", Dict[int, Dict[int, int]]),
+        ("changed_lines_src", Dict[int, List[int]]),
+        ("new_line_map_src", Dict[int, Dict[int, int]]),
     ],
 )
 
@@ -63,8 +63,8 @@ TestsAndDataCommitted = NamedTuple(
 TestsFromChangesInput = NamedTuple(
     "TestsFromChangesInput",
     [
-        ("test_file_diffs", Dict[str, str]),
-        ("src_file_diffs", Dict[str, str]),
+        ("test_file_diffs", Dict[int, str]),
+        ("src_file_diffs", Dict[int, str]),
         ("testfiles", List[Tuple[int, str]]),
         ("srcfiles", List[Tuple[int, str]]),
         ("mappinghelper", MappingHelper),
