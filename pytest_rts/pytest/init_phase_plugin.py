@@ -15,7 +15,7 @@ class InitPhasePlugin:
     def __init__(self, mappinghelper):
         """"Constructor calls database and Coverage.py initialization"""
         self.test_func_lines = {}
-        self.cov = coverage.Coverage()
+        self.cov = coverage.Coverage(data_file=None)
         self.cov._warn_unimported_source = False
         self.testfiles = set()
 

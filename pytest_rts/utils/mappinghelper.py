@@ -61,19 +61,19 @@ class MappingHelper:
 
     def __delete_lines(self, line_ids, file_id):
         """Remove entries from covered line mapping"""
-        for line in line_ids:
-            self.connection.execute(
-                "DELETE FROM test_map WHERE line_id == ? AND file_id == ?",
-                (line, file_id),
-            )
+        entries = [(line_id, file_id) for line_id in line_ids]
+        self.connection.executemany(
+            "DELETE FROM test_map WHERE line_id == ? AND file_id == ?",
+            entries,
+        )
 
     def __add_lines(self, src_id, test_function_id, lines):
         """Add entries to covered line mapping"""
-        for line in lines:
-            self.connection.execute(
-                "INSERT OR IGNORE INTO test_map (file_id,test_function_id,line_id) VALUES (?,?,?)",
-                (src_id, test_function_id, line),
-            )
+        entries = [(src_id, test_function_id, line) for line in lines]
+        self.connection.executemany(
+            "INSERT OR IGNORE INTO test_map (file_id,test_function_id,line_id) VALUES (?,?,?)",
+            entries,
+        )
 
     def __add_srcfile(self, path):
         """Add a covered source code file to mapping"""
