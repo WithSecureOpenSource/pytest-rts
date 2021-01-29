@@ -1,45 +1,42 @@
 """This module contains code for running a specific test set with mapping database updating"""
+import os
+import sys
 from timeit import default_timer as timer
+
 import coverage
 import pytest
 from _pytest.python import Function
-from pytest_rts.utils.db import DatabaseHelper
+
 from pytest_rts.pytest.fake_item import FakeItem
-from pytest_rts.utils.common import (
-    calculate_func_lines,
-    save_mapping_data,
-    save_testfile_and_func_data,
-)
+from pytest_rts.utils.common import calculate_func_lines
+from pytest_rts.utils.mappinghelper import TestrunData
+
+
+def _read_testfile_functions(testfile_path):
+    """Calculate test file function lines and
+    expect an error for deleted test file between commits
+    """
+    try:
+        return calculate_func_lines(coverage.python.get_python_source(testfile_path))
+    except coverage.misc.NoSource:
+        return {}
 
 
 class UpdatePhasePlugin:
     """Class to handle running of selected tests and updating mapping with the results"""
 
-    def __init__(self, test_set):
+    def __init__(self, test_set, mappinghelper, testgetter):
         """Constructor opens database connection and initializes Coverage.py"""
-        self.test_func_lines = {}
-        self.test_func_times = {}
         self.cov = coverage.Coverage()
         self.cov._warn_unimported_source = False
         self.test_set = test_set
-        self.testfiles = set()
-        self.database = DatabaseHelper()
-        self.database.init_conn()
-        self.fill_times_dict()
 
-    def fill_times_dict(self):
-        """Gets test durations from database used for test prioritization"""
-        for testname in self.test_set:
-            self.test_func_times[testname] = self.database.get_test_duration(testname)
+        self.mappinghelper = mappinghelper
+        self.testgetter = testgetter
 
-    def add_missing_testfiles(self):
-        """Checks database for testfile names
-        to prevent them for getting mapped to source code files
-        """
-        db_test_files, _ = self.database.get_testfiles_and_srcfiles()
-        for testfile in db_test_files:
-            filename = testfile[1]
-            self.testfiles.add(filename)
+        self.testfiles = {testfile[1] for testfile in self.mappinghelper.testfiles}
+        self.test_func_lines = None
+        self.test_func_times = self.testgetter.test_function_runtimes
 
     def pytest_collection_modifyitems(self, session, config, items):
         """
@@ -48,21 +45,21 @@ class UpdatePhasePlugin:
         """
         del config
         original_length = len(items)
-        selected = []
-        for item in items:
-            if item.nodeid in self.test_set:
-                selected.append(item)
-        # sort tests based on duration value from database
-        items[:] = sorted(selected, key=lambda item: self.test_func_times[item.nodeid])
+        selected = list(filter(lambda item: item.nodeid in self.test_set, items))
+        updated_runtimes = {
+            item.nodeid: self.test_func_times[item.nodeid]
+            if item.nodeid in self.test_func_times
+            else sys.maxsize
+            for item in selected
+        }
 
-        for item in items:
-            testfile = item.nodeid.split("::")[0]
-            self.testfiles.add(testfile)
-            if testfile not in self.test_func_lines:
-                testfile_src_code = coverage.python.get_python_source(testfile)
-                self.test_func_lines[testfile] = calculate_func_lines(testfile_src_code)
+        items[:] = sorted(selected, key=lambda item: updated_runtimes[item.nodeid])
 
-        self.add_missing_testfiles()
+        self.testfiles.update({os.path.relpath(item.location[0]) for item in items})
+        self.test_func_lines = {
+            testfile_path: _read_testfile_functions(testfile_path)
+            for testfile_path in self.testfiles
+        }
 
         session.config.hook.pytest_deselected(
             items=([FakeItem(session.config)] * (original_length - len(selected)))
@@ -78,17 +75,16 @@ class UpdatePhasePlugin:
             self.cov.start()
             yield
             self.cov.stop()
-            self.cov.save()
             end = timer()
             elapsed = round(end - start, 4)
-            _, test_function_id = save_testfile_and_func_data(
-                item, elapsed, self.test_func_lines, self.database
+
+            testrun_data = TestrunData(
+                pytest_item=item,
+                elapsed_time=elapsed,
+                coverage_data=self.cov.get_data(),
+                found_testfiles=self.testfiles,
+                test_function_lines=self.test_func_lines,
             )
-            save_mapping_data(
-                test_function_id,
-                self.cov.get_data(),
-                self.testfiles,
-                self.database,
-            )
+            self.mappinghelper.save_testrun_data(testrun_data)
         else:
             yield

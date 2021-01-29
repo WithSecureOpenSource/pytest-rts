@@ -12,15 +12,22 @@ def _read_long_description():
 
 
 GIT_VERSION = (
-    subprocess
-    .check_output("git describe --always".split())
+    subprocess.check_output("git describe --always".split())
     .strip()
     .decode("ascii")
     .replace("v", "", 1)
 )
 DEV_REQUIRE = [
-    "pytest-cov", "pytest-socket", "tox", "python-semantic-release", "black", "mypy",
-    "pylint", "safety", "wheel", "twine"
+    "pytest-cov",
+    "pytest-socket",
+    "tox",
+    "python-semantic-release",
+    "black",
+    "mypy",
+    "pylint",
+    "safety",
+    "wheel",
+    "twine",
 ]
 NAME = "pytest_rts"
 NAME_DASHED = NAME.replace("_", "-")
@@ -32,15 +39,14 @@ setup(
     long_description_content_type="text/markdown",
     author="Eero Kauhanen, Matvey Pashkovskiy, Alexey Vyskubov",
     url=f"https://github.com/F-Secure/{NAME_DASHED}",
-    license='Apache License 2.0',
-    platforms='any',
+    license="Apache License 2.0",
+    platforms="any",
     version=GIT_VERSION,
     packages=find_packages(exclude=[f"{NAME}.tests", f"{NAME}.tests.*"]),
     entry_points={
         "console_scripts": [
             f"{NAME}_eval={NAME}.tests.evaluation.start:main",
-            f"{NAME}_specific_without_remap={NAME}.tests.evaluation.specific_without_remap:main",
-            f"{NAME}_all_without_remap={NAME}.tests.evaluation.all_without_remap:main",
+            f"{NAME}_capture_exitcode={NAME}.tests.evaluation.exitcode:main",
             f"{NAME}_collect={NAME}.collect:main",
         ],
         "pytest11": [
