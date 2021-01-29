@@ -2,6 +2,14 @@
 
 <!--next-version-placeholder-->
 
+## v1.1.10 (2021-01-29)
+### Fix
+* Rename selection file to prevent test discovery ([`b80f30a`](https://github.com/F-Secure/pytest-rts/commit/b80f30a6e29060f1b9769d01ec61760a49d2f977))
+
+### Documentation
+* Added Acknowledgement section to README.md ([#75](https://github.com/F-Secure/pytest-rts/issues/75)) ([`4de6632`](https://github.com/F-Secure/pytest-rts/commit/4de663291fd8c388164259b830e4badcb13d98e8))
+* Added link to the tutorial to README.md and fixed usage sectino ([`9d25edf`](https://github.com/F-Secure/pytest-rts/commit/9d25edf7c54c2e0b7743cc83c5c8e7e658c88118))
+
 ## v1.1.9 (2020-12-21)
 ### Fix
 * Minor ([`891c743`](https://github.com/F-Secure/pytest-rts/commit/891c743332cf7c5248f6ec1b28140c4381a72ef6))
