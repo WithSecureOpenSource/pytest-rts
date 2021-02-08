@@ -7,9 +7,36 @@ from pydriller import GitRepository
 def get_git_repo(project_folder):
     """Return a GitRepository"""
     if not project_folder:
-        res = subprocess.check_output("git rev-parse --show-toplevel".split())
+        res = subprocess.check_output(
+            "git rev-parse --show-toplevel".split(),
+            stderr=subprocess.DEVNULL,
+        )
         project_folder = res.decode().strip()
     return GitRepository(project_folder)
+
+
+def is_git_repo():
+    """Check if current directory or any parent directory is a git repo"""
+    try:
+        subprocess.check_output(
+            "git rev-parse --show-toplevel".split(),
+            stderr=subprocess.DEVNULL,
+        )
+        return True
+    except subprocess.CalledProcessError:
+        return False
+
+
+def repo_has_commits():
+    """Check if current repository has commits"""
+    try:
+        subprocess.check_output(
+            ["git", "log"],
+            stderr=subprocess.DEVNULL,
+        )
+        return True
+    except subprocess.CalledProcessError:
+        return False
 
 
 def changed_files_between_commits(commit1, commit2, project_folder=None):
