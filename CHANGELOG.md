@@ -10,9 +10,27 @@
 * Added Acknowledgement section to README.md ([#75](https://github.com/F-Secure/pytest-rts/issues/75)) ([`4de6632`](https://github.com/F-Secure/pytest-rts/commit/4de663291fd8c388164259b830e4badcb13d98e8))
 * Added link to the tutorial to README.md and fixed usage sectino ([`9d25edf`](https://github.com/F-Secure/pytest-rts/commit/9d25edf7c54c2e0b7743cc83c5c8e7e658c88118))
 
+### Performance
+
+#### Mapping database initialization for RTS
+
+   | Pytest run of "pandas/tests/arithmetic/" of [Pandas](https://github.com/pandas-dev/pandas) (Commit 3bd3d1ec253a8a18ac951511820eb970f62baaed, 11839 tests)        | normal run | [Coverage.py](https://github.com/nedbat/coveragepy) "dynamic context" |  pytest-rts 1.1.10 |
+   | ------------------- | ------------------| ----------------| -----------------| 
+   | Database size       | -           | 2.8 MB         |  307 MB         |
+   | Runtime | 2min 5s            | 4min 36s         |  5min 36s        |
+
 ## v1.1.9 (2020-12-21)
 ### Fix
 * Minor ([`891c743`](https://github.com/F-Secure/pytest-rts/commit/891c743332cf7c5248f6ec1b28140c4381a72ef6))
+
+### Performance
+
+#### Mapping database initialization for RTS
+
+   | Pytest run of "pandas/tests/arithmetic/" of [Pandas](https://github.com/pandas-dev/pandas) (Commit 3bd3d1ec253a8a18ac951511820eb970f62baaed, 11839 tests)        | normal run | [Coverage.py](https://github.com/nedbat/coveragepy) "dynamic context" | pytest-rts 1.1.9  |
+   | ------------------- | ------------------| ----------------| -----------------| 
+   | Database size       | -           | 2.8 MB         | 307 MB         | 
+   | Runtime | 2min 5s            | 4min 36s         | 2h 24min 7s         |
 
 ## v1.1.8 (2020-12-21)
 ### Fix
