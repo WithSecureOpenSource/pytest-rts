@@ -2,6 +2,13 @@
 
 <!--next-version-placeholder-->
 
+## v1.2.0 (2021-02-15)
+### Feature
+* Handle usage in non-git directory ([`8ad080b`](https://github.com/F-Secure/pytest-rts/commit/8ad080be7eb31b96e1047a4aadabe9fe1a944085))
+
+### Documentation
+* Add performance section to changelog ([`b7f6139`](https://github.com/F-Secure/pytest-rts/commit/b7f6139520350c6f3ff49c1d5451b7d2015c5b56))
+
 ## v1.1.10 (2021-01-29)
 ### Fix
 * Rename selection file to prevent test discovery ([`b80f30a`](https://github.com/F-Secure/pytest-rts/commit/b80f30a6e29060f1b9769d01ec61760a49d2f977))
