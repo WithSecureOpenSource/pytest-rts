@@ -8,7 +8,11 @@ import pytest
 from pytest_rts.pytest.init_phase_plugin import InitPhasePlugin
 from pytest_rts.pytest.normal_phase_plugin import NormalPhasePlugin
 from pytest_rts.pytest.update_phase_plugin import UpdatePhasePlugin
-from pytest_rts.utils.git import get_current_head_hash
+from pytest_rts.utils.git import (
+    get_current_head_hash,
+    is_git_repo,
+    repo_has_commits,
+)
 from pytest_rts.utils.selection import (
     get_tests_and_data_committed,
     get_tests_and_data_current,
@@ -43,6 +47,18 @@ def pytest_configure(config):
     logging.basicConfig(format="%(message)s", level=logging.INFO)
 
     if not config.option.rts:
+        return
+
+    if not is_git_repo():
+        logger.info(
+            "Not a git repository! pytest-rts is disabled. Run git init before using pytest-rts."
+        )
+        return
+
+    if not repo_has_commits():
+        logger.info(
+            "No commits yet! pytest-rts is disabled. Create a git commit before using pytest-rts."
+        )
         return
 
     init_required = not os.path.isfile(DB_FILE_NAME)
