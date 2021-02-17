@@ -2,94 +2,30 @@
 import ast
 import os
 import subprocess
-from typing import Dict, List, Set, Tuple
+from typing import Dict, Tuple
 
 from pytest_rts.utils.git import (
     file_diff_data_between_commits,
     file_diff_data_current,
-    get_test_lines_and_update_lines,
 )
 
 
 def file_diff_dict_current(files) -> Dict[int, str]:
     """Returns a dictionary with file id as key and git diff as value"""
-    return {file_id: file_diff_data_current(filename) for file_id, filename in files}
+    return {
+        mapped_file.id: file_diff_data_current(mapped_file.path)
+        for mapped_file in files
+    }
 
 
 def file_diff_dict_between_commits(files, commithash1, commithash2) -> Dict[int, str]:
     """Returns a dictionary with file id as key and git diff as value"""
     return {
-        file_id: file_diff_data_between_commits(filename, commithash1, commithash2)
-        for file_id, filename in files
+        mapped_file.id: file_diff_data_between_commits(
+            mapped_file.path, commithash1, commithash2
+        )
+        for mapped_file in files
     }
-
-
-def tests_from_changed_testfiles(
-    diff_dict, files, testgetter
-) -> Tuple[Set[str], Dict[int, List[int]], Dict[int, Dict[int, int]]]:
-    """Calculate test set and update data from changes to a testfile"""
-
-    test_set: Set[str] = set()
-    changed_lines_map: Dict[int, List[int]] = {}
-    new_line_map: Dict[int, Dict[int, int]] = {}
-    for testfile in files:
-        file_id = testfile[0]
-        filename = testfile[1]
-        changed_lines, updates_to_lines, _ = get_test_lines_and_update_lines(
-            diff_dict[file_id]
-        )
-
-        changed_lines_map[file_id] = changed_lines
-        new_line_map[file_id] = line_mapping(updates_to_lines, filename)
-
-        test_set.update(testgetter.get_tests_from_testfiles(changed_lines, file_id))
-
-    return test_set, changed_lines_map, new_line_map
-
-
-def tests_from_changed_srcfiles(
-    diff_dict, files, mappinghelper, testgetter
-) -> Tuple[Set[str], Dict[int, List[int]], Dict[int, Dict[int, int]], List[str]]:
-    """
-    Calculate test set,
-    update data
-    and warning for untested new lines from changes to a source code file
-    """
-
-    test_set: Set[str] = set()
-    changed_lines_map: Dict[int, List[int]] = {}
-    new_line_map: Dict[int, Dict[int, int]] = {}
-    files_to_warn: List[str] = []
-    for srcfile in files:
-        file_id = srcfile[0]
-        filename = srcfile[1]
-        changed_lines, updates_to_lines, new_lines = get_test_lines_and_update_lines(
-            diff_dict[file_id]
-        )
-
-        changed_lines_map[file_id] = changed_lines
-        new_line_map[file_id] = line_mapping(updates_to_lines, filename)
-
-        if not all(
-            [
-                mappinghelper.line_exists(file_id, line_number)
-                for line_number in new_lines
-            ]
-        ):
-            files_to_warn.append(filename)
-
-        test_set.update(testgetter.get_tests_from_srcfiles(changed_lines, file_id))
-
-    return test_set, changed_lines_map, new_line_map, files_to_warn
-
-
-def split_changes(
-    changed_files, mappinghelper
-) -> Tuple[List[Tuple[int, str]], List[Tuple[int, str]]]:
-    """Split given changed files into changed testfiles and source code files by comparing paths"""
-    changed_testfiles = [x for x in mappinghelper.testfiles if x[1] in changed_files]
-    changed_srcfiles = [x for x in mappinghelper.srcfiles if x[1] in changed_files]
-    return changed_testfiles, changed_srcfiles
 
 
 def run_new_test_collection():

@@ -1,29 +1,19 @@
 """Helper functions for evaluation code"""
-from functools import wraps
 import logging
 import random
-import sqlite3
 import subprocess
 from typing import List, Set
 
-from pytest_rts.plugin import DB_FILE_NAME
 from pytest_rts.utils.git import (
     get_git_repo,
     get_current_head_hash,
     changed_files_between_commits,
 )
-
-
-def with_connection(func):
-    @wraps(func)
-    def wrapper(*args, **kwargs):
-        conn = sqlite3.connect(DB_FILE_NAME)
-        try:
-            return func(*args, **kwargs, conn=conn)
-        finally:
-            conn.close()
-
-    return wrapper
+from pytest_rts.models.source_file import SourceFile
+from pytest_rts.models.test_function import TestFunction
+from pytest_rts.models.test_map import TestMap
+from pytest_rts.tests.session_wrapper import with_session
+from pytest_rts.utils.mappinghelper import MappingHelper
 
 
 def full_diff_between_commits(commit1, commit2) -> str:
@@ -119,33 +109,27 @@ def print_remove_test_output(
     logger.info("============")
 
 
-@with_connection
-def get_test_suite_size(conn=None) -> int:
+@with_session
+def get_test_suite_size(session=None) -> int:
     """Query how many tests are in mapping database"""
-    return int(conn.execute("SELECT count() FROM test_function").fetchone()[0])
+    return session.query(TestFunction).count()
 
 
-@with_connection
-def get_all_tests_for_srcfile(file_id, conn=None) -> List[str]:
+@with_session
+def get_all_tests_for_srcfile(file_id, session=None) -> List[str]:
     """Query all tests for a source code file"""
     return [
-        line[0]
-        for line in conn.execute(
-            """ SELECT DISTINCT context
-                FROM test_function
-                JOIN test_map ON test_function.id == test_map.test_function_id
-                WHERE test_map.file_id = ? """,
-            (file_id,),
-        )
+        testfunction.name
+        for testfunction in session.query(TestFunction.name)
+        .join(TestMap)
+        .filter(TestMap.file_id == file_id)
     ]
 
 
-@with_connection
-def get_srcfile_id(path, conn=None) -> int:
+@with_session
+def get_srcfile_id(path, session=None) -> int:
     """Get the id in the mapping database for a source code file"""
-    return conn.execute("SELECT id FROM src_file WHERE path == ?", (path,)).fetchone()[
-        0
-    ]
+    return MappingHelper(session)._get_srcfile(path)
 
 
 def get_file_level_tests_between_commits(commit1, commit2) -> Set[str]:
@@ -157,13 +141,13 @@ def get_file_level_tests_between_commits(commit1, commit2) -> Set[str]:
     }
 
 
-@with_connection
-def get_mapping_srcfiles(conn=None) -> List[str]:
+@with_session
+def get_mapping_srcfiles(session=None) -> List[str]:
     """Get all the tool's covered source code files"""
-    return [x[0] for x in conn.execute("SELECT path FROM src_file")]
+    return [x.path for x in MappingHelper(session).srcfiles]
 
 
-@with_connection
-def get_mapping_init_hash(conn=None) -> str:
+@with_session
+def get_mapping_init_hash(session=None) -> str:
     """Get the git commit hash for initial state of the mapping database"""
-    return conn.execute("SELECT hash FROM last_update_hash").fetchone()[0]
+    return MappingHelper(session).last_update_hash

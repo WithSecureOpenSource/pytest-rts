@@ -5,6 +5,13 @@ from typing import Dict, List, NamedTuple, Set, Tuple
 from coverage import CoverageData
 from _pytest.python import Function
 
+from pytest_rts.models.source_file import SourceFile
+from pytest_rts.models.test_file import TestFile
+from pytest_rts.models.test_function import TestFunction
+from pytest_rts.models.test_map import TestMap
+from pytest_rts.models.last_update_hash import LastUpdateHash
+
+
 TestrunData = NamedTuple(
     "TestrunData",
     [
@@ -31,208 +38,148 @@ TestFunctionData = NamedTuple(
 class MappingHelper:
     """Class to handle mapping database initialization and updating"""
 
-    def __init__(self, connection):
+    def __init__(self, session):
         """Set the connection"""
-        self.connection = connection
+        self.session = session
+        self.saved_srcfiles = {}
+        self.saved_testfiles = {}
 
     @property
-    def srcfiles(self) -> List[Tuple[int, str]]:
+    def srcfiles(self) -> List[SourceFile]:
         """List of source code files (id, path) in the mapping database"""
-        return [
-            (x[0], x[1])
-            for x in self.connection.execute("SELECT id, path FROM src_file").fetchall()
-        ]
+        return self.session.query(SourceFile).all()
 
     @property
-    def testfiles(self) -> List[Tuple[int, str]]:
+    def testfiles(self) -> List[TestFile]:
         """List of test code files (id, path) in the mapping database"""
-        return [
-            (x[0], x[1])
-            for x in self.connection.execute(
-                "SELECT id, path FROM test_file"
-            ).fetchall()
-        ]
+        return self.session.query(TestFile).all()
 
     @property
     def last_update_hash(self) -> str:
         """Git commit hash of latest database update"""
-        return self.connection.execute("SELECT hash FROM last_update_hash").fetchone()[
-            0
-        ]
+        return self.session.query(LastUpdateHash).first().commithash
 
-    def _delete_lines(self, line_ids, file_id):
+    def split_changes(self, changed_files) -> Tuple[List[TestFile], List[SourceFile]]:
+        """Split given changed files into changed testfiles
+        and source code files by comparing paths
+        """
+        changed_testfiles = [x for x in self.testfiles if x.path in changed_files]
+        changed_srcfiles = [x for x in self.srcfiles if x.path in changed_files]
+        return changed_testfiles, changed_srcfiles
+
+    def _delete_lines(self, lines, file_id):
         """Remove entries from covered line mapping"""
-        entries = [(line_id, file_id) for line_id in line_ids]
-        self.connection.executemany(
-            "DELETE FROM test_map WHERE line_id == ? AND file_id == ?",
-            entries,
-        )
+        for line in lines:
+            self.session.query(TestMap).filter(
+                TestMap.file_id == file_id, TestMap.line_number == line
+            ).delete()
 
-    def _add_lines(self, src_id, test_function_id, lines):
-        """Add entries to covered line mapping"""
-        entries = [(src_id, test_function_id, line) for line in lines]
-        self.connection.executemany(
-            "INSERT OR IGNORE INTO test_map (file_id,test_function_id,line_id) VALUES (?,?,?)",
-            entries,
+    def _add_lines(self, file_id, test_function_id, lines):
+        self.session.bulk_insert_mappings(
+            TestMap,
+            [
+                dict(
+                    file_id=file_id, test_function_id=test_function_id, line_number=line
+                )
+                for line in lines
+            ],
         )
 
     def _add_srcfile(self, path):
         """Add a covered source code file to mapping"""
-        self.connection.execute(
-            "INSERT OR IGNORE INTO src_file (path) VALUES (?)", (path,)
-        )
+        self.session.add(SourceFile(path=path))
 
     def _get_srcfile(self, path) -> int:
         """Get a source code file id with path"""
-        srcfile_id = self.connection.execute(
-            "SELECT id FROM src_file WHERE path == ?", (path,)
-        ).fetchone()[0]
-        return srcfile_id
+        return self.session.query(SourceFile).filter_by(path=path).first().id
 
     def _add_testfile(self, path):
         """Add a test file to mapping"""
-        self.connection.execute(
-            "INSERT OR IGNORE INTO test_file (path) VALUES (?)", (path,)
-        )
+        self.session.add(TestFile(path=path))
 
     def _get_testfile(self, path) -> int:
         """Get a test code file id with path"""
-        testfile_id = self.connection.execute(
-            "SELECT id FROM test_file WHERE path == ?", (path,)
-        ).fetchone()[0]
-        return testfile_id
+        return self.session.query(TestFile).filter_by(path=path).first().id
 
     def _add_test_function(self, test_function_data):
         """Add a test function to mapping"""
-        self.connection.execute(
-            """INSERT OR IGNORE
-                INTO test_function
-                (test_file_id,context,start,end,duration)
-                VALUES (?,?,?,?,?)""",
-            (
-                test_function_data.testfile_id,
-                test_function_data.testname,
-                test_function_data.start_line_number,
-                test_function_data.end_line_number,
-                test_function_data.elapsed_time,
-            ),
+        self.session.add(
+            TestFunction(
+                test_file_id=test_function_data.testfile_id,
+                name=test_function_data.testname,
+                start=test_function_data.start_line_number,
+                end=test_function_data.end_line_number,
+                duration=test_function_data.elapsed_time,
+            )
         )
 
     def _get_test_function(self, testname) -> int:
         """Get a test function id with test name"""
-        test_function_id = self.connection.execute(
-            "SELECT id FROM test_function WHERE context == ?", (testname,)
-        ).fetchone()[0]
-        return test_function_id
+        return self.session.query(TestFunction).filter_by(name=testname).first().id
 
     def set_last_update_hash(self, commithash):
         """Set the latest database update Git commit hash"""
-        self.connection.execute("DELETE FROM last_update_hash")
-        self.connection.execute(
-            "INSERT INTO last_update_hash VALUES (?)", (commithash,)
-        )
-
-    def init_mapping(self):
-        """Create the mapping database tables"""
-        self.connection.execute("DROP TABLE IF EXISTS test_map")
-        self.connection.execute("DROP TABLE IF EXISTS src_file")
-        self.connection.execute("DROP TABLE IF EXISTS test_file")
-        self.connection.execute("DROP TABLE IF EXISTS test_function")
-        self.connection.execute("DROP TABLE IF EXISTS new_tests")
-        self.connection.execute("DROP TABLE IF EXISTS last_update_hash")
-        self.connection.execute(
-            """CREATE TABLE test_map (
-                    file_id INTEGER,
-                    test_function_id INTEGER,
-                    line_id INTEGER,
-                    UNIQUE(file_id,test_function_id,line_id))"""
-        )
-        self.connection.execute(
-            "CREATE TABLE src_file (id INTEGER PRIMARY KEY, path TEXT, UNIQUE (path))"
-        )
-        self.connection.execute(
-            "CREATE TABLE test_file (id INTEGER PRIMARY KEY, path TEXT, UNIQUE (path))"
-        )
-        self.connection.execute(
-            """CREATE TABLE test_function (
-                                    id INTEGER PRIMARY KEY,
-                                    test_file_id INTEGER,
-                                    context TEXT,
-                                    start INTEGER,
-                                    end INTEGER,
-                                    duration REAL,
-                                    FOREIGN KEY (test_file_id) REFERENCES test_file(id),
-                                    UNIQUE (context))"""
-        )
-        self.connection.execute("CREATE TABLE new_tests (context TEXT)")
-        self.connection.execute("CREATE TABLE last_update_hash (hash TEXT)")
+        self.session.query(LastUpdateHash).delete()
+        self.session.add(LastUpdateHash(commithash=commithash))
 
     def line_exists(self, file_id, line_number) -> bool:
         """Check whether a specific line number is covered for a source code file"""
         return bool(
-            self.connection.execute(
-                "SELECT EXISTS(SELECT file_id FROM test_map WHERE file_id = ? AND line_id = ?)",
-                (
-                    file_id,
-                    line_number,
-                ),
-            ).fetchone()[0]
+            self.session.query(TestMap)
+            .filter_by(file_id=file_id, line_number=line_number)
+            .first()
         )
 
     def _update_test_function_mapping(self, line_map, file_id):
         """Update test function entries in the mapping database
         by shifting their start and end line numbers
         """
-        entries_to_update = self.connection.execute(
-            """SELECT id,test_file_id,context,start,end FROM test_function
-                WHERE test_file_id = ?""",
-            (file_id,),
-        ).fetchall()
-
-        self.connection.execute(
-            "DELETE FROM test_function WHERE test_file_id = ?", (file_id,)
+        entries_to_update = (
+            self.session.query(TestFunction).filter_by(test_file_id=file_id).all()
         )
-        updated_entries = [
-            (
-                x[0],
-                x[1],
-                x[2],
-                line_map[x[3]] if x[3] in line_map else x[3],
-                line_map[x[4]] if x[4] in line_map else x[4],
+        for testfunction in entries_to_update:
+            testfunction.start = (
+                line_map[testfunction.start]
+                if testfunction.start in line_map
+                else testfunction.start
             )
-            for x in entries_to_update
-        ]
-        self.connection.executemany(
-            """
-                INSERT OR IGNORE
-                INTO test_function (id,test_file_id,context,start,end)
-                VALUES (?,?,?,?,?)""",
-            updated_entries,
-        )
+            testfunction.end = (
+                line_map[testfunction.end]
+                if testfunction.end in line_map
+                else testfunction.end
+            )
 
     def _update_line_mapping(self, line_map, file_id):
         """Update source code mapping
         by changing the covered line numbers
         according to a new line mapping
         """
-        lines = list(line_map.keys())
-        sql_params = tuple(lines + ([file_id]))
+        entries_to_update = []
+        for line in line_map.keys():
+            entries_to_update.extend(
+                self.session.query(TestMap).filter_by(file_id=file_id, line_number=line)
+            )
 
-        entries_to_update = self.connection.execute(
-            f"""SELECT file_id,test_function_id,line_id
-                FROM test_map WHERE line_id IN ({','.join(['?']*len(lines))}) AND file_id == ?""",
-            sql_params,
-        ).fetchall()
+        for entry in entries_to_update:
+            entry.line_number = line_map[entry.line_number]
 
-        self.connection.execute(
-            f"""DELETE FROM test_map
-            WHERE line_id IN ({','.join(['?']*len(lines))}) AND file_id == ?""",
-            sql_params,
-        )
-        updated_entries = [(x[0], x[1], line_map[x[2]]) for x in entries_to_update]
-        self.connection.executemany(
-            "INSERT OR IGNORE INTO test_map (file_id,test_function_id,line_id) VALUES (?,?,?)",
-            updated_entries,
+        self.session.expunge_all()
+
+        for line in line_map.keys():
+            self.session.query(TestMap).filter_by(
+                file_id=file_id, line_number=line
+            ).delete()
+
+        self.session.bulk_insert_mappings(
+            TestMap,
+            [
+                dict(
+                    file_id=entry.file_id,
+                    test_function_id=entry.test_function_id,
+                    line_number=entry.line_number,
+                )
+                for entry in entries_to_update
+            ],
         )
 
     def save_testrun_data(
@@ -279,8 +226,11 @@ class MappingHelper:
 
             self._add_srcfile(src_file_path)
             src_id = self._get_srcfile(src_file_path)
+
             self._add_lines(
-                src_id, test_function_id, testrun_data.coverage_data.lines(filename)
+                src_id,
+                test_function_id,
+                testrun_data.coverage_data.lines(filename),
             )
 
     def update_mapping(self, update_data):

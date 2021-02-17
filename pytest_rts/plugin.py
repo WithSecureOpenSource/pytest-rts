@@ -1,10 +1,10 @@
 """Code for pytest-rts plugin logic"""
 import logging
-import os
-import sqlite3
 
 import pytest
+from sqlalchemy_utils import database_exists
 
+from pytest_rts.connection import DB_FILE_NAME, MappingConn
 from pytest_rts.pytest.init_phase_plugin import InitPhasePlugin
 from pytest_rts.pytest.normal_phase_plugin import NormalPhasePlugin
 from pytest_rts.pytest.update_phase_plugin import UpdatePhasePlugin
@@ -20,25 +20,17 @@ from pytest_rts.utils.selection import (
 from pytest_rts.utils.mappinghelper import MappingHelper
 from pytest_rts.utils.testgetter import TestGetter
 
-DB_FILE_NAME = "mapping.db"
-
-
-class MappingConn:  # pylint: disable=too-few-public-methods
-    """Mapping connection"""
-
-    _conn = None
-
-    @classmethod
-    def conn(cls):
-        """SQLite connection"""
-        if not cls._conn:
-            cls._conn = sqlite3.connect(DB_FILE_NAME)
-        return cls._conn
-
 
 def pytest_addoption(parser):
     """Register pytest flags"""
-    parser.addoption("--rts", action="store_true", default=False, help="run rts")
+    group = parser.getgroup("pytest-rts")
+    group.addoption("--rts", action="store_true", default=False, help="run rts")
+    group.addoption(
+        "--rts-db-conn",
+        action="store",
+        default="",
+        help="database connection string",
+    )
 
 
 def pytest_configure(config):
@@ -61,10 +53,16 @@ def pytest_configure(config):
         )
         return
 
-    init_required = not os.path.isfile(DB_FILE_NAME)
+    config.option.rts_db_conn = (
+        f"sqlite:///{DB_FILE_NAME}"
+        if not config.option.rts_db_conn
+        else config.option.rts_db_conn
+    )
 
-    mapping_helper = MappingHelper(MappingConn.conn())
-    test_getter = TestGetter(MappingConn.conn())
+    init_required = not database_exists(config.option.rts_db_conn)
+
+    mapping_helper = MappingHelper(MappingConn.session(config.option.rts_db_conn))
+    test_getter = TestGetter(MappingConn.session(config.option.rts_db_conn))
 
     if init_required:
         logger.info("No mapping database detected, starting initialization...")
@@ -132,5 +130,5 @@ def pytest_configure(config):
 def pytest_unconfigure(config):
     """Cleanup after pytest run"""
     if config.option.rts:
-        MappingConn.conn().commit()
-        MappingConn.conn().close()
+        MappingConn.session(config.option.rts_db_conn).commit()
+        MappingConn.session(config.option.rts_db_conn).close()

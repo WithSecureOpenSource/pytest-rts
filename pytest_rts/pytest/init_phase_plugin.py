@@ -22,7 +22,6 @@ class InitPhasePlugin:
         self.test_func_lines = None
 
         self.mappinghelper = mappinghelper
-        self.mappinghelper.init_mapping()
         self.mappinghelper.set_last_update_hash(get_current_head_hash())
 
     def pytest_collection_modifyitems(self, session, config, items):

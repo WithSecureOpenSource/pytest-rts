@@ -8,7 +8,7 @@ def test_full_integration(helper):
     helper.change_file("changes/car/add_new_method.txt", "src/car.py")
 
     # Get changed src file id
-    src_file_id = helper.get_mapping_id_from_filename("src/car.py", is_srcfile=True)
+    src_file_id = helper.get_mapping_id_for_srcfile("src/car.py")
 
     # Get working directory test_set like in pytest_rts script
     workdir_test_set = helper.get_tests_from_tool_current()
@@ -79,7 +79,7 @@ def test_db_updating_only_once(helper):
     change = "changes/car/shift_2_forward.txt"
     expected_lines = [6, 7, 8, 11, 14]
 
-    src_file_id = helper.get_mapping_id_from_filename(filename, is_srcfile=True)
+    src_file_id = helper.get_mapping_id_for_srcfile(filename)
     old_lines = helper.get_mapping_lines_for_srcfile(src_file_id)
 
     # Change src file

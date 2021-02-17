@@ -3,7 +3,7 @@ import os
 import subprocess
 import shutil
 import pytest
-from pytest_rts.plugin import DB_FILE_NAME
+from pytest_rts.connection import DB_FILE_NAME
 from testhelper import TestHelper
 
 

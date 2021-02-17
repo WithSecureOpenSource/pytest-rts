@@ -34,7 +34,7 @@ class UpdatePhasePlugin:
         self.mappinghelper = mappinghelper
         self.testgetter = testgetter
 
-        self.testfiles = {testfile[1] for testfile in self.mappinghelper.testfiles}
+        self.testfiles = {testfile.path for testfile in self.mappinghelper.testfiles}
         self.test_func_lines = None
         self.test_func_times = self.testgetter.test_function_runtimes
 
