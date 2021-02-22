@@ -1,13 +1,15 @@
+"""Tests for common functions"""
 import ast
-import pytest
+
 from pytest_rts.utils import git, common
 
 
 def test_line_mapping(helper):
+    """Test case for calculating changed line numbers"""
     helper.change_file("changes/car/shift_2_forward.txt", "src/car.py")
 
     diff = git.file_diff_data_current("src/car.py")
-    lines_to_query, updates_to_lines, _ = git.get_test_lines_and_update_lines(diff)
+    _, updates_to_lines, _ = git.get_test_lines_and_update_lines(diff)
     line_map = common.line_mapping(updates_to_lines, "src/car.py")
 
     expected_line_map = {
@@ -42,9 +44,10 @@ def test_line_mapping(helper):
 
 
 def test_function_lines():
-    with open("src/car.py", "r") as f:
-        code = f.read()
-        codelines = f.readlines()
+    """Test case for calculating start and end line numbers in functions"""
+    with open("src/car.py", "r") as srcfile:
+        code = srcfile.read()
+        codelines = srcfile.readlines()
 
     parsed_code = ast.parse(code)
     func_lines = common.function_lines(parsed_code, len(codelines))

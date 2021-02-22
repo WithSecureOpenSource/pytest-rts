@@ -1,4 +1,6 @@
+"""Tests for Git utilities"""
 import pytest
+
 from pytest_rts.utils import git
 
 
@@ -17,9 +19,10 @@ from pytest_rts.utils import git
     ],
 )
 def test_changed_files_current(changes, expected, helper):
-    for c in changes:
-        change = c[0]
-        filename = c[1]
+    """Test for finding correct changed files"""
+    for change_tuple in changes:
+        change = change_tuple[0]
+        filename = change_tuple[1]
         helper.change_file(change, filename)
     assert git.changed_files_current() == expected
 
@@ -97,8 +100,9 @@ def test_changed_files_current(changes, expected, helper):
 def test_get_test_lines_and_update_lines_fake_change(
     diff_file, real_changed_lines, real_line_updates
 ):
-    with open(diff_file, "r") as f:
-        diff = f.read()
+    """Test for finding correct changed lines and required updates to lines"""
+    with open(diff_file, "r") as dfile:
+        diff = dfile.read()
 
     lines_changed, line_updates, _ = git.get_test_lines_and_update_lines(diff)
 
@@ -107,6 +111,7 @@ def test_get_test_lines_and_update_lines_fake_change(
 
 
 def test_get_test_lines_and_update_lines_real_change(helper):
+    """Test for finding correct changed lines and required updates to lines"""
     helper.change_file("changes/car/line_shifts_middle.txt", "src/car.py")
     diff = git.file_diff_data_current("src/car.py")
     changed_lines, line_updates, _ = git.get_test_lines_and_update_lines(diff)

@@ -5,11 +5,12 @@ from pytest_rts.tests.evaluation.capture_specific_plugin import CaptureSpecificP
 
 
 def main():
+    """Run pytest and exit with pytest exitcode"""
     test_set = set(sys.argv[1:])
     exit_code = pytest.main(
         ["-p", "no:terminal"], plugins=[CaptureSpecificPlugin(test_set)]
     )
-    exit(int(exit_code))
+    sys.exit(int(exit_code))
 
 
 if __name__ == "__main__":

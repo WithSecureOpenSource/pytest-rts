@@ -1,73 +1,91 @@
-import sqlite3
+"""Helper code for test cases"""
 import subprocess
-from pytest_rts.plugin import DB_FILE_NAME
+
+from sqlalchemy.sql import select
+
 from pytest_rts.utils.common import run_new_test_collection
+from pytest_rts.utils.mappinghelper import MappingHelper
 from pytest_rts.utils.selection import (
     get_tests_and_data_committed,
     get_tests_and_data_current,
 )
-from pytest_rts.utils.mappinghelper import MappingHelper
+from pytest_rts.tests.engine_wrapper import with_engine
 from pytest_rts.utils.testgetter import TestGetter
+from pytest_rts.utils.tables import test_function_table, test_map_table
 
 
 class TestHelper:
-    def get_mapping_id_from_filename(self, filename, is_srcfile):
-        if is_srcfile:
-            sql = "SELECT id FROM src_file WHERE path = ?"
-        else:
-            sql = "SELECT id from test_file WHERE path = ?"
+    """Helper class"""
 
-        conn = sqlite3.connect(DB_FILE_NAME)
-        file_id = conn.execute(sql, (filename,)).fetchone()[0]
-        conn.close()
-        return file_id
+    @staticmethod
+    @with_engine
+    def get_mapping_id_for_srcfile(path, engine=None):
+        """Mapping database id for a source code file"""
+        return MappingHelper(engine).saved_srcfiles[path]
 
-    def get_mapping_lines_for_srcfile(self, src_file_id):
-        conn = sqlite3.connect(DB_FILE_NAME)
-        lines = [
+    @staticmethod
+    @with_engine
+    def get_mapping_id_for_testfile(path, engine=None):
+        """Mapping database id for a test code file"""
+        return MappingHelper(engine).saved_testfiles[path]
+
+    @staticmethod
+    @with_engine
+    def get_mapping_lines_for_srcfile(src_file_id, engine=None):
+        """All mapped line numbers for a source code file"""
+        return [
             x[0]
-            for x in conn.execute(
-                "SELECT line_id FROM test_map WHERE file_id = ?", (src_file_id,)
-            ).fetchall()
+            for x in engine.execute(
+                select([test_map_table.c.line_id]).where(
+                    test_map_table.c.file_id == src_file_id
+                )
+            )
         ]
-        conn.close()
-        return lines
 
-    def get_tests_from_tool_current(self):
-        conn = sqlite3.connect(DB_FILE_NAME)
-        mappinghelper = MappingHelper(conn)
-        testgetter = TestGetter(conn)
+    @staticmethod
+    @with_engine
+    def get_tests_from_tool_current(engine=None):
+        """Tests from Git working directory changes"""
+        mappinghelper = MappingHelper(engine)
+        testgetter = TestGetter(engine)
         change_data = get_tests_and_data_current(mappinghelper, testgetter)
-        conn.close()
         return change_data.test_set
 
-    def get_tests_from_tool_committed(self):
-        conn = sqlite3.connect(DB_FILE_NAME)
-        mappinghelper = MappingHelper(conn)
-        testgetter = TestGetter(conn)
+    @staticmethod
+    @with_engine
+    def get_tests_from_tool_committed(engine=None):
+        """Tests from Git committed changes"""
+        mappinghelper = MappingHelper(engine)
+        testgetter = TestGetter(engine)
         change_data = get_tests_and_data_committed(
             mappinghelper,
             testgetter,
         )
-        conn.close()
         return change_data.test_set
 
-    def get_newly_added_tests_from_tool(self):
+    @staticmethod
+    @with_engine
+    def get_newly_added_tests_from_tool(engine=None):
+        """Tests that are not yet mapped"""
         run_new_test_collection()
-        conn = sqlite3.connect(DB_FILE_NAME)
-        testgetter = TestGetter(conn)
+        testgetter = TestGetter(engine)
         new_tests = testgetter.newly_added_tests
-        conn.close()
         return new_tests
 
-    def new_test_exists_in_mapping_db(self, testname):
-        conn = sqlite3.connect(DB_FILE_NAME)
-        sql = "SELECT EXISTS(SELECT id FROM test_function WHERE context = ?)"
-        exists = bool(conn.execute(sql, (testname,)).fetchone()[0])
-        conn.close()
-        return exists
+    @staticmethod
+    @with_engine
+    def new_test_exists_in_mapping_db(testname, engine=None):
+        """Check whether a test function is mapped"""
+        existing_test = engine.execute(
+            select([test_function_table]).where(
+                test_function_table.c.context == testname
+            )
+        ).fetchone()
+        return not existing_test is None
 
-    def change_file(self, change_path, file_path):
+    @staticmethod
+    def change_file(change_path, file_path):
+        """Change a file with path"""
         subprocess.run(
             ["cp", "-f", change_path, file_path],
             check=True,
@@ -75,7 +93,9 @@ class TestHelper:
             stderr=subprocess.DEVNULL,
         )
 
-    def commit_change(self, filename, message):
+    @staticmethod
+    def commit_change(filename, message):
+        """Git commit"""
         subprocess.run(
             ["git", "add", filename],
             check=True,
@@ -89,14 +109,22 @@ class TestHelper:
             stderr=subprocess.DEVNULL,
         )
 
-    def run_tool(self):
+    @staticmethod
+    def run_tool():
+        """Run pytest-rts"""
         subprocess.run(["pytest", "--rts"], check=True)
 
-    def squash_commits(self, n, new_message):
-        subprocess.run(["git", "reset", "--soft", f"HEAD~{n}"], check=True)
+    @staticmethod
+    def squash_commits(number_of_commits, new_message):
+        """Merge number_of_commits commits into one"""
+        subprocess.run(
+            ["git", "reset", "--soft", f"HEAD~{number_of_commits}"], check=True
+        )
         subprocess.run(["git", "commit", "-m", new_message], check=True)
 
-    def checkout_new_branch(self, branchname="new-branch"):
+    @staticmethod
+    def checkout_new_branch(branchname="new-branch"):
+        """Git checkout new branch"""
         subprocess.run(
             ["git", "checkout", "-b", branchname],
             check=True,
@@ -104,7 +132,9 @@ class TestHelper:
             stderr=subprocess.DEVNULL,
         )
 
-    def checkout_branch(self, branchname):
+    @staticmethod
+    def checkout_branch(branchname):
+        """Git checkout existing branch"""
         subprocess.run(
             ["git", "checkout", branchname],
             check=True,
@@ -112,7 +142,9 @@ class TestHelper:
             stderr=subprocess.DEVNULL,
         )
 
-    def delete_branch(self, branchname):
+    @staticmethod
+    def delete_branch(branchname):
+        """Remove Git branch"""
         subprocess.run(
             ["git", "branch", "-D", branchname],
             check=False,

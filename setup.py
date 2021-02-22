@@ -53,7 +53,13 @@ setup(
             f"{NAME_DASHED}={NAME}.plugin",
         ],
     },
-    install_requires=["pydriller", "coverage", "pytest"],
+    install_requires=[
+        "pydriller",
+        "coverage",
+        "pytest",
+        "sqlalchemy",
+        "sqlalchemy_utils",
+    ],
     extras_require={"dev": DEV_REQUIRE},
     classifiers=[
         "Programming Language :: Python",

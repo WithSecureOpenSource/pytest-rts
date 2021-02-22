@@ -2,9 +2,11 @@
 import os
 import subprocess
 import shutil
+
 import pytest
+
 from pytest_rts.plugin import DB_FILE_NAME
-from testhelper import TestHelper
+from pytest_rts.tests.testhelper import TestHelper
 
 
 @pytest.fixture(scope="session", autouse=True)

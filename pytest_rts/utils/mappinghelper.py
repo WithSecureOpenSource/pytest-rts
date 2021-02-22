@@ -3,7 +3,17 @@ import os
 from typing import Dict, List, NamedTuple, Set, Tuple
 
 from coverage import CoverageData
+from sqlalchemy.sql import select
 from _pytest.python import Function
+
+from pytest_rts.utils.tables import (
+    src_file_table,
+    test_file_table,
+    test_function_table,
+    test_map_table,
+    last_update_hash_table,
+    metadata,
+)
 
 TestrunData = NamedTuple(
     "TestrunData",
@@ -31,16 +41,27 @@ TestFunctionData = NamedTuple(
 class MappingHelper:
     """Class to handle mapping database initialization and updating"""
 
-    def __init__(self, connection):
+    def __init__(self, engine):
         """Set the connection"""
-        self.connection = connection
+        self.engine = engine
+        self.connection = self.engine.connect()
+        self.transaction = None
+        self.insert_prefix = "OR IGNORE"
+
+        metadata.create_all(self.engine)
+
+        self.saved_testfiles = {x[1]: x[0] for x in self.testfiles}
+        self.saved_srcfiles = {x[1]: x[0] for x in self.srcfiles}
+        self.saved_testfunctions = self._saved_testfunctions()
 
     @property
     def srcfiles(self) -> List[Tuple[int, str]]:
         """List of source code files (id, path) in the mapping database"""
         return [
             (x[0], x[1])
-            for x in self.connection.execute("SELECT id, path FROM src_file").fetchall()
+            for x in self.connection.execute(
+                select([src_file_table.c.id, src_file_table.c.path])
+            )
         ]
 
     @property
@@ -49,222 +70,51 @@ class MappingHelper:
         return [
             (x[0], x[1])
             for x in self.connection.execute(
-                "SELECT id, path FROM test_file"
-            ).fetchall()
+                select([test_file_table.c.id, test_file_table.c.path])
+            )
         ]
 
     @property
     def last_update_hash(self) -> str:
         """Git commit hash of latest database update"""
-        return self.connection.execute("SELECT hash FROM last_update_hash").fetchone()[
-            0
-        ]
-
-    def _delete_lines(self, line_ids, file_id):
-        """Remove entries from covered line mapping"""
-        entries = [(line_id, file_id) for line_id in line_ids]
-        self.connection.executemany(
-            "DELETE FROM test_map WHERE line_id == ? AND file_id == ?",
-            entries,
-        )
-
-    def _add_lines(self, src_id, test_function_id, lines):
-        """Add entries to covered line mapping"""
-        entries = [(src_id, test_function_id, line) for line in lines]
-        self.connection.executemany(
-            "INSERT OR IGNORE INTO test_map (file_id,test_function_id,line_id) VALUES (?,?,?)",
-            entries,
-        )
-
-    def _add_srcfile(self, path):
-        """Add a covered source code file to mapping"""
-        self.connection.execute(
-            "INSERT OR IGNORE INTO src_file (path) VALUES (?)", (path,)
-        )
-
-    def _get_srcfile(self, path) -> int:
-        """Get a source code file id with path"""
-        srcfile_id = self.connection.execute(
-            "SELECT id FROM src_file WHERE path == ?", (path,)
+        return self.connection.execute(
+            select([last_update_hash_table.c.hash])
         ).fetchone()[0]
-        return srcfile_id
-
-    def _add_testfile(self, path):
-        """Add a test file to mapping"""
-        self.connection.execute(
-            "INSERT OR IGNORE INTO test_file (path) VALUES (?)", (path,)
-        )
-
-    def _get_testfile(self, path) -> int:
-        """Get a test code file id with path"""
-        testfile_id = self.connection.execute(
-            "SELECT id FROM test_file WHERE path == ?", (path,)
-        ).fetchone()[0]
-        return testfile_id
-
-    def _add_test_function(self, test_function_data):
-        """Add a test function to mapping"""
-        self.connection.execute(
-            """INSERT OR IGNORE
-                INTO test_function
-                (test_file_id,context,start,end,duration)
-                VALUES (?,?,?,?,?)""",
-            (
-                test_function_data.testfile_id,
-                test_function_data.testname,
-                test_function_data.start_line_number,
-                test_function_data.end_line_number,
-                test_function_data.elapsed_time,
-            ),
-        )
-
-    def _get_test_function(self, testname) -> int:
-        """Get a test function id with test name"""
-        test_function_id = self.connection.execute(
-            "SELECT id FROM test_function WHERE context == ?", (testname,)
-        ).fetchone()[0]
-        return test_function_id
-
-    def set_last_update_hash(self, commithash):
-        """Set the latest database update Git commit hash"""
-        self.connection.execute("DELETE FROM last_update_hash")
-        self.connection.execute(
-            "INSERT INTO last_update_hash VALUES (?)", (commithash,)
-        )
-
-    def init_mapping(self):
-        """Create the mapping database tables"""
-        self.connection.execute("DROP TABLE IF EXISTS test_map")
-        self.connection.execute("DROP TABLE IF EXISTS src_file")
-        self.connection.execute("DROP TABLE IF EXISTS test_file")
-        self.connection.execute("DROP TABLE IF EXISTS test_function")
-        self.connection.execute("DROP TABLE IF EXISTS new_tests")
-        self.connection.execute("DROP TABLE IF EXISTS last_update_hash")
-        self.connection.execute(
-            """CREATE TABLE test_map (
-                    file_id INTEGER,
-                    test_function_id INTEGER,
-                    line_id INTEGER,
-                    UNIQUE(file_id,test_function_id,line_id))"""
-        )
-        self.connection.execute(
-            "CREATE TABLE src_file (id INTEGER PRIMARY KEY, path TEXT, UNIQUE (path))"
-        )
-        self.connection.execute(
-            "CREATE TABLE test_file (id INTEGER PRIMARY KEY, path TEXT, UNIQUE (path))"
-        )
-        self.connection.execute(
-            """CREATE TABLE test_function (
-                                    id INTEGER PRIMARY KEY,
-                                    test_file_id INTEGER,
-                                    context TEXT,
-                                    start INTEGER,
-                                    end INTEGER,
-                                    duration REAL,
-                                    FOREIGN KEY (test_file_id) REFERENCES test_file(id),
-                                    UNIQUE (context))"""
-        )
-        self.connection.execute("CREATE TABLE new_tests (context TEXT)")
-        self.connection.execute("CREATE TABLE last_update_hash (hash TEXT)")
-
-    def line_exists(self, file_id, line_number) -> bool:
-        """Check whether a specific line number is covered for a source code file"""
-        return bool(
-            self.connection.execute(
-                "SELECT EXISTS(SELECT file_id FROM test_map WHERE file_id = ? AND line_id = ?)",
-                (
-                    file_id,
-                    line_number,
-                ),
-            ).fetchone()[0]
-        )
-
-    def _update_test_function_mapping(self, line_map, file_id):
-        """Update test function entries in the mapping database
-        by shifting their start and end line numbers
-        """
-        entries_to_update = self.connection.execute(
-            """SELECT id,test_file_id,context,start,end FROM test_function
-                WHERE test_file_id = ?""",
-            (file_id,),
-        ).fetchall()
-
-        self.connection.execute(
-            "DELETE FROM test_function WHERE test_file_id = ?", (file_id,)
-        )
-        updated_entries = [
-            (
-                x[0],
-                x[1],
-                x[2],
-                line_map[x[3]] if x[3] in line_map else x[3],
-                line_map[x[4]] if x[4] in line_map else x[4],
-            )
-            for x in entries_to_update
-        ]
-        self.connection.executemany(
-            """
-                INSERT OR IGNORE
-                INTO test_function (id,test_file_id,context,start,end)
-                VALUES (?,?,?,?,?)""",
-            updated_entries,
-        )
-
-    def _update_line_mapping(self, line_map, file_id):
-        """Update source code mapping
-        by changing the covered line numbers
-        according to a new line mapping
-        """
-        lines = list(line_map.keys())
-        sql_params = tuple(lines + ([file_id]))
-
-        entries_to_update = self.connection.execute(
-            f"""SELECT file_id,test_function_id,line_id
-                FROM test_map WHERE line_id IN ({','.join(['?']*len(lines))}) AND file_id == ?""",
-            sql_params,
-        ).fetchall()
-
-        self.connection.execute(
-            f"""DELETE FROM test_map
-            WHERE line_id IN ({','.join(['?']*len(lines))}) AND file_id == ?""",
-            sql_params,
-        )
-        updated_entries = [(x[0], x[1], line_map[x[2]]) for x in entries_to_update]
-        self.connection.executemany(
-            "INSERT OR IGNORE INTO test_map (file_id,test_function_id,line_id) VALUES (?,?,?)",
-            updated_entries,
-        )
 
     def save_testrun_data(
         self,
         testrun_data,
     ):
         """Save the coverage information of running a single test function"""
-        testfile_path = os.path.relpath(testrun_data.pytest_item.location[0])
 
-        self._add_testfile(testfile_path)
-        testfile_id = self._get_testfile(testfile_path)
+        testfile_path = os.path.relpath(testrun_data.pytest_item.location[0])
+        if testfile_path not in self.saved_testfiles:
+            self._add_testfile(testfile_path)
+
+        testfile_id = self.saved_testfiles[testfile_path]
 
         testname = testrun_data.pytest_item.nodeid
-        test_function_name = testrun_data.pytest_item.originalname
-
-        test_function_data = TestFunctionData(
-            testfile_id=testfile_id,
-            testname=testname,
-            start_line_number=testrun_data.test_function_lines[testfile_path][
-                test_function_name
-            ][0],
-            end_line_number=testrun_data.test_function_lines[testfile_path][
-                test_function_name
-            ][1],
-            elapsed_time=testrun_data.elapsed_time,
-        )
-
-        self._add_test_function(test_function_data)
-        test_function_id = self._get_test_function(testname)
+        if testname not in self.saved_testfunctions:
+            test_function_name = testrun_data.pytest_item.originalname
+            test_function_data = TestFunctionData(
+                testfile_id=testfile_id,
+                testname=testname,
+                start_line_number=testrun_data.test_function_lines[testfile_path][
+                    test_function_name
+                ][0],
+                end_line_number=testrun_data.test_function_lines[testfile_path][
+                    test_function_name
+                ][1],
+                elapsed_time=testrun_data.elapsed_time,
+            )
+            self._add_test_function(test_function_data)
+        test_function_id = self.saved_testfunctions[testname]
 
         for filename in testrun_data.coverage_data.measured_files():
+            if not testrun_data.coverage_data.lines(filename):
+                continue
             src_file_path = os.path.relpath(filename, os.getcwd())
+
             # issue: find a way to get rid of hardcoded mapping conditions
             conditions = [
                 "pytest-rts" in filename,
@@ -277,8 +127,9 @@ class MappingHelper:
             if any(conditions):
                 continue
 
-            self._add_srcfile(src_file_path)
-            src_id = self._get_srcfile(src_file_path)
+            if src_file_path not in self.saved_srcfiles:
+                self._add_srcfile(src_file_path)
+            src_id = self.saved_srcfiles[src_file_path]
             self._add_lines(
                 src_id, test_function_id, testrun_data.coverage_data.lines(filename)
             )
@@ -298,3 +149,184 @@ class MappingHelper:
             # shift affected lines by correct amount
             self._delete_lines(changed_lines_src[srcfile_id], srcfile_id)
             self._update_line_mapping(line_map_src[srcfile_id], srcfile_id)
+
+    def split_changes(
+        self, changed_files
+    ) -> Tuple[List[Tuple[int, str]], List[Tuple[int, str]]]:
+        """Split given changed files into
+        changed testfiles and source code files by comparing paths
+        """
+        changed_testfiles = [x for x in self.testfiles if x[1] in changed_files]
+        changed_srcfiles = [x for x in self.srcfiles if x[1] in changed_files]
+        return changed_testfiles, changed_srcfiles
+
+    def start_transaction(self):
+        """Start a transaction for adding testrun data"""
+        self.transaction = self.connection.begin()
+
+    def end_transaction(self):
+        """Commit and end a transaction"""
+        self.transaction.commit()
+        self.transaction = None
+
+    def set_last_update_hash(self, commithash):
+        """Set the latest database update Git commit hash"""
+        self.connection.execute(last_update_hash_table.delete(None))
+        self.connection.execute(
+            last_update_hash_table.insert(None).values(hash=commithash)
+        )
+
+    def line_exists(self, file_id, line_number) -> bool:
+        """Check whether a specific line number is covered for a source code file"""
+        existing_line = self.connection.execute(
+            select([test_map_table])
+            .where(test_map_table.c.file_id == file_id)
+            .where(test_map_table.c.line_id == line_number)
+        ).fetchone()
+        return not existing_line is None
+
+    def _saved_testfunctions(self) -> Dict[str, int]:
+        """Dictionary for test function id's based on test function name"""
+        return {
+            x[0]: x[1]
+            for x in self.connection.execute(
+                select([test_function_table.c.context, test_function_table.c.id])
+            )
+        }
+
+    def _delete_lines(self, line_ids, file_id):
+        """Remove entries from covered line mapping"""
+        with self.connection.begin():
+            for line in line_ids:
+                self.connection.execute(
+                    test_map_table.delete(None)
+                    .where(test_map_table.c.line_id == line)
+                    .where(test_map_table.c.file_id == file_id)
+                )
+
+    def _add_lines(self, src_id, test_function_id, lines):
+        """Add entries to covered line mapping"""
+        self.connection.execute(
+            test_map_table.insert(None).prefix_with(self.insert_prefix),
+            [
+                {
+                    "file_id": src_id,
+                    "test_function_id": test_function_id,
+                    "line_id": line,
+                }
+                for line in lines
+            ],
+        )
+
+    def _add_srcfile(self, path):
+        """Add a covered source code file to mapping"""
+        result = self.connection.execute(
+            src_file_table.insert(None)
+            .values(path=path)
+            .prefix_with(self.insert_prefix)
+        )
+        self.saved_srcfiles[path] = result.inserted_primary_key[0]
+
+    def _add_testfile(self, path):
+        """Add a test file to mapping"""
+        result = self.connection.execute(
+            test_file_table.insert(None)
+            .values(path=path)
+            .prefix_with(self.insert_prefix)
+        )
+        self.saved_testfiles[path] = result.inserted_primary_key[0]
+
+    def _add_test_function(self, test_function_data):
+        """Add a test function to mapping"""
+        result = self.connection.execute(
+            test_function_table.insert(None)
+            .values(
+                test_file_id=test_function_data.testfile_id,
+                context=test_function_data.testname,
+                start=test_function_data.start_line_number,
+                end=test_function_data.end_line_number,
+                duration=test_function_data.elapsed_time,
+            )
+            .prefix_with(self.insert_prefix)
+        )
+        self.saved_testfunctions[
+            test_function_data.testname
+        ] = result.inserted_primary_key[0]
+
+    def _update_test_function_mapping(self, line_map, file_id):
+        """Update test function entries in the mapping database
+        by shifting their start and end line numbers
+        """
+        with self.connection.begin():
+            entries_to_update = [
+                {
+                    "id": x[0],
+                    "test_file_id": x[1],
+                    "name": x[2],
+                    "start": line_map[x[3]] if x[3] in line_map else x[3],
+                    "end": line_map[x[4]] if x[4] in line_map else x[4],
+                    "duration": x[5],
+                }
+                for x in self.connection.execute(
+                    select(
+                        [
+                            test_function_table.c.id,
+                            test_function_table.c.test_file_id,
+                            test_function_table.c.context,
+                            test_function_table.c.start,
+                            test_function_table.c.end,
+                            test_function_table.c.duration,
+                        ]
+                    ).where(test_function_table.c.id == file_id)
+                )
+            ]
+
+            self.connection.execute(
+                test_function_table.delete(None).where(
+                    test_function_table.c.id == file_id
+                )
+            )
+
+            self.connection.execute(
+                test_function_table.insert(None).prefix_with(self.insert_prefix),
+                entries_to_update,
+            )
+
+    def _update_line_mapping(self, line_map, file_id):
+        """Update source code mapping
+        by changing the covered line numbers
+        according to a new line mapping
+        """
+        with self.connection.begin():
+            entries_to_update = []
+            for line in line_map.keys():
+                entries_to_update.extend(
+                    {
+                        "file_id": x[0],
+                        "test_function_id": x[1],
+                        "line_id": line_map[x[2]],
+                    }
+                    for x in self.connection.execute(
+                        select(
+                            [
+                                test_map_table.c.file_id,
+                                test_map_table.c.test_function_id,
+                                test_map_table.c.line_id,
+                            ]
+                        )
+                        .where(test_map_table.c.file_id == file_id)
+                        .where(test_map_table.c.line_id == line)
+                    )
+                )
+
+            for line in line_map.keys():
+                self.connection.execute(
+                    test_map_table.delete(None)
+                    .where(test_map_table.c.file_id == file_id)
+                    .where(test_map_table.c.line_id == line)
+                )
+
+            self.connection.execute(
+                test_map_table.insert(None).prefix_with(self.insert_prefix),
+                entries_to_update,
+            )

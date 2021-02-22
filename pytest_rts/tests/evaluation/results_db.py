@@ -1,4 +1,5 @@
 """This module contains a class for using evaluation results database"""
+# pylint: disable=too-many-arguments
 import sqlite3
 
 RESULTS_DB_FILE_NAME = "results.db"

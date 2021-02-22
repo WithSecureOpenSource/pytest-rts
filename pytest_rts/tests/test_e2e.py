@@ -1,14 +1,15 @@
-import pytest
+"""E2E tests of the tool"""
 
 
 def test_full_integration(helper):
+    """Test case for running a typical workflow"""
     helper.checkout_new_branch()
 
     # Add a new method to source file
     helper.change_file("changes/car/add_new_method.txt", "src/car.py")
 
     # Get changed src file id
-    src_file_id = helper.get_mapping_id_from_filename("src/car.py", is_srcfile=True)
+    src_file_id = helper.get_mapping_id_for_srcfile("src/car.py")
 
     # Get working directory test_set like in pytest_rts script
     workdir_test_set = helper.get_tests_from_tool_current()
@@ -73,13 +74,14 @@ def test_full_integration(helper):
 
 
 def test_db_updating_only_once(helper):
+    """Test case for making sure the database does not update twice"""
     helper.checkout_new_branch()
 
     filename = "src/car.py"
     change = "changes/car/shift_2_forward.txt"
     expected_lines = [6, 7, 8, 11, 14]
 
-    src_file_id = helper.get_mapping_id_from_filename(filename, is_srcfile=True)
+    src_file_id = helper.get_mapping_id_for_srcfile(filename)
     old_lines = helper.get_mapping_lines_for_srcfile(src_file_id)
 
     # Change src file
@@ -108,6 +110,7 @@ def test_db_updating_only_once(helper):
 
 
 def test_skipping_commit(helper):
+    """Test case for skipping pytest-rts run between commits"""
     # Checkout a new branch
     helper.checkout_new_branch()
 
@@ -150,6 +153,7 @@ def test_skipping_commit(helper):
 
 
 def test_squashing_commits(helper):
+    """Test case for squashing commits"""
     helper.checkout_new_branch()
 
     helper.change_file("changes/car/change_accelerate.txt", "src/car.py")
@@ -174,6 +178,7 @@ def test_squashing_commits(helper):
 
 
 def test_init_code_tracked(helper):
+    """Test case for code in __init__.py file"""
     helper.change_file("changes/init/change_function_one.txt", "src/__init__.py")
     assert helper.get_tests_from_tool_current() == {"tests/test_init.py::test_one"}
 

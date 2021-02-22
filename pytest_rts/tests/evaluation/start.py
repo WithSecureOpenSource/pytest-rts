@@ -15,12 +15,10 @@ from pytest_rts.tests.evaluation.evaluation_utils import (
     capture_all_exit_code,
     capture_specific_exit_code,
     delete_random_line,
-    get_all_tests_for_srcfile,
     get_file_level_tests_between_commits,
     full_diff_between_commits,
     get_mapping_init_hash,
     get_mapping_srcfiles,
-    get_srcfile_id,
     get_test_suite_size,
     print_remove_test_output,
     select_random_file,
@@ -34,6 +32,7 @@ MAIN_BRANCH = "master"
 
 def random_remove_test(iterations, deletes_per_iteration, max_wait, logger):
     """Delete random lines and evaluate tests sets and pytest exitcodes"""
+    # pylint: disable=too-many-locals
     if not os.path.isfile(DB_FILE_NAME):
         subprocess.run(["pytest", "--rts"], check=False)
 

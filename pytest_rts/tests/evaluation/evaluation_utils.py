@@ -1,29 +1,20 @@
 """Helper functions for evaluation code"""
-from functools import wraps
 import logging
 import random
-import sqlite3
 import subprocess
+import sys
 from typing import List, Set
 
-from pytest_rts.plugin import DB_FILE_NAME
+from sqlalchemy import func
+from sqlalchemy.sql import select
+
 from pytest_rts.utils.git import (
     get_git_repo,
-    get_current_head_hash,
     changed_files_between_commits,
 )
-
-
-def with_connection(func):
-    @wraps(func)
-    def wrapper(*args, **kwargs):
-        conn = sqlite3.connect(DB_FILE_NAME)
-        try:
-            return func(*args, **kwargs, conn=conn)
-        finally:
-            conn.close()
-
-    return wrapper
+from pytest_rts.utils.mappinghelper import MappingHelper
+from pytest_rts.utils.tables import test_function_table, test_map_table
+from pytest_rts.tests.engine_wrapper import with_engine
 
 
 def full_diff_between_commits(commit1, commit2) -> str:
@@ -53,8 +44,8 @@ def delete_random_line(filepath):
                 randomfile.write(line)
 
     except FileNotFoundError:
-        logging.getLogger().error(f"can't open selected random file {filepath}")
-        exit(1)
+        logging.getLogger().error("can't open selected random file %s", filepath)
+        sys.exit(1)
 
 
 def capture_specific_exit_code(tests, max_wait) -> int:
@@ -104,6 +95,7 @@ def print_remove_test_output(
     logger,
 ):
     """Print random remove test statistics"""
+    # pylint: disable=too-many-arguments
     logger.info("============")
     logger.info(f"iteration: {i+1}")
     logger.info(f"project name: {project_name}")
@@ -119,33 +111,29 @@ def print_remove_test_output(
     logger.info("============")
 
 
-@with_connection
-def get_test_suite_size(conn=None) -> int:
+@with_engine
+def get_test_suite_size(engine=None) -> int:
     """Query how many tests are in mapping database"""
-    return int(conn.execute("SELECT count() FROM test_function").fetchone()[0])
+    return engine.execute(select([func.count(test_function_table)])).fetchone()[0]
 
 
-@with_connection
-def get_all_tests_for_srcfile(file_id, conn=None) -> List[str]:
+@with_engine
+def get_all_tests_for_srcfile(file_id, engine=None) -> List[str]:
     """Query all tests for a source code file"""
     return [
-        line[0]
-        for line in conn.execute(
-            """ SELECT DISTINCT context
-                FROM test_function
-                JOIN test_map ON test_function.id == test_map.test_function_id
-                WHERE test_map.file_id = ? """,
-            (file_id,),
+        x[0]
+        for x in engine.execute(
+            select([test_function_table.c.context])
+            .where(test_map_table.c.file_id == file_id)
+            .select_from(test_function_table.join(test_map_table))
         )
     ]
 
 
-@with_connection
-def get_srcfile_id(path, conn=None) -> int:
+@with_engine
+def get_srcfile_id(path, engine=None) -> int:
     """Get the id in the mapping database for a source code file"""
-    return conn.execute("SELECT id FROM src_file WHERE path == ?", (path,)).fetchone()[
-        0
-    ]
+    return MappingHelper(engine).saved_srcfiles[path]
 
 
 def get_file_level_tests_between_commits(commit1, commit2) -> Set[str]:
@@ -157,13 +145,13 @@ def get_file_level_tests_between_commits(commit1, commit2) -> Set[str]:
     }
 
 
-@with_connection
-def get_mapping_srcfiles(conn=None) -> List[str]:
+@with_engine
+def get_mapping_srcfiles(engine=None) -> List[str]:
     """Get all the tool's covered source code files"""
-    return [x[0] for x in conn.execute("SELECT path FROM src_file")]
+    return [x[1] for x in MappingHelper(engine).srcfiles]
 
 
-@with_connection
-def get_mapping_init_hash(conn=None) -> str:
+@with_engine
+def get_mapping_init_hash(engine=None) -> str:
     """Get the git commit hash for initial state of the mapping database"""
-    return conn.execute("SELECT hash FROM last_update_hash").fetchone()[0]
+    return MappingHelper(engine).last_update_hash
