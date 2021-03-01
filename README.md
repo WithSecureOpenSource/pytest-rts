@@ -32,6 +32,10 @@ More detailed usage is described in the [tutorial][tutorial]
 
 1. execute `pytest --rts` after doing changes
 
+#### Defining database connection string
+
+* Execute `pytest-rts` with `--rts-db-conn CONNECTION_STRING` to provide an SQLAlchemy connection string (only SQLite supported, defaults to `sqlite:///mapping.db` if not used)
+
 #### Running evaluation code
 
 1. execute `pytest_rts_eval` in target project directory
