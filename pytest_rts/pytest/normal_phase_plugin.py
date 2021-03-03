@@ -1,8 +1,7 @@
 """This module contains code for running a specific test set without mapping database updating"""
 # pylint: disable=too-few-public-methods
-import sys
-
 from pytest_rts.pytest.fake_item import FakeItem
+from pytest_rts.utils.common import filter_and_sort_pytest_items
 
 
 class NormalPhasePlugin:
@@ -18,16 +17,9 @@ class NormalPhasePlugin:
         """Select only specific tests for running and prioritize them based on queried times"""
         del config
         original_length = len(items)
-        selected = list(filter(lambda item: item.nodeid in self.test_set, items))
-        updated_runtimes = {
-            item.nodeid: self.test_func_times[item.nodeid]
-            if item.nodeid in self.test_func_times
-            else sys.maxsize
-            for item in selected
-        }
-
-        items[:] = sorted(selected, key=lambda item: updated_runtimes[item.nodeid])
-
+        items[:] = filter_and_sort_pytest_items(
+            self.test_set, items, self.test_func_times
+        )
         session.config.hook.pytest_deselected(
-            items=([FakeItem(session.config)] * (original_length - len(selected)))
+            items=([FakeItem(session.config)] * (original_length - len(items)))
         )
