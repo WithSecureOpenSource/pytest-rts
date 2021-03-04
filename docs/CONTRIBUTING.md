@@ -196,7 +196,7 @@ Any line of the commit message cannot be longer than 100 characters.
   │           │
   │           └─⫸ Summary in present tense. Not capitalized. No period at the end.
   │   
-  └─⫸ Commit Type: build|ci|docs|feat|fix|perf|refactor|test
+  └─⫸ Commit Type: build|chore|docs|feat|fix|refactor|style|test|update
 ```
 
 The `<type>` and `<summary>` fields are mandatory, the `(<scope>)` field is optional.
@@ -206,14 +206,15 @@ The `<type>` and `<summary>` fields are mandatory, the `(<scope>)` field is opti
 
 Must be one of the following:
 
-* **build**: Changes that affect the build system or external dependencies (example scopes: gulp, broccoli, npm)
-* **ci**: Changes to our CI configuration files and scripts (example scopes: Circle, BrowserStack, SauceLabs)
-* **docs**: Documentation only changes
-* **feat**: A new feature
-* **fix**: A bug fix
-* **perf**: A code change that improves performance
-* **refactor**: A code change that neither fixes a bug nor adds a feature
-* **test**: Adding missing tests or correcting existing tests
+* **build**: add required/missing build file
+* **chore**: updating grunt tasks etc; no production code change
+* **docs**: changes to the documentation
+* **feat**: new feature for the user, not a new feature for build script
+* **fix**: bug fix for the user, not a fix to a build script
+* **refactor**: refactoring production code, eg. renaming a variable
+* **style**: formatting, missing semi colons, etc; no production code change
+* **test**: adding missing tests, refactoring tests; no production code change
+* **update**: update an old feature; file;
 
 
 ##### Summary

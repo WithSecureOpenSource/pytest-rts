@@ -196,3 +196,20 @@ def test_decorated_with_param_tracked(helper):
     assert helper.get_tests_from_tool_current() == {
         "tests/test_decorated.py::test_decorated_2"
     }
+
+
+def test_testfunction_runtimes_not_wiped(helper):
+    """Test that checks that test function runtimes are not removed
+    from database when running the tool for committed changes
+    and a testfile is changed
+    """
+    orig_runtimes = helper.get_test_function_runtimes()
+    helper.checkout_new_branch()
+
+    helper.change_file("changes/test_shop/shift_two_forward.txt", "tests/test_shop.py")
+    helper.commit_change("tests/test_shop.py", "shift")
+
+    helper.run_tool()
+    new_runtimes = helper.get_test_function_runtimes()
+
+    assert orig_runtimes == new_runtimes

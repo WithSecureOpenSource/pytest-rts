@@ -2,7 +2,10 @@
 import ast
 import os
 import subprocess
+import sys
 from typing import Dict, List, Set, Tuple
+
+from _pytest.nodes import Item
 
 from pytest_rts.utils.git import (
     file_diff_data_between_commits,
@@ -71,10 +74,7 @@ def tests_from_changed_srcfiles(
         new_line_map[file_id] = line_mapping(updates_to_lines, filename)
 
         if not all(
-            [
-                mappinghelper.line_exists(file_id, line_number)
-                for line_number in new_lines
-            ]
+            mappinghelper.line_exists(file_id, line_number) for line_number in new_lines
         ):
             files_to_warn.append(filename)
 
@@ -162,3 +162,15 @@ def calculate_func_lines(src_code) -> Dict[str, Tuple[int, int]]:
     parsed_src_code = ast.parse(src_code)
     func_lines = function_lines(parsed_src_code, len(src_code.splitlines()))
     return {x[0]: (x[1], x[2]) for x in func_lines}
+
+
+def filter_and_sort_pytest_items(test_set, pytest_items, runtimes) -> List[Item]:
+    """Selected pytest items based on found tests
+    ordered by their runtimes
+    """
+    selected = list(filter(lambda item: item.nodeid in test_set, pytest_items))
+    updated_runtimes = {
+        item.nodeid: runtimes[item.nodeid] if item.nodeid in runtimes else sys.maxsize
+        for item in pytest_items
+    }
+    return sorted(selected, key=lambda item: updated_runtimes[item.nodeid])

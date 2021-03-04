@@ -134,27 +134,24 @@ class MappingHelper:
 
     def init_mapping(self):
         """Create the mapping database tables"""
-        self.connection.execute("DROP TABLE IF EXISTS test_map")
-        self.connection.execute("DROP TABLE IF EXISTS src_file")
-        self.connection.execute("DROP TABLE IF EXISTS test_file")
-        self.connection.execute("DROP TABLE IF EXISTS test_function")
-        self.connection.execute("DROP TABLE IF EXISTS new_tests")
-        self.connection.execute("DROP TABLE IF EXISTS last_update_hash")
         self.connection.execute(
-            """CREATE TABLE test_map (
+            """CREATE TABLE IF NOT EXISTS test_map (
                     file_id INTEGER,
                     test_function_id INTEGER,
                     line_id INTEGER,
                     UNIQUE(file_id,test_function_id,line_id))"""
         )
         self.connection.execute(
-            "CREATE TABLE src_file (id INTEGER PRIMARY KEY, path TEXT, UNIQUE (path))"
+            "CREATE TABLE IF NOT EXISTS src_file (id INTEGER PRIMARY KEY, path TEXT, UNIQUE (path))"
         )
         self.connection.execute(
-            "CREATE TABLE test_file (id INTEGER PRIMARY KEY, path TEXT, UNIQUE (path))"
+            """CREATE TABLE IF NOT EXISTS test_file (
+                id INTEGER PRIMARY KEY,
+                path TEXT,
+                UNIQUE (path))"""
         )
         self.connection.execute(
-            """CREATE TABLE test_function (
+            """CREATE TABLE IF NOT EXISTS test_function (
                                     id INTEGER PRIMARY KEY,
                                     test_file_id INTEGER,
                                     context TEXT,
@@ -164,8 +161,10 @@ class MappingHelper:
                                     FOREIGN KEY (test_file_id) REFERENCES test_file(id),
                                     UNIQUE (context))"""
         )
-        self.connection.execute("CREATE TABLE new_tests (context TEXT)")
-        self.connection.execute("CREATE TABLE last_update_hash (hash TEXT)")
+        self.connection.execute("CREATE TABLE IF NOT EXISTS new_tests (context TEXT)")
+        self.connection.execute(
+            "CREATE TABLE IF NOT EXISTS last_update_hash (hash TEXT)"
+        )
 
     def line_exists(self, file_id, line_number) -> bool:
         """Check whether a specific line number is covered for a source code file"""
@@ -184,7 +183,7 @@ class MappingHelper:
         by shifting their start and end line numbers
         """
         entries_to_update = self.connection.execute(
-            """SELECT id,test_file_id,context,start,end FROM test_function
+            """SELECT id,test_file_id,context,start,end,duration FROM test_function
                 WHERE test_file_id = ?""",
             (file_id,),
         ).fetchall()
@@ -199,14 +198,15 @@ class MappingHelper:
                 x[2],
                 line_map[x[3]] if x[3] in line_map else x[3],
                 line_map[x[4]] if x[4] in line_map else x[4],
+                x[5],
             )
             for x in entries_to_update
         ]
         self.connection.executemany(
             """
                 INSERT OR IGNORE
-                INTO test_function (id,test_file_id,context,start,end)
-                VALUES (?,?,?,?,?)""",
+                INTO test_function (id,test_file_id,context,start,end,duration)
+                VALUES (?,?,?,?,?,?)""",
             updated_entries,
         )
 
