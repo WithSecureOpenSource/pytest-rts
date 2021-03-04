@@ -151,3 +151,10 @@ class TestHelper:
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
         )
+
+    def get_test_function_runtimes(self):
+        conn = sqlite3.connect(DB_FILE_NAME)
+        testgetter = TestGetter(conn)
+        runtimes = testgetter.test_function_runtimes
+        conn.close()
+        return runtimes

@@ -28,6 +28,7 @@ DEV_REQUIRE = [
     "safety",
     "wheel",
     "twine",
+    "xenon",
 ]
 NAME = "pytest_rts"
 NAME_DASHED = NAME.replace("_", "-")

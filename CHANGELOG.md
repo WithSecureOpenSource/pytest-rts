@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v1.2.1 (2021-03-03)
+### Fix
+* Fix crash in test function runtimes ([`ad4c1f3`](https://github.com/F-Secure/pytest-rts/commit/ad4c1f3820a72bf2b9cbc8583c94bba6d2b2dcc2))
+
 ## v1.2.0 (2021-02-15)
 ### Feature
 * Handle usage in non-git directory ([`8ad080b`](https://github.com/F-Secure/pytest-rts/commit/8ad080be7eb31b96e1047a4aadabe9fe1a944085))
