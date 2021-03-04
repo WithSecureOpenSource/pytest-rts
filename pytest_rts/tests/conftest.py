@@ -5,8 +5,7 @@ import shutil
 
 import pytest
 
-from pytest_rts.plugin import DB_FILE_NAME
-from pytest_rts.tests.testhelper import TestHelper
+from pytest_rts.connection import DB_FILE_NAME
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -39,9 +38,3 @@ def teardown_method():
     subprocess.run(["git", "branch", "-D", "new-branch"], check=False)
     os.remove(DB_FILE_NAME)
     subprocess.run(["pytest", "--rts"], check=True)
-
-
-@pytest.fixture
-def helper():
-    """TestHelper as a fixture for tests"""
-    return TestHelper()

@@ -103,9 +103,10 @@ def filter_and_sort_pytest_items(test_set, pytest_items, runtimes) -> List[Item]
     """Selected pytest items based on found tests
     ordered by their runtimes
     """
-    selected = list(filter(lambda item: item.nodeid in test_set, pytest_items))
-    updated_runtimes = {
-        item.nodeid: runtimes[item.nodeid] if item.nodeid in runtimes else sys.maxsize
-        for item in pytest_items
-    }
-    return sorted(selected, key=lambda item: updated_runtimes[item.nodeid])
+    selected = filter(lambda item: item.nodeid in test_set, pytest_items)
+    return sorted(
+        selected,
+        key=lambda item: runtimes[item.nodeid]
+        if item.nodeid in runtimes and runtimes[item.nodeid]
+        else sys.maxsize,
+    )

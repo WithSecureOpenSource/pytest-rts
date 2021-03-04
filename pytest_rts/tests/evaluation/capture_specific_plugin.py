@@ -8,9 +8,10 @@ class CaptureSpecificPlugin:  # pylint: disable=too-few-public-methods
         """Set test set as a value"""
         self.test_set = test_set
 
-    def pytest_collection_modifyitems(self, session, config, items):
+    def pytest_collection_modifyitems(
+        self, session, config, items
+    ):  # pylint: disable=unused-argument
         """Only select specific tests for running"""
-        del session, config
         selected = []
         for item in items:
             if item.nodeid in self.test_set:

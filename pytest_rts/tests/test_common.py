@@ -1,12 +1,13 @@
 """Tests for common functions"""
 import ast
 
+from pytest_rts.tests.utils.helper_functions import change_file
 from pytest_rts.utils import git, common
 
 
-def test_line_mapping(helper):
+def test_line_mapping():
     """Test case for calculating changed line numbers"""
-    helper.change_file("changes/car/shift_2_forward.txt", "src/car.py")
+    change_file("changes/car/shift_2_forward.txt", "src/car.py")
 
     diff = git.file_diff_data_current("src/car.py")
     _, updates_to_lines, _ = git.get_test_lines_and_update_lines(diff)
@@ -62,3 +63,34 @@ def test_function_lines():
     ]
 
     assert func_lines == expected_func_lines
+
+
+def test_filter_and_sort_pytest_items():
+    """Test for filtering and sorting the test set
+    based on given selected tests and their runtimes
+    """
+
+    class FakePytestItem:  # pylint: disable=too-few-public-methods
+        """Class that has nodeid field like a pytest item"""
+
+        def __init__(self, name, nodeid):
+            self.name = name
+            self.nodeid = nodeid
+
+    all_tests = [
+        FakePytestItem("test1", nodeid="test_func_1"),
+        FakePytestItem("test2", nodeid="test_func_2"),
+        FakePytestItem("test3", nodeid="test_func_3"),
+        FakePytestItem("test4", nodeid="test_func_4"),
+    ]
+    test_set = [
+        "test_func_1",
+        "test_func_2",
+        "test_func_3",
+    ]
+    runtimes = {"test_func_1": 1.23, "test_func_2": None}
+
+    selected = common.filter_and_sort_pytest_items(test_set, all_tests, runtimes)
+
+    assert len(selected) == 3
+    assert selected[0].nodeid == "test_func_1"

@@ -23,7 +23,13 @@ from pytest_rts.tests.evaluation.evaluation_utils import (
     print_remove_test_output,
     select_random_file,
 )
-from pytest_rts.tests.testhelper import TestHelper
+from pytest_rts.tests.utils.helper_functions import (
+    checkout_branch,
+    checkout_new_branch,
+    commit_change,
+    delete_branch,
+    get_tests_from_tool_committed,
+)
 
 
 EVALUATION_BRANCH = "evaluation-branch"
@@ -50,21 +56,19 @@ def random_remove_test(iterations, deletes_per_iteration, max_wait, logger):
 
     src_files = get_mapping_srcfiles()
 
-    testhelper = TestHelper()
-
     for i in range(iterations):
 
         # Remove random lines
-        testhelper.checkout_new_branch(EVALUATION_BRANCH)
+        checkout_new_branch(EVALUATION_BRANCH)
         for j in range(deletes_per_iteration):
             random_filepath = select_random_file(src_files)
             delete_random_line(random_filepath)
-            testhelper.commit_change(random_filepath, str(j + 1))
+            commit_change(random_filepath, str(j + 1))
 
         current_git_hash = get_current_head_hash()
 
         # Get tests based on line-level and file-level changes
-        tests_line_level = testhelper.get_tests_from_tool_committed()
+        tests_line_level = get_tests_from_tool_committed()
         tests_file_level = get_file_level_tests_between_commits(
             init_hash, current_git_hash
         )
@@ -86,8 +90,8 @@ def random_remove_test(iterations, deletes_per_iteration, max_wait, logger):
         exitcode_all = capture_all_exit_code(max_wait)
 
         # Clear removal
-        testhelper.checkout_branch(MAIN_BRANCH)
-        testhelper.delete_branch(EVALUATION_BRANCH)
+        checkout_branch(MAIN_BRANCH)
+        delete_branch(EVALUATION_BRANCH)
 
         # Store and print data
         results_db.store_results_data(

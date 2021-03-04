@@ -262,7 +262,7 @@ class MappingHelper:
                 {
                     "id": x[0],
                     "test_file_id": x[1],
-                    "name": x[2],
+                    "context": x[2],
                     "start": line_map[x[3]] if x[3] in line_map else x[3],
                     "end": line_map[x[4]] if x[4] in line_map else x[4],
                     "duration": x[5],

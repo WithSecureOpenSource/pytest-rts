@@ -16,9 +16,10 @@ class InitPhasePlugin(MapperPlugin):
         super().__init__(mappinghelper)
         self.mappinghelper.set_last_update_hash(get_current_head_hash())
 
-    def pytest_collection_modifyitems(self, session, config, items):
+    def pytest_collection_modifyitems(
+        self, session, config, items
+    ):  # pylint: disable=unused-argument
         """Calculate function start and end line numbers from testfiles"""
-        del session, config
         self.testfiles = {os.path.relpath(item.location[0]) for item in items}
         self.test_func_lines = {
             testfile_path: calculate_func_lines(

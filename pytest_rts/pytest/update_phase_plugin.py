@@ -24,16 +24,17 @@ class UpdatePhasePlugin(MapperPlugin):
     def __init__(self, test_set, mappinghelper, testgetter):
         """Constructor opens database connection and initializes Coverage.py"""
         super().__init__(mappinghelper)
-        self.test_set = test_set
         self.testgetter = testgetter
         self.test_func_times = self.testgetter.test_function_runtimes
+        self.test_set = test_set
 
-    def pytest_collection_modifyitems(self, session, config, items):
+    def pytest_collection_modifyitems(
+        self, session, config, items
+    ):  # pylint: disable=unused-argument
         """
         Sorts tests based on database duration and
         calculates test function start and end line numbers
         """
-        del config
         original_length = len(items)
         items[:] = filter_and_sort_pytest_items(
             self.test_set, items, self.test_func_times

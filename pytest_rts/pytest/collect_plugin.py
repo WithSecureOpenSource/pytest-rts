@@ -14,9 +14,10 @@ class CollectPlugin:
         self.existing_tests = self.testgetter.existing_tests
         self.testgetter.delete_newly_added_tests()
 
-    def pytest_collection_modifyitems(self, session, config, items):
+    def pytest_collection_modifyitems(
+        self, session, config, items
+    ):  # pylint: disable=unused-argument
         """Select tests that have not been previously seen"""
-        del session, config
         for item in items:
             if item.nodeid not in self.existing_tests:
                 self.collected.add(item.nodeid)

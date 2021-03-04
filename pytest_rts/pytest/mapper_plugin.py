@@ -19,15 +19,23 @@ class MapperPlugin:
         self.testfiles = {testfile[1] for testfile in self.mappinghelper.testfiles}
         self.test_func_lines = None
 
-    def pytest_sessionstart(self, session):
-        """Start SQLalchemy transaction before test loop"""
-        del session
+    def pytest_sessionstart(self, session):  # pylint: disable=unused-argument
+        """Start SQLAlchemy transaction before test loop
+        by calling SQLAlchemy connection.begin() to the
+        connection that is given to mappinghelper
+
+        Intended to work like "with connection.begin():" from SQLAlchemy
+        """
         self.mappinghelper.start_transaction()
 
     @pytest.hookimpl(hookwrapper=True)
-    def pytest_runtest_protocol(self, item, nextitem):
-        """Start coverage collection for each test function run and save data"""
-        del nextitem
+    def pytest_runtest_protocol(
+        self, item, nextitem
+    ):  # pylint: disable=unused-argument
+        """Start coverage collection for each test function run and save data
+        by starting Coverage.py before test function starts executing
+        and saving the collected coverage after the test function stops executing
+        """
         if isinstance(item, Function):
             start = timer()
             self.cov.erase()
@@ -48,7 +56,9 @@ class MapperPlugin:
         else:
             yield
 
-    def pytest_sessionfinish(self, session):
-        """End SQLalchemy transaction after test loop"""
-        del session
+    def pytest_sessionfinish(self):
+        """End SQLAlchemy transaction after test loop
+        by calling transaction.commit() to the started
+        SQLAlchemy transaction within mappinghelper
+        """
         self.mappinghelper.end_transaction()
