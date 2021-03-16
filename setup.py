@@ -48,7 +48,6 @@ setup(
         "console_scripts": [
             f"{NAME}_eval={NAME}.tests.evaluation.start:main",
             f"{NAME}_capture_exitcode={NAME}.tests.evaluation.exitcode:main",
-            f"{NAME}_collect={NAME}.collect:main",
         ],
         "pytest11": [
             f"{NAME_DASHED}={NAME}.plugin",

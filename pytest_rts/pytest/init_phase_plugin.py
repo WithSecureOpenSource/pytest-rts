@@ -1,28 +1,19 @@
-"""This module contains code for initializing the mapping database"""
-import os
-
-import coverage
-
-from pytest_rts.pytest.mapper_plugin import MapperPlugin
-from pytest_rts.utils.common import calculate_func_lines
-from pytest_rts.utils.git import get_current_head_hash
+"""This module contains code for the first run of pytest-rts"""
 
 
-class InitPhasePlugin(MapperPlugin):
+class InitPhasePlugin:
     """Class to handle mapping database initialization"""
 
-    def __init__(self, mappinghelper):
-        """"Constructor calls database and Coverage.py initialization"""
-        super().__init__(mappinghelper)
-        self.mappinghelper.set_last_update_hash(get_current_head_hash())
+    def __init__(self):
+        """"Coverage.py object placeholder set to None"""
+        self.cov = None
 
-    def pytest_collection_modifyitems(self, session, config, items):
-        """Calculate function start and end line numbers from testfiles"""
-        del session, config
-        self.testfiles = {os.path.relpath(item.location[0]) for item in items}
-        self.test_func_lines = {
-            testfile_path: calculate_func_lines(
-                coverage.python.get_python_source(testfile_path)
-            )
-            for testfile_path in self.testfiles
-        }
+    def pytest_collection_modifyitems(
+        self, session, config, items
+    ):  # pylint: disable=unused-argument
+        """Set the Coverage object from pytest-cov"""
+        self.cov = config.pluginmanager.getplugin("_cov").cov_controller.cov
+
+    def pytest_runtest_logstart(self, nodeid, location):
+        """Switch test function name in Coverage.py when a test starts running"""
+        self.cov.switch_context(nodeid)

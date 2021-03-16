@@ -65,14 +65,11 @@ def file_diff_data_current(filename, project_folder=None):
     return repo.repo.git.diff("-U0", "--", filename)
 
 
-def get_test_lines_and_update_lines(diff):
+def get_changed_lines(diff):
     """Parse changed lines, line number updates and new lines from git diff -U0 output"""
     regex = r"[@][@]\s+[-][0-9]+(?:,[0-9]+)?\s+[+][0-9]+(?:,[0-9]+)?\s+[@][@]"
     line_changes = re.findall(regex, diff)
-    lines_to_query = []
-    updates_to_lines = []
-    new_lines = []
-    cum_diff = 0
+    changed_lines = []
     for change in line_changes:
         changed_line = change.strip("@").split()
         if "," not in changed_line[0]:
@@ -84,35 +81,18 @@ def get_test_lines_and_update_lines(diff):
         new = changed_line[1].split(",")
         new[0] = new[0].strip("+")
 
-        line_diff = (
-            ((int(new[0]) + int(new[1])) - int(new[0]))
-            - ((int(old[0]) + int(old[1])) - int(old[0]))
-            + cum_diff
-        )
-        cum_diff = line_diff
-
-        update_tuple = (int(old[0]), line_diff)
-        updates_to_lines.append(update_tuple)
-
         # example data:
         # @@ -old0,old1 +new0,new1 @@
         # old0 to old0 + old1 are now new0 to new0+new1
         # changed lines: old0 to old0 + old1
         # correct?
         if int(old[1]) == 0:
-            lines_to_query.append(int(old[0]))
+            changed_lines.append(int(old[0]))
         else:
             for i in range(int(old[0]), int(old[0]) + int(old[1])):
-                lines_to_query.append(i)
+                changed_lines.append(i)
 
-        # Extract new lines
-        if int(new[1]) == 0:
-            new_lines.append(int(new[0]))
-        else:
-            for i in range(int(new[0]), int(new[0]) + int(new[1])):
-                new_lines.append(i)
-
-    return lines_to_query, updates_to_lines, new_lines
+    return changed_lines
 
 
 def get_current_head_hash():
