@@ -45,15 +45,11 @@ setup(
     version=GIT_VERSION,
     packages=find_packages(exclude=[f"{NAME}.tests", f"{NAME}.tests.*"]),
     entry_points={
-        "console_scripts": [
-            f"{NAME}_eval={NAME}.tests.evaluation.start:main",
-            f"{NAME}_capture_exitcode={NAME}.tests.evaluation.exitcode:main",
-        ],
         "pytest11": [
             f"{NAME_DASHED}={NAME}.plugin",
         ],
     },
-    install_requires=["pydriller", "coverage", "pytest"],
+    install_requires=["coverage", "pytest"],
     extras_require={"dev": DEV_REQUIRE},
     classifiers=[
         "Programming Language :: Python",
