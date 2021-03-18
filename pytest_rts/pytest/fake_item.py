@@ -4,5 +4,5 @@
 class FakeItem:  # pylint: disable=too-few-public-methods
     """Fake class"""
 
-    def __init__(self, config):
+    def __init__(self, config) -> None:
         self.config = config

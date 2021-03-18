@@ -5,7 +5,7 @@ from coverage import CoverageData
 from _pytest.nodes import Item
 
 
-def filter_pytest_items(pytest_items, existing_tests) -> List[Item]:
+def filter_pytest_items(pytest_items: List[Item], existing_tests) -> List[Item]:
     """Select pytest items if they are new and not marked as skipped"""
     return list(
         filter(
@@ -17,7 +17,7 @@ def filter_pytest_items(pytest_items, existing_tests) -> List[Item]:
     )
 
 
-def get_existing_tests(coverage_file_path) -> Set[str]:
+def get_existing_tests(coverage_file_path: str) -> Set[str]:
     """Read all the test function names from the coverage file.
     pytest-cov creates the coverage file and adds a section at the
     end of each testname which need to be stripped.
@@ -30,7 +30,7 @@ def get_existing_tests(coverage_file_path) -> Set[str]:
     }
 
 
-def strip_pytest_cov_testname(testname) -> str:
+def strip_pytest_cov_testname(testname: str) -> str:
     """Strip ends of pytest-cov produced testnames"""
     if testname.endswith("|teardown"):
         return testname[:-9]
