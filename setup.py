@@ -18,7 +18,6 @@ GIT_VERSION = (
     .replace("v", "", 1)
 )
 DEV_REQUIRE = [
-    "pytest-cov",
     "pytest-socket",
     "tox",
     "python-semantic-release",
@@ -49,7 +48,7 @@ setup(
             f"{NAME_DASHED}={NAME}.plugin",
         ],
     },
-    install_requires=["coverage", "pytest"],
+    install_requires=["coverage", "pytest", "pytest-cov"],
     extras_require={"dev": DEV_REQUIRE},
     classifiers=[
         "Programming Language :: Python",
