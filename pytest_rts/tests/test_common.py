@@ -1,61 +1,69 @@
-import ast
+"""Tests for common utility functions"""
+from typing import cast
+
 import pytest
-from pytest_rts.utils import git, common
+from _pytest.nodes import Item
+
+from pytest_rts.utils.common import filter_pytest_items, strip_pytest_cov_testname
 
 
-def test_line_mapping(helper):
-    helper.change_file("changes/car/shift_2_forward.txt", "src/car.py")
+@pytest.mark.parametrize(
+    "testname, expected",
+    [
+        (
+            "tests/test_example.py::test_methods_var_inheritance|setup",
+            "tests/test_example.py::test_methods_var_inheritance",
+        ),
+        (
+            "tests/test_example2.py::TestJSON::test_jsonify_basic_types[0]|teardown",
+            "tests/test_example2.py::TestJSON::test_jsonify_basic_types[0]",
+        ),
+        (
+            "tests/test_example3.py::test_session_ip_warning|run",
+            "tests/test_example3.py::test_session_ip_warning",
+        ),
+    ],
+)
+def test_strip_pytest_cov_testname(testname: str, expected: str) -> None:
+    """Test pytest-cov testname stripping to actual pytest item.nodeid strings"""
+    assert strip_pytest_cov_testname(testname) == expected
 
-    diff = git.file_diff_data_current("src/car.py")
-    lines_to_query, updates_to_lines, _ = git.get_test_lines_and_update_lines(diff)
-    line_map = common.line_mapping(updates_to_lines, "src/car.py")
 
-    expected_line_map = {
-        1: 3,
-        2: 4,
-        3: 5,
-        4: 6,
-        5: 7,
-        6: 8,
-        7: 9,
-        8: 10,
-        9: 11,
-        10: 12,
-        11: 13,
-        12: 14,
-        13: 15,
-        14: 16,
-        15: 17,
-        16: 18,
-        17: 19,
-        18: 20,
-        19: 21,
-        20: 22,
-        21: 23,
-        22: 24,
-        23: 25,
-        24: 26,
-        25: 27,
+def test_filter_pytest_items() -> None:
+    """Test for filtering the test set
+    based on given existing tests
+    """
+
+    class FakePytestItem:  # pylint: disable=too-few-public-methods
+        """Class that has nodeid field like a pytest item
+        and a method get_closest_marker which returns something
+        """
+
+        def __init__(self, name: str, nodeid: str, markername: str) -> None:
+            """Set test name, identifier nodeid and marker name"""
+            self.name = name
+            self.nodeid = nodeid
+            self.markername = markername
+
+        def get_closest_marker(self, markername: str) -> bool:
+            """Return if item is marked as skipped"""
+            if self.markername == markername:
+                return True
+            return False
+
+    collected_items = [
+        cast(Item, FakePytestItem("test1", "test_func_1", "")),
+        cast(Item, FakePytestItem("test2", "test_func_2", "skip")),
+        cast(Item, FakePytestItem("test3", "test_func_3", "")),
+        cast(Item, FakePytestItem("test4", "test_func_4", "skipif")),
+        cast(Item, FakePytestItem("test5", "test_func_5", "")),
+    ]
+    existing_tests = {
+        "test_func_1",
+        "test_func_3",
     }
 
-    assert line_map == expected_line_map
+    filtered_items = filter_pytest_items(collected_items, existing_tests)
 
-
-def test_function_lines():
-    with open("src/car.py", "r") as f:
-        code = f.read()
-        codelines = f.readlines()
-
-    parsed_code = ast.parse(code)
-    func_lines = common.function_lines(parsed_code, len(codelines))
-
-    expected_func_lines = [
-        ("__init__", 4, 7),
-        ("get_speed", 9, 10),
-        ("accelerate", 12, 13),
-        ("get_passengers", 15, 16),
-        ("add_passenger", 18, 20),
-        ("remove_passenger", 22, 0),
-    ]
-
-    assert func_lines == expected_func_lines
+    assert len(filtered_items) == 1
+    assert filtered_items[0].nodeid == "test_func_5"
