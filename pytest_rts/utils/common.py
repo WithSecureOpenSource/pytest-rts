@@ -5,7 +5,9 @@ from coverage import CoverageData
 from _pytest.nodes import Item
 
 
-def filter_pytest_items(pytest_items: List[Item], existing_tests) -> List[Item]:
+def filter_pytest_items(
+    pytest_items: List[Item], existing_tests: Set[str]
+) -> List[Item]:
     """Select pytest items if they are new and not marked as skipped"""
     return list(
         filter(

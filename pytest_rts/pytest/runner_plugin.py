@@ -1,6 +1,6 @@
 """This module contains code for running a specific test set"""
 # pylint: disable=too-few-public-methods
-from typing import List
+from typing import List, Set
 
 from _pytest.main import Session
 from _pytest.nodes import Item
@@ -12,7 +12,7 @@ from pytest_rts.utils.common import filter_pytest_items
 class RunnerPlugin:
     """Plugin class for pytest"""
 
-    def __init__(self, existing_tests) -> None:
+    def __init__(self, existing_tests: Set[str]) -> None:
         """Set existing tests"""
         self.existing_tests = existing_tests
 

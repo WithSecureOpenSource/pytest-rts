@@ -1,8 +1,10 @@
 """Integration tests for pytest-rts"""
 import os
 
+from _pytest.pytester import Testdir
 
-def test_only_new_functions_are_ran(testdir):
+
+def test_only_new_functions_are_ran(testdir: Testdir) -> None:
     """Test case for running pytest-rts when new tests are added
     and changes are not committed.
     """

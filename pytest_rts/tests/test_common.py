@@ -1,5 +1,8 @@
 """Tests for common utility functions"""
+from typing import cast
+
 import pytest
+from _pytest.nodes import Item
 
 from pytest_rts.utils.common import filter_pytest_items, strip_pytest_cov_testname
 
@@ -21,12 +24,12 @@ from pytest_rts.utils.common import filter_pytest_items, strip_pytest_cov_testna
         ),
     ],
 )
-def test_strip_pytest_cov_testname(testname, expected):
+def test_strip_pytest_cov_testname(testname: str, expected: str) -> None:
     """Test pytest-cov testname stripping to actual pytest item.nodeid strings"""
     assert strip_pytest_cov_testname(testname) == expected
 
 
-def test_filter_pytest_items():
+def test_filter_pytest_items() -> None:
     """Test for filtering the test set
     based on given existing tests
     """
@@ -49,16 +52,16 @@ def test_filter_pytest_items():
             return False
 
     collected_items = [
-        FakePytestItem("test1", "test_func_1", ""),
-        FakePytestItem("test2", "test_func_2", "skip"),
-        FakePytestItem("test3", "test_func_3", ""),
-        FakePytestItem("test4", "test_func_4", "skipif"),
-        FakePytestItem("test5", "test_func_5", ""),
+        cast(Item, FakePytestItem("test1", "test_func_1", "")),
+        cast(Item, FakePytestItem("test2", "test_func_2", "skip")),
+        cast(Item, FakePytestItem("test3", "test_func_3", "")),
+        cast(Item, FakePytestItem("test4", "test_func_4", "skipif")),
+        cast(Item, FakePytestItem("test5", "test_func_5", "")),
     ]
-    existing_tests = [
+    existing_tests = {
         "test_func_1",
         "test_func_3",
-    ]
+    }
 
     filtered_items = filter_pytest_items(collected_items, existing_tests)
 
