@@ -26,15 +26,12 @@ More detailed usage is described in the [tutorial][tutorial]
    - install `pytest-rts`
 3. Switch to directory with target project
 4. Install all the dependencies needed for testing (should be installed into the same pytest-rts virtual environment)
-5. Execute `pytest --rts` which will run the entire test suite and build a mapping database
+5. Execute `pytest --cov=<path to code> --cov-context=test` which will run the entire test suite and build a mapping database with [pytest-cov](https://github.com/pytest-dev/pytest-cov)
+6. Rename the coverage file produced by `pytest-cov` to your liking. Example: `mv .coverage pytest-rts-coverage`
 
-#### Running tests related to the changes
+#### Running new tests
 
-1. execute `pytest --rts` after doing changes
-
-#### Running evaluation code
-
-1. execute `pytest_rts_eval` in target project directory
+1. execute `pytest --rts --rts-coverage-db=<your coverage file>` after adding new tests
 
 ## <a name="dev"></a> Development
 
