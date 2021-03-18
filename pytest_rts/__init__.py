@@ -1,2 +1,2 @@
 """pytest-rts: avoid already imported warning: PYTEST_DONT_REWRITE"""
-__version__ = "2.0.0"
+__version__ = "2.1.0"
