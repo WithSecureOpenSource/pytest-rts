@@ -1,19 +1,28 @@
 """This module contains fuctions for test selecting operations"""
-from typing import List, Set
+from typing import Dict, List, Set
 
 from coverage import CoverageData
 from _pytest.nodes import Item
 
+from pytest_rts.utils.git import (
+    get_changed_lines,
+    get_changed_files_current,
+    get_file_diff_dict_current,
+)
+
 
 def filter_pytest_items(
-    pytest_items: List[Item], existing_tests: Set[str]
+    pytest_items: List[Item], existing_tests: Set[str], tests_from_changes: Set[str]
 ) -> List[Item]:
     """Select pytest items if they are new and not marked as skipped"""
     return list(
         filter(
-            lambda item: item.nodeid not in existing_tests
-            and not item.get_closest_marker("skipif")
-            and not item.get_closest_marker("skip"),
+            lambda item: (item.nodeid in tests_from_changes)
+            or (
+                item.nodeid not in existing_tests
+                and not item.get_closest_marker("skipif")
+                and not item.get_closest_marker("skip")
+            ),
             pytest_items,
         )
     )
@@ -30,6 +39,34 @@ def get_existing_tests(coverage_file_path: str) -> Set[str]:
         strip_pytest_cov_testname(testname)
         for testname in coverage_data.measured_contexts()
     }
+
+
+def get_tests_from_changes(
+    file_diffs: Dict[str, str], coverage_file_path: str
+) -> Set[str]:
+    """Returns the test set from given Git diffs"""
+    coverage_data = CoverageData(coverage_file_path)
+    coverage_data.read()
+
+    tests: Set[str] = set()
+    for changed_file in file_diffs:
+        changed_lines = get_changed_lines(file_diffs[changed_file])
+        for line_number in coverage_data.contexts_by_lineno(changed_file):
+            if line_number in changed_lines:
+                tests.update(
+                    strip_pytest_cov_testname(testname)
+                    for testname in coverage_data.contexts_by_lineno(changed_file)[
+                        line_number
+                    ]
+                )
+    return tests
+
+
+def get_tests_current(coverage_file_path: str) -> Set[str]:
+    """Returns the test set from working directory changes"""
+    changed_files = get_changed_files_current()
+    file_diffs = get_file_diff_dict_current(changed_files)
+    return get_tests_from_changes(file_diffs, coverage_file_path)
 
 
 def strip_pytest_cov_testname(testname: str) -> str:
