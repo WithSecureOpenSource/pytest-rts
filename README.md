@@ -43,6 +43,12 @@ As a result only tests related to made changes will be executed.
   * make sure you have coverage database from the main branch located next to the code
   * run `pytest --rts --rts-coverage-db=[path to database]`
 
+## Troubleshooting
+
+* **`pytest --rts` returns non-zero code:** command returns one of the
+  [pytest exit codes](https://docs.pytest.org/en/stable/usage.html#possible-exit-codes). For example if pytest-rts
+  module found no tests to execute resulting code will be 5 - "No tests were collected"
+
 ## <a name="dev"></a> Development
 
 See [DEVELOPER.md][developer] for more info
