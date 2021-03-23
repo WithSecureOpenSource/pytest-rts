@@ -28,7 +28,7 @@ def get_changed_lines(diff: str) -> Set[int]:
     - Change data according to git diff output:
     - @@ -old0,old1 +new0,new1 @@
     - old0 to old0 + old1 are now new0 to new0 + new1
-    - changed lines = old0 to old0 + old1
+    - changed lines = old0 to old0 + old1 (last not included)
     """
     regex = r"[@][@]\s+[-][0-9]+(?:,[0-9]+)?\s+[+][0-9]+(?:,[0-9]+)?\s+[@][@]"
     line_changes = re.findall(regex, diff)
