@@ -13,7 +13,7 @@ from pytest_rts.utils.git import get_changed_lines
     [
         (
             FAKE_DIFF_1,
-            [
+            {
                 23,
                 29,
                 30,
@@ -42,10 +42,10 @@ from pytest_rts.utils.git import get_changed_lines
                 219,
                 228,
                 238,
-            ],
+            },
         ),
-        (FAKE_DIFF_2, [83, 240]),
-        (FAKE_DIFF_3, [16, 24]),
+        (FAKE_DIFF_2, {83, 240}),
+        (FAKE_DIFF_3, {16, 24}),
     ],
 )
 def test_get_changed_lines(diff: str, real_changed_lines: List[int]) -> None:

@@ -1,7 +1,7 @@
 """This module contains code for git operations"""
 import re
 import subprocess
-from typing import Dict, List
+from typing import Dict, List, Set
 
 from pydriller import GitRepository
 
@@ -23,7 +23,7 @@ def get_file_diff_dict_current(files: List[str]) -> Dict[str, str]:
     return {file_path: get_file_diff_data_current(file_path) for file_path in files}
 
 
-def get_changed_lines(diff: str) -> List[int]:
+def get_changed_lines(diff: str) -> Set[int]:
     """Parse changed lines from git diff -U0 output.
     - Change data according to git diff output:
     - @@ -old0,old1 +new0,new1 @@
@@ -32,7 +32,7 @@ def get_changed_lines(diff: str) -> List[int]:
     """
     regex = r"[@][@]\s+[-][0-9]+(?:,[0-9]+)?\s+[+][0-9]+(?:,[0-9]+)?\s+[@][@]"
     line_changes = re.findall(regex, diff)
-    changed_lines = []
+    changed_lines: Set[int] = set()
     for change in line_changes:
         changed_line = change.strip("@").split()
 
@@ -45,9 +45,9 @@ def get_changed_lines(diff: str) -> List[int]:
         old[0] = old[0].strip("-")
 
         if int(old[1]) == 0:
-            changed_lines.append(int(old[0]))
+            changed_lines.add(int(old[0]))
         else:
-            changed_lines.extend(range(int(old[0]), int(old[0]) + int(old[1])))
+            changed_lines.update(range(int(old[0]), int(old[0]) + int(old[1])))
 
     return changed_lines
 

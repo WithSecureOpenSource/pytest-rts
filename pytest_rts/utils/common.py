@@ -50,15 +50,21 @@ def get_tests_from_changes(
 
     tests: Set[str] = set()
     for changed_file in file_diffs:
-        changed_lines = get_changed_lines(file_diffs[changed_file])
-        for line_number in coverage_data.contexts_by_lineno(changed_file):
-            if line_number in changed_lines:
-                tests.update(
-                    strip_pytest_cov_testname(testname)
-                    for testname in coverage_data.contexts_by_lineno(changed_file)[
-                        line_number
-                    ]
-                )
+
+        contexts = coverage_data.contexts_by_lineno(changed_file)
+        if not contexts:
+            continue
+
+        changed_lines_with_tests = get_changed_lines(
+            file_diffs[changed_file]
+        ).intersection(contexts.keys())
+
+        tests.update(
+            strip_pytest_cov_testname(testname)
+            for line in changed_lines_with_tests
+            for testname in contexts[line]
+        )
+
     return tests
 
 
