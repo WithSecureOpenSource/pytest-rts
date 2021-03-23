@@ -3,10 +3,11 @@
 # Coverage-based regression test selection (RTS) plugin for pytest
 
 - [Usage](#usage)
+- [Troubleshooting](#troubleshooting)
 - [Development](#dev)
 - [Contributing](#contrib)
 
-## <a name="usage"></a>Usage
+## <a name="usage"></a> Usage
 
 Plugin is supposed to be used to execute tests related to changes done locally on developer's machine and in CI environment to test pull requests.
 
@@ -15,24 +16,17 @@ Plugin is supposed to be used to execute tests related to changes done locally o
 To start using pytest-rts build of coverage DB is needed. For [Trunk Based Development](https://trunkbaseddevelopment.com/) mapping database from `master` branch should be used, for [A successful Git branching model](https://nvie.com/posts/a-successful-git-branching-model/) - `develop`
 
 1. Install [pytest-cov](https://github.com/pytest-dev/pytest-cov) with `pip install pytest-cov`
-2. Configure coverage with `.coveragerc`:
-   ```dosini
-   [run]
-   source = <path to your package>
-   relative_files = True
-   dynamic_context = test_function
-   ```
-2. Execute `pytest --cov-config=.coveragerc` which will run the entire test suite and build a mapping database
+2. Execute `pytest --cov=[path to your package] --cov-context=test` which will run the entire test suite and build a mapping database in `.coverage` file
 3. Rename the coverage file `.coverage` produced by `pytest-cov` to your liking. Example: `mv .coverage pytest-rts-coverage`
 
-### Usage
+### Local usage
 
 1. Install `pytest-rts` with `pip install pytest-rts`
 2. Create a branch `git checkout -b feat/new-feature`
 3. Make changes in your code
-5. Run the tool with `pytest --rts --rts-coverage-db=[path to database]`
+4. Run the tool with `pytest --rts --rts-coverage-db=[path to database]`
 
-As a result only tests related to made changes will be executed.
+As a result only tests related to changes in working directory and branch will be executed.
 
 ### Usage in CI
 
@@ -43,11 +37,11 @@ As a result only tests related to made changes will be executed.
   * make sure you have coverage database from the main branch located next to the code
   * run `pytest --rts --rts-coverage-db=[path to database]`
 
-## Troubleshooting
+## <a name="troubleshooting"></a> Troubleshooting
 
 * **`pytest --rts` returns non-zero code:** command returns one of the
   [pytest exit codes](https://docs.pytest.org/en/stable/usage.html#possible-exit-codes). For example if pytest-rts
-  module found no tests to execute resulting code will be 5 - "No tests were collected"
+  module found no tests to execute resulting code will be 5 "No tests were collected"
 
 ## <a name="dev"></a> Development
 
