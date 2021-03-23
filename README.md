@@ -3,35 +3,45 @@
 # Coverage-based regression test selection (RTS) plugin for pytest
 
 - [Usage](#usage)
+- [Troubleshooting](#troubleshooting)
 - [Development](#dev)
 - [Contributing](#contrib)
 
 ## <a name="usage"></a> Usage
 
-### Usage as a module (no source code)
+Plugin is supposed to be used to execute tests related to changes done locally on developer's machine and in CI environment to test pull requests.
 
-1. Install the module with `pip install pytest-rts`
-2. Use the tool with `pytest --rts`
+### Initialization
 
-More detailed usage is described in the [tutorial][tutorial]
+To start using pytest-rts build of coverage DB is needed. For [Trunk Based Development](https://trunkbaseddevelopment.com/) mapping database from `master` branch should be used, for [A successful Git branching model](https://nvie.com/posts/a-successful-git-branching-model/) - `develop`
 
-### Usage from source code
+1. Install [pytest-cov](https://github.com/pytest-dev/pytest-cov) with `pip install pytest-cov`
+2. Execute `pytest --cov=[path to your package] --cov-context=test` which will run the entire test suite and build a mapping database in `.coverage` file
+3. Rename the coverage file `.coverage` produced by `pytest-cov` to your liking. Example: `mv .coverage pytest-rts-coverage`
 
-#### Initialization
+### Local usage
 
-1. Checkout the project
-2. In project directory run `make install` - that will:
-   - create virtual environment
-   - download all the dependencies
-   - install `pytest-rts`
-3. Switch to directory with target project
-4. Install all the dependencies needed for testing (should be installed into the same pytest-rts virtual environment)
-5. Execute `pytest --cov=<path to code> --cov-context=test` which will run the entire test suite and build a mapping database with [pytest-cov](https://github.com/pytest-dev/pytest-cov)
-6. Rename the coverage file produced by `pytest-cov` to your liking. Example: `mv .coverage pytest-rts-coverage`
+1. Install `pytest-rts` with `pip install pytest-rts`
+2. Create a branch `git checkout -b feat/new-feature`
+3. Make changes in your code
+4. Run the tool with `pytest --rts --rts-coverage-db=[path to database]`
 
-#### Running new tests
+As a result only tests related to changes in working directory and branch will be executed.
 
-1. execute `pytest --rts --rts-coverage-db=<your coverage file>` after adding new tests
+### Usage in CI
+
+* In the main branch (`master` or `develop`) make sure you run entire test suite and
+  * commit back coverage database
+  * or, if the database size is big, upload it to some storage
+* In pull requests:
+  * make sure you have coverage database from the main branch located next to the code
+  * run `pytest --rts --rts-coverage-db=[path to database]`
+
+## <a name="troubleshooting"></a> Troubleshooting
+
+* **`pytest --rts` returns non-zero code:** command returns one of the
+  [pytest exit codes](https://docs.pytest.org/en/stable/usage.html#possible-exit-codes). For example if pytest-rts
+  module found no tests to execute resulting code will be 5 "No tests were collected"
 
 ## <a name="dev"></a> Development
 
@@ -51,7 +61,6 @@ Help us keep the project open and inclusive. Please read and follow our [Code of
 
 The package was developed by [F-Secure Corporation][f-secure] and [University of Helsinki][hy] in scope of [IVVES project][ivves]. This work was labelled by [ITEA3][itea3] and funded by local authorities under grant agreement “ITEA-2019-18022-IVVES”
 
-[tutorial]: https://github.com/F-Secure/pytest-rts/tree/master/docs/tutorial.md
 [developer]: https://github.com/F-Secure/pytest-rts/tree/master/docs/DEVELOPER.md
 [contributing]: https://github.com/F-Secure/pytest-rts/tree/master/docs/CONTRIBUTING.md
 [codeofconduct]: https://github.com/F-Secure/pytest-rts/tree/master/docs/CODE_OF_CONDUCT.md
