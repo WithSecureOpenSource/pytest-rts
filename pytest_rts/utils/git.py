@@ -6,21 +6,21 @@ from typing import Dict, List, Set
 from pydriller import GitRepository
 
 
-def get_changed_files_current() -> List[str]:
+def get_changed_files_current(repo: GitRepository) -> List[str]:
     """Get changed files in git working directory"""
-    repo = get_git_repo()
     return repo.repo.git.diff("--name-only").split()
 
 
-def get_file_diff_data_current(filename: str) -> str:
+def get_file_diff_data_current(repo: GitRepository, filename: str) -> str:
     """Get git diff for a file in git working directory"""
-    repo = get_git_repo()
     return repo.repo.git.diff("-U0", "--", filename)
 
 
-def get_file_diff_dict_current(files: List[str]) -> Dict[str, str]:
+def get_file_diff_dict_current(repo: GitRepository, files: List[str]) -> Dict[str, str]:
     """Returns a dictionary with file id as key and git diff as value"""
-    return {file_path: get_file_diff_data_current(file_path) for file_path in files}
+    return {
+        file_path: get_file_diff_data_current(repo, file_path) for file_path in files
+    }
 
 
 def get_changed_lines(diff: str) -> Set[int]:
@@ -65,10 +65,7 @@ def get_git_repo() -> GitRepository:
 def is_git_repo() -> bool:
     """Check if current directory or any parent directory is a git repo"""
     try:
-        subprocess.check_output(
-            "git rev-parse --show-toplevel".split(),
-            stderr=subprocess.DEVNULL,
-        )
+        get_git_repo()
         return True
     except subprocess.CalledProcessError:
         return False

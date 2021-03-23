@@ -5,6 +5,7 @@ from coverage import CoverageData
 from _pytest.nodes import Item
 
 from pytest_rts.utils.git import (
+    get_git_repo,
     get_changed_lines,
     get_changed_files_current,
     get_file_diff_dict_current,
@@ -70,8 +71,9 @@ def get_tests_from_changes(
 
 def get_tests_current(coverage_file_path: str) -> Set[str]:
     """Returns the test set from working directory changes"""
-    changed_files = get_changed_files_current()
-    file_diffs = get_file_diff_dict_current(changed_files)
+    repo = get_git_repo()
+    changed_files = get_changed_files_current(repo)
+    file_diffs = get_file_diff_dict_current(repo, changed_files)
     return get_tests_from_changes(file_diffs, coverage_file_path)
 
 
