@@ -16,8 +16,14 @@ Plugin is supposed to be used to execute tests related to changes done locally o
 To start using pytest-rts build of coverage DB is needed. For [Trunk Based Development](https://trunkbaseddevelopment.com/) mapping database from `master` branch should be used, for [A successful Git branching model](https://nvie.com/posts/a-successful-git-branching-model/) - `develop`
 
 1. Install [pytest-cov](https://github.com/pytest-dev/pytest-cov) with `pip install pytest-cov`
-2. Execute `pytest --cov=[path to your package] --cov-context=test` which will run the entire test suite and build a mapping database in `.coverage` file
-3. Rename the coverage file `.coverage` produced by `pytest-cov` to your liking. Example: `mv .coverage pytest-rts-coverage`
+2. Create a `.coveragerc` file with the following contents inside to configure `pytest-cov`:
+```
+[run] 
+relative_files = True
+```
+ 
+3. Execute `pytest --cov=[path to your package] --cov-context=test` which will run the entire test suite and build a mapping database in `.coverage` file
+4. Rename the coverage file `.coverage` produced by `pytest-cov` to your liking. Example: `mv .coverage pytest-rts-coverage`
 
 ### Local usage
 
