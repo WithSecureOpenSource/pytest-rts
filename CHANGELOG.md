@@ -2,6 +2,16 @@
 
 <!--next-version-placeholder-->
 
+## v2.2.0 (2021-03-24)
+### Feature
+* Run tests from changes in workdir ([`5836afd`](https://github.com/F-Secure/pytest-rts/commit/5836afd07b04f005123c4d0d85c5920c7b61c7ea))
+
+### Documentation
+* Mention relative files configuration ([`07104f8`](https://github.com/F-Secure/pytest-rts/commit/07104f833633426aebaef0346c1b867422b45eec))
+* Fixed initialization section ([`d093abb`](https://github.com/F-Secure/pytest-rts/commit/d093abb03b169b47e5a09d3d236d36ae36575b79))
+* Added troubleshooting section ([`d03881e`](https://github.com/F-Secure/pytest-rts/commit/d03881e891b4f471b748ad5174698ed5641d2965))
+* Updated usage instructions and removed outdated files ([`c8639e1`](https://github.com/F-Secure/pytest-rts/commit/c8639e1f83554bfbf7d07d1ffa72e62a05508232))
+
 ## v2.1.0 (2021-03-18)
 ### Feature
 * Run new tests based on pytest-cov ([`7d40a75`](https://github.com/F-Secure/pytest-rts/commit/7d40a752aa69b9d16fbd0927fd4ded626c1355be))
