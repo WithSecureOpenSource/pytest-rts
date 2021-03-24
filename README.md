@@ -21,8 +21,7 @@ To start using pytest-rts build of coverage DB is needed. For [Trunk Based Devel
 [run] 
 relative_files = True
 ```
- 
-3. Execute `pytest --cov=[path to your package] --cov-context=test` which will run the entire test suite and build a mapping database in `.coverage` file
+3. Execute `pytest --cov=[path to your package] --cov-context=test --cov-config=.coveragerc` which will run the entire test suite and build a mapping database in `.coverage` file
 4. Rename the coverage file `.coverage` produced by `pytest-cov` to your liking. Example: `mv .coverage pytest-rts-coverage`
 
 ### Local usage
