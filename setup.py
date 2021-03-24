@@ -48,7 +48,7 @@ setup(
             f"{NAME_DASHED}={NAME}.plugin",
         ],
     },
-    install_requires=["coverage", "pytest", "pytest-cov"],
+    install_requires=["coverage", "pytest", "pytest-cov", "pydriller"],
     extras_require={"dev": DEV_REQUIRE},
     classifiers=[
         "Programming Language :: Python",

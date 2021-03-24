@@ -12,9 +12,10 @@ from pytest_rts.utils.common import filter_pytest_items
 class RunnerPlugin:
     """Plugin class for pytest"""
 
-    def __init__(self, existing_tests: Set[str]) -> None:
+    def __init__(self, existing_tests: Set[str], tests_from_changes: Set[str]) -> None:
         """Set existing tests"""
         self.existing_tests = existing_tests
+        self.tests_from_changes = tests_from_changes
 
     def pytest_collection_modifyitems(
         self,
@@ -24,7 +25,9 @@ class RunnerPlugin:
     ) -> None:
         """Select only specific tests for running"""
         original_length = len(items)
-        items[:] = filter_pytest_items(items, self.existing_tests)
+        items[:] = filter_pytest_items(
+            items, self.existing_tests, self.tests_from_changes
+        )
         session.config.hook.pytest_deselected(
             items=([FakeItem(session.config)] * (original_length - len(items)))
         )

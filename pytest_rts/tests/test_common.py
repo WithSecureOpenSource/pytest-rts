@@ -62,8 +62,13 @@ def test_filter_pytest_items() -> None:
         "test_func_1",
         "test_func_3",
     }
+    tests_from_changes = {
+        "test_func_5",
+    }
 
-    filtered_items = filter_pytest_items(collected_items, existing_tests)
+    filtered_items = filter_pytest_items(
+        collected_items, existing_tests, tests_from_changes
+    )
 
     assert len(filtered_items) == 1
     assert filtered_items[0].nodeid == "test_func_5"

@@ -1,0 +1,3 @@
+.coverage
+rts-coverage.1234
+*__pycache__*
