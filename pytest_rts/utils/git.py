@@ -1,9 +1,14 @@
 """This module contains code for git operations"""
 import re
 import subprocess
-from typing import Dict, List, Set
+from typing import List, Set
 
 from pydriller import GitRepository
+
+
+def commit_exists(commithash: str) -> bool:
+    """Check if a given commithash exists in the Git repository"""
+    return commithash in [commit.hash for commit in get_git_repo().get_list_commits()]
 
 
 def get_changed_files_current(repo: GitRepository) -> List[str]:
@@ -11,16 +16,23 @@ def get_changed_files_current(repo: GitRepository) -> List[str]:
     return repo.repo.git.diff("--name-only").split()
 
 
-def get_file_diff_data_current(repo: GitRepository, filename: str) -> str:
+def get_changed_files_between_commits(
+    repo: GitRepository, commithash1: str, commithash2: str
+) -> List[str]:
+    """Get changed files between two commits"""
+    return repo.repo.git.diff("--name-only", commithash1, commithash2).split()
+
+
+def get_file_diff_data_current(repo: GitRepository, file_path: str) -> str:
     """Get git diff for a file in git working directory"""
-    return repo.repo.git.diff("-U0", "--", filename)
+    return repo.repo.git.diff("-U0", "--", file_path)
 
 
-def get_file_diff_dict_current(repo: GitRepository, files: List[str]) -> Dict[str, str]:
-    """Returns a dictionary with file id as key and git diff as value"""
-    return {
-        file_path: get_file_diff_data_current(repo, file_path) for file_path in files
-    }
+def get_file_diff_data_between_commits(
+    repo: GitRepository, file_path: str, commithash1: str, commithash2: str
+) -> str:
+    """Get git diff for a file from changes between two commits"""
+    return repo.repo.git.diff("-U0", commithash1, commithash2, "--", file_path)
 
 
 def get_changed_lines(diff: str) -> Set[int]:
@@ -50,6 +62,11 @@ def get_changed_lines(diff: str) -> Set[int]:
             changed_lines.update(range(int(old[0]), int(old[0]) + int(old[1])))
 
     return changed_lines
+
+
+def get_current_head_hash(repo: GitRepository) -> str:
+    """Return current git HEAD hash"""
+    return repo.repo.head.object.hexsha
 
 
 def get_git_repo() -> GitRepository:

@@ -8,7 +8,10 @@ from pytest_rts.utils.git import (
     get_git_repo,
     get_changed_lines,
     get_changed_files_current,
-    get_file_diff_dict_current,
+    get_changed_files_between_commits,
+    get_current_head_hash,
+    get_file_diff_data_current,
+    get_file_diff_data_between_commits,
 )
 
 
@@ -73,7 +76,28 @@ def get_tests_current(coverage_file_path: str) -> Set[str]:
     """Returns the test set from working directory changes"""
     repo = get_git_repo()
     changed_files = get_changed_files_current(repo)
-    file_diffs = get_file_diff_dict_current(repo, changed_files)
+    file_diffs = {
+        file_path: get_file_diff_data_current(repo, file_path)
+        for file_path in changed_files
+    }
+    return get_tests_from_changes(file_diffs, coverage_file_path)
+
+
+def get_tests_committed(
+    commithash_to_compare: str, coverage_file_path: str
+) -> Set[str]:
+    """Returns the test set from committed changes"""
+    repo = get_git_repo()
+    current_hash = get_current_head_hash(repo)
+    changed_files = get_changed_files_between_commits(
+        repo, commithash_to_compare, current_hash
+    )
+    file_diffs = {
+        file_path: get_file_diff_data_between_commits(
+            repo, file_path, commithash_to_compare, current_hash
+        )
+        for file_path in changed_files
+    }
     return get_tests_from_changes(file_diffs, coverage_file_path)
 
 

@@ -6,8 +6,9 @@ from typing import Dict, List
 import pytest
 from _pytest.pytester import Testdir
 
+from pytest_rts.utils.git import get_current_head_hash, get_git_repo
 
-COV_FILE = "rts-coverage.1234"
+COV_FILE = "rts-coverage.db"
 
 
 def init_git_repo(tmp_testdir_path: str) -> None:
@@ -19,6 +20,79 @@ def init_git_repo(tmp_testdir_path: str) -> None:
     subprocess.run(["git", "config", "user.email", "pytest@example.com"], check=True)
     subprocess.run(["git", "add", "."], check=True)
     subprocess.run(["git", "commit", "-m", "1"], check=True)
+
+
+def commit_change(tmp_testdir_path: str, file_path: str) -> None:
+    """Helper function to commit a change to the temporary repo during tests"""
+    if os.getcwd() != tmp_testdir_path:
+        return
+    subprocess.run(
+        ["git", "add", file_path],
+        check=True,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+    )
+    subprocess.run(
+        ["git", "commit", "-m", f"commit {file_path}"],
+        check=True,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+    )
+
+
+def change_file(
+    tmp_testdir_path: str, path_of_change: str, path_to_change: str
+) -> None:
+    """Helper function to change a file in the testdir during tests"""
+    if os.getcwd() != tmp_testdir_path:
+        return
+    subprocess.run(
+        ["cp", "-f", path_of_change, path_to_change],
+        check=True,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+    )
+
+
+def cleanup_caches(tmp_testdir_path: str) -> None:
+    """Helper function to cleanup python and pytest caches
+    in testdir between test runs to prevent flakiness
+    """
+    if os.getcwd() != tmp_testdir_path:
+        return
+    subprocess.run(
+        ["rm", "-rf", "src/__pycache__/"],
+        check=True,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+    )
+    subprocess.run(
+        ["rm", "-rf", "tests/__pycache__/"],
+        check=True,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+    )
+    subprocess.run(
+        ["rm", "-rf", ".pytest_cache/"],
+        check=True,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+    )
+
+
+def get_testrepo_commithash(tmp_testdir_path: str) -> str:
+    """Helper function to return the current Git HEAD in the testrepo"""
+    if os.getcwd() != tmp_testdir_path:
+        return ""
+    return get_current_head_hash(get_git_repo())
+
+
+def squash_commits(tmp_testdir_path: str, num_to_squash: int) -> None:
+    """Helper function to squash given amount of commits in the testrepo"""
+    if os.getcwd() != tmp_testdir_path:
+        return
+    subprocess.run(["git", "reset", "--soft", f"HEAD~{num_to_squash}"], check=True)
+    subprocess.run(["git", "commit", "-m", "squashed_commit"], check=True)
 
 
 def test_only_new_functions_are_ran(testdir: Testdir) -> None:
@@ -39,7 +113,11 @@ def test_only_new_functions_are_ran(testdir: Testdir) -> None:
     os.rename(".coverage", COV_FILE)
 
     # add a new test method to an existing file
-    os.rename("changes/test_car/add_test_passengers.txt", "tests/test_car.py")
+    change_file(
+        str(testdir.tmpdir),
+        "changes/test_car/add_test_passengers.txt",
+        "tests/test_car.py",
+    )
 
     # add a new test file with a test in it
     testdir.makepyfile(
@@ -48,6 +126,8 @@ def test_only_new_functions_are_ran(testdir: Testdir) -> None:
             assert 1 == 1
     """
     )
+
+    cleanup_caches(str(testdir.tmpdir))
 
     # run pytest-rts to only run new tests
     result = testdir.runpytest("--rts", f"--rts-coverage-db={COV_FILE}")
@@ -65,17 +145,17 @@ def test_only_new_functions_are_ran(testdir: Testdir) -> None:
         (
             "changes/decorated/change_decorator.txt",
             "src/decorators.py",
-            {"passed": 1, "failed": 0, "errors": 0},
+            {"passed": 0, "failed": 1, "errors": 0},
         ),
         (
             "changes/decorated/change_decorator_2.txt",
             "src/decorators.py",
-            {"passed": 1, "failed": 0, "errors": 0},
+            {"passed": 0, "failed": 1, "errors": 0},
         ),
         (
             "changes/init/change_function_one.txt",
             "src/__init__.py",
-            {"passed": 1, "failed": 0, "errors": 0},
+            {"passed": 0, "failed": 1, "errors": 0},
         ),
     ],
 )
@@ -102,7 +182,9 @@ def test_changes_in_working_directory(
     os.rename(".coverage", COV_FILE)
 
     # do a change
-    os.rename(path_of_change, path_to_change)
+    change_file(str(testdir.tmpdir), path_of_change, path_to_change)
+
+    cleanup_caches(str(testdir.tmpdir))
 
     # run pytest-rts to only run tests based on changes
     result = testdir.runpytest("--rts", f"--rts-coverage-db={COV_FILE}")
@@ -136,3 +218,216 @@ def test_misused_flags(flags: List[str], returncode: int, testdir: Testdir) -> N
     init_git_repo(str(testdir.tmpdir))
     result = testdir.runpytest_subprocess(*flags)
     assert result.ret == returncode
+
+
+@pytest.mark.parametrize(
+    "path_of_change, path_to_change, result_dict",
+    [
+        (
+            "changes/shop/change_get_price.txt",
+            "src/shop.py",
+            {"passed": 2, "failed": 0, "errors": 0},
+        ),
+        (
+            "changes/decorated/change_decorator.txt",
+            "src/decorators.py",
+            {"passed": 0, "failed": 1, "errors": 0},
+        ),
+        (
+            "changes/decorated/change_decorator_2.txt",
+            "src/decorators.py",
+            {"passed": 0, "failed": 1, "errors": 0},
+        ),
+        (
+            "changes/init/change_function_one.txt",
+            "src/__init__.py",
+            {"passed": 0, "failed": 1, "errors": 0},
+        ),
+    ],
+)
+def test_committed_changes(
+    path_of_change: str,
+    path_to_change: str,
+    result_dict: Dict[str, int],
+    testdir: Testdir,
+) -> None:
+    """Test cases for running pytest-rts when changes are committed"""
+    testdir.copy_example(".")
+    init_git_repo(str(testdir.tmpdir))
+    testdir.runpytest_subprocess("--cov=.", "--cov-context=test")
+    os.rename(".coverage", COV_FILE)
+
+    original_commithash = get_testrepo_commithash(str(testdir.tmpdir))
+    change_file(str(testdir.tmpdir), path_of_change, path_to_change)
+    commit_change(str(testdir.tmpdir), path_to_change)
+
+    cleanup_caches(str(testdir.tmpdir))
+
+    result = testdir.runpytest(
+        "--rts",
+        f"--rts-coverage-db={COV_FILE}",
+        f"--rts-from-commit={original_commithash}",
+    )
+    result.assert_outcomes(
+        passed=result_dict["passed"],
+        failed=result_dict["failed"],
+        errors=result_dict["errors"],
+    )
+
+
+def test_commithash_does_not_exist(testdir: Testdir) -> None:
+    """Test case for invalid given commithash"""
+    testdir.copy_example(".")
+    init_git_repo(str(testdir.tmpdir))
+    testdir.runpytest_subprocess("--cov=.", "--cov-context=test")
+    os.rename(".coverage", COV_FILE)
+
+    result = testdir.runpytest_subprocess(
+        "--rts",
+        f"--rts-coverage-db={COV_FILE}",
+        "--rts-from-commit=does-not-exist",
+    )
+    assert result.ret == 2
+
+
+def test_multiple_commits(testdir: Testdir) -> None:
+    """Test case for running pytest-rts after two commits"""
+    testdir.copy_example(".")
+    init_git_repo(str(testdir.tmpdir))
+    testdir.runpytest_subprocess("--cov=.", "--cov-context=test")
+    os.rename(".coverage", COV_FILE)
+
+    original_commithash = get_testrepo_commithash(str(testdir.tmpdir))
+
+    change_file(str(testdir.tmpdir), "changes/shop/change_get_price.txt", "src/shop.py")
+    commit_change(str(testdir.tmpdir), "src/shop.py")
+
+    change_file(
+        str(testdir.tmpdir),
+        "changes/test_car/add_test_passengers.txt",
+        "tests/test_car.py",
+    )
+    commit_change(str(testdir.tmpdir), "tests/test_car.py")
+
+    cleanup_caches(str(testdir.tmpdir))
+
+    result = testdir.runpytest(
+        "--rts",
+        f"--rts-coverage-db={COV_FILE}",
+        f"--rts-from-commit={original_commithash}",
+    )
+    result.assert_outcomes(
+        passed=3,
+        failed=0,
+        errors=0,
+    )
+
+
+def test_squashing_commits(testdir: Testdir) -> None:
+    """Test case for running pytest-rts after doing two commits
+    and then squashing them into one
+    """
+    testdir.copy_example(".")
+    init_git_repo(str(testdir.tmpdir))
+    testdir.runpytest_subprocess("--cov=.", "--cov-context=test")
+    os.rename(".coverage", COV_FILE)
+
+    original_commithash = get_testrepo_commithash(str(testdir.tmpdir))
+
+    change_file(str(testdir.tmpdir), "changes/shop/change_get_price.txt", "src/shop.py")
+    commit_change(str(testdir.tmpdir), "src/shop.py")
+
+    change_file(
+        str(testdir.tmpdir),
+        "changes/test_car/add_test_passengers.txt",
+        "tests/test_car.py",
+    )
+    commit_change(str(testdir.tmpdir), "tests/test_car.py")
+
+    squash_commits(str(testdir.tmpdir), 2)
+
+    cleanup_caches(str(testdir.tmpdir))
+
+    result = testdir.runpytest(
+        "--rts",
+        f"--rts-coverage-db={COV_FILE}",
+        f"--rts-from-commit={original_commithash}",
+    )
+    result.assert_outcomes(
+        passed=3,
+        failed=0,
+        errors=0,
+    )
+
+
+def test_only_committed(testdir: Testdir) -> None:
+    """Test case for running only committed changes
+    even if working directory has changes
+    """
+    testdir.copy_example(".")
+    init_git_repo(str(testdir.tmpdir))
+    testdir.runpytest_subprocess("--cov=.", "--cov-context=test")
+    os.rename(".coverage", COV_FILE)
+
+    original_commithash = get_testrepo_commithash(str(testdir.tmpdir))
+
+    change_file(
+        str(testdir.tmpdir),
+        "changes/decorated/change_decorator.txt",
+        "src/decorators.py",
+    )
+    commit_change(str(testdir.tmpdir), "src/decorators.py")
+
+    change_file(
+        str(testdir.tmpdir),
+        "changes/shop/change_get_price.txt",
+        "src/shop.py",
+    )
+
+    cleanup_caches(str(testdir.tmpdir))
+    result = testdir.runpytest(
+        "--rts",
+        f"--rts-coverage-db={COV_FILE}",
+        f"--rts-from-commit={original_commithash}",
+    )
+
+    result.assert_outcomes(
+        passed=0,
+        failed=1,
+        errors=0,
+    )
+
+
+def test_only_working_directory(testdir: Testdir) -> None:
+    """Test case for only running working directory changes
+    even if there are committed changes
+    """
+    testdir.copy_example(".")
+    init_git_repo(str(testdir.tmpdir))
+    testdir.runpytest_subprocess("--cov=.", "--cov-context=test")
+    os.rename(".coverage", COV_FILE)
+
+    change_file(
+        str(testdir.tmpdir),
+        "changes/decorated/change_decorator.txt",
+        "src/decorators.py",
+    )
+    commit_change(str(testdir.tmpdir), "src/decorators.py")
+
+    change_file(
+        str(testdir.tmpdir),
+        "changes/shop/change_get_price.txt",
+        "src/shop.py",
+    )
+
+    cleanup_caches(str(testdir.tmpdir))
+    result = testdir.runpytest(
+        "--rts",
+        f"--rts-coverage-db={COV_FILE}",
+    )
+
+    result.assert_outcomes(
+        passed=2,
+        failed=0,
+        errors=0,
+    )
