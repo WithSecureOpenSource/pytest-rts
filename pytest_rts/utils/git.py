@@ -17,10 +17,10 @@ def get_changed_files_current(repo: GitRepository) -> List[str]:
 
 
 def get_changed_files_between_commits(
-    repo: GitRepository, commithash1: str, commithash2: str
+    repo: GitRepository, commithash_to_compare: str
 ) -> List[str]:
-    """Get changed files between two commits"""
-    return repo.repo.git.diff("--name-only", commithash1, commithash2).split()
+    """Get changed files between given commit and Git HEAD"""
+    return repo.repo.git.diff("--name-only", commithash_to_compare, "HEAD").split()
 
 
 def get_file_diff_data_current(repo: GitRepository, file_path: str) -> str:
@@ -29,10 +29,10 @@ def get_file_diff_data_current(repo: GitRepository, file_path: str) -> str:
 
 
 def get_file_diff_data_between_commits(
-    repo: GitRepository, file_path: str, commithash1: str, commithash2: str
+    repo: GitRepository, file_path: str, commithash_to_compare: str
 ) -> str:
     """Get git diff for a file from changes between two commits"""
-    return repo.repo.git.diff("-U0", commithash1, commithash2, "--", file_path)
+    return repo.repo.git.diff("-U0", commithash_to_compare, "HEAD", "--", file_path)
 
 
 def get_changed_lines(diff: str) -> Set[int]:
@@ -62,11 +62,6 @@ def get_changed_lines(diff: str) -> Set[int]:
             changed_lines.update(range(int(old[0]), int(old[0]) + int(old[1])))
 
     return changed_lines
-
-
-def get_current_head_hash(repo: GitRepository) -> str:
-    """Return current git HEAD hash"""
-    return repo.repo.head.object.hexsha
 
 
 def get_git_repo() -> GitRepository:

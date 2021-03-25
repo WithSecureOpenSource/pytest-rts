@@ -6,7 +6,7 @@ from typing import Dict, List
 import pytest
 from _pytest.pytester import Testdir
 
-from pytest_rts.utils.git import get_current_head_hash, get_git_repo
+from pytest_rts.utils.git import get_git_repo
 
 COV_FILE = "rts-coverage.db"
 
@@ -84,7 +84,8 @@ def get_testrepo_commithash(tmp_testdir_path: str) -> str:
     """Helper function to return the current Git HEAD in the testrepo"""
     if os.getcwd() != tmp_testdir_path:
         return ""
-    return get_current_head_hash(get_git_repo())
+    repo = get_git_repo()
+    return repo.repo.head.object.hexsha
 
 
 def squash_commits(tmp_testdir_path: str, num_to_squash: int) -> None:
