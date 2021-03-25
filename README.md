@@ -35,14 +35,14 @@ relative_files = True
 
 As a result only tests related to changes in working directory will be executed.
 
-#### Tests from committed changes
+#### Tests from working directory + committed changes 
 
 1. Install `pytest-rts` with `pip install pytest-rts`
 2. Create a branch `git checkout -b feat/new-feature`
 3. Make changes in your code and commit them
 4. Run the tool with `pytest --rts --rts-coverage-db=[path to database] --rts-from-commit=[database initialization commithash]`
 
-As a result only tests related to committed changes will be executed. The tool compares the given commithash to the current Git HEAD.
+The current git working directory copy will be compared to the given commithash. Tests for changes in commits and in the working directory will be executed.
 
 ### Usage in CI
 
