@@ -8,10 +8,9 @@ from _pytest.config.argparsing import Parser
 from pytest_rts.pytest.runner_plugin import RunnerPlugin
 from pytest_rts.utils.common import (
     get_existing_tests,
-    get_tests_current,
-    get_tests_committed,
+    get_tests_from_changes,
 )
-from pytest_rts.utils.git import commit_exists, is_git_repo
+from pytest_rts.utils.git import is_git_repo
 
 
 def pytest_addoption(parser: Parser) -> None:
@@ -46,17 +45,8 @@ def pytest_configure(config: Config) -> None:
     if not os.path.exists(config.option.rts_coverage_db):
         pytest.exit("pytest-rts: Provided coverage file does not exist", 2)
 
-    if not config.option.rts_from_commit:
-        existing_tests = get_existing_tests(config.option.rts_coverage_db)
-        workdir_tests = get_tests_current(config.option.rts_coverage_db)
-        config.pluginmanager.register(RunnerPlugin(existing_tests, workdir_tests))
-        return
-
-    if not commit_exists(config.option.rts_from_commit):
-        pytest.exit("pytest-rts: Given commithash does not exist", 2)
-
     existing_tests = get_existing_tests(config.option.rts_coverage_db)
-    committed_tests = get_tests_committed(
+    tests_from_changes = get_tests_from_changes(
         config.option.rts_from_commit, config.option.rts_coverage_db
     )
-    config.pluginmanager.register(RunnerPlugin(existing_tests, committed_tests))
+    config.pluginmanager.register(RunnerPlugin(existing_tests, tests_from_changes))

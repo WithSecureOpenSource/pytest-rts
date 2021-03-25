@@ -249,13 +249,33 @@ def test_committed_changes(
 
 
 def test_commithash_does_not_exist(testrepo: Testdir) -> None:
-    """Test case for invalid given commithash"""
-    result = testrepo.runpytest_subprocess(
+    """Test case for invalid given commithash where only
+    tests from working directory should be collected
+    """
+    change_file(
+        str(testrepo.tmpdir),
+        "changes/decorated/change_decorator.txt",
+        "src/decorators.py",
+    )
+    commit_change(str(testrepo.tmpdir), "src/decorators.py")
+
+    change_file(
+        str(testrepo.tmpdir),
+        "changes/shop/change_get_price.txt",
+        "src/shop.py",
+    )
+
+    result = testrepo.runpytest(
         "--rts",
         f"--rts-coverage-db={COV_FILE}",
         "--rts-from-commit=does-not-exist",
     )
-    assert result.ret == 2
+
+    result.assert_outcomes(
+        passed=2,
+        failed=0,
+        errors=0,
+    )
 
 
 def test_multiple_commits(testrepo: Testdir) -> None:
@@ -316,9 +336,9 @@ def test_squashing_commits(testrepo: Testdir) -> None:
     )
 
 
-def test_only_committed(testrepo: Testdir) -> None:
-    """Test case for running only committed changes
-    even if working directory has changes
+def test_both_committed_and_workdir(testrepo: Testdir) -> None:
+    """Test case for running tests when there are changes
+    both committed and in the working directory
     """
     original_commithash = get_testrepo_commithash(str(testrepo.tmpdir))
 
@@ -342,36 +362,7 @@ def test_only_committed(testrepo: Testdir) -> None:
     )
 
     result.assert_outcomes(
-        passed=0,
-        failed=1,
-        errors=0,
-    )
-
-
-def test_only_working_directory(testrepo: Testdir) -> None:
-    """Test case for only running working directory changes
-    even if there are committed changes
-    """
-    change_file(
-        str(testrepo.tmpdir),
-        "changes/decorated/change_decorator.txt",
-        "src/decorators.py",
-    )
-    commit_change(str(testrepo.tmpdir), "src/decorators.py")
-
-    change_file(
-        str(testrepo.tmpdir),
-        "changes/shop/change_get_price.txt",
-        "src/shop.py",
-    )
-
-    result = testrepo.runpytest(
-        "--rts",
-        f"--rts-coverage-db={COV_FILE}",
-    )
-
-    result.assert_outcomes(
         passed=2,
-        failed=0,
+        failed=1,
         errors=0,
     )

@@ -1,16 +1,17 @@
 """This module contains fuctions for test selecting operations"""
-from typing import Dict, List, Set
+from typing import List, Set
 
 from coverage import CoverageData
 from _pytest.nodes import Item
 
 from pytest_rts.utils.git import (
+    commit_exists,
     get_git_repo,
     get_changed_lines,
-    get_changed_files_current,
-    get_changed_files_between_commits,
-    get_file_diff_data_current,
-    get_file_diff_data_between_commits,
+    get_changed_files_workdir,
+    get_changed_files_committed_and_workdir,
+    get_file_diff_data_workdir,
+    get_file_diff_data_committed_and_workdir,
 )
 
 
@@ -45,9 +46,28 @@ def get_existing_tests(coverage_file_path: str) -> Set[str]:
 
 
 def get_tests_from_changes(
-    file_diffs: Dict[str, str], coverage_file_path: str
+    commithash_to_compare: str, coverage_file_path: str
 ) -> Set[str]:
-    """Returns the test set from given Git diffs"""
+    """Returns the test set from Git changes.
+    If the provided commithash does not exist in the repo,
+    then only changes in the git working directory are considered.
+    Otherwise the commithash is compared to the current working copy.
+    """
+    repo = get_git_repo()
+    if not commit_exists(commithash_to_compare, repo):
+        file_diffs = {
+            file_path: get_file_diff_data_workdir(repo, file_path)
+            for file_path in get_changed_files_workdir(repo)
+        }
+    else:
+        file_diffs = {
+            file_path: get_file_diff_data_committed_and_workdir(
+                repo, file_path, commithash_to_compare
+            )
+            for file_path in get_changed_files_committed_and_workdir(
+                repo, commithash_to_compare
+            )
+        }
     coverage_data = CoverageData(coverage_file_path)
     coverage_data.read()
 
@@ -69,32 +89,6 @@ def get_tests_from_changes(
         )
 
     return tests
-
-
-def get_tests_current(coverage_file_path: str) -> Set[str]:
-    """Returns the test set from working directory changes"""
-    repo = get_git_repo()
-    changed_files = get_changed_files_current(repo)
-    file_diffs = {
-        file_path: get_file_diff_data_current(repo, file_path)
-        for file_path in changed_files
-    }
-    return get_tests_from_changes(file_diffs, coverage_file_path)
-
-
-def get_tests_committed(
-    commithash_to_compare: str, coverage_file_path: str
-) -> Set[str]:
-    """Returns the test set from committed changes"""
-    repo = get_git_repo()
-    changed_files = get_changed_files_between_commits(repo, commithash_to_compare)
-    file_diffs = {
-        file_path: get_file_diff_data_between_commits(
-            repo, file_path, commithash_to_compare
-        )
-        for file_path in changed_files
-    }
-    return get_tests_from_changes(file_diffs, coverage_file_path)
 
 
 def strip_pytest_cov_testname(testname: str) -> str:

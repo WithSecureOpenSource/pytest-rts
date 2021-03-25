@@ -6,33 +6,35 @@ from typing import List, Set
 from pydriller import GitRepository
 
 
-def commit_exists(commithash: str) -> bool:
+def commit_exists(commithash: str, repo: GitRepository) -> bool:
     """Check if a given commithash exists in the Git repository"""
-    return commithash in [commit.hash for commit in get_git_repo().get_list_commits()]
+    if not commithash:
+        return False
+    return commithash in [commit.hash for commit in repo.get_list_commits()]
 
 
-def get_changed_files_current(repo: GitRepository) -> List[str]:
+def get_changed_files_workdir(repo: GitRepository) -> List[str]:
     """Get changed files in git working directory"""
     return repo.repo.git.diff("--name-only").split()
 
 
-def get_changed_files_between_commits(
+def get_changed_files_committed_and_workdir(
     repo: GitRepository, commithash_to_compare: str
 ) -> List[str]:
     """Get changed files between given commit and Git HEAD"""
-    return repo.repo.git.diff("--name-only", commithash_to_compare, "HEAD").split()
+    return repo.repo.git.diff("--name-only", commithash_to_compare).split()
 
 
-def get_file_diff_data_current(repo: GitRepository, file_path: str) -> str:
+def get_file_diff_data_workdir(repo: GitRepository, file_path: str) -> str:
     """Get git diff for a file in git working directory"""
     return repo.repo.git.diff("-U0", "--", file_path)
 
 
-def get_file_diff_data_between_commits(
+def get_file_diff_data_committed_and_workdir(
     repo: GitRepository, file_path: str, commithash_to_compare: str
 ) -> str:
     """Get git diff for a file from changes between two commits"""
-    return repo.repo.git.diff("-U0", commithash_to_compare, "HEAD", "--", file_path)
+    return repo.repo.git.diff("-U0", commithash_to_compare, "--", file_path)
 
 
 def get_changed_lines(diff: str) -> Set[int]:
