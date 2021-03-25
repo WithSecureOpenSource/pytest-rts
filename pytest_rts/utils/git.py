@@ -21,7 +21,7 @@ def get_changed_files_workdir(repo: GitRepository) -> List[str]:
 def get_changed_files_committed_and_workdir(
     repo: GitRepository, commithash_to_compare: str
 ) -> List[str]:
-    """Get changed files between given commit and Git HEAD"""
+    """Get changed files between given commit and the working copy"""
     return repo.repo.git.diff("--name-only", commithash_to_compare).split()
 
 
@@ -33,7 +33,7 @@ def get_file_diff_data_workdir(repo: GitRepository, file_path: str) -> str:
 def get_file_diff_data_committed_and_workdir(
     repo: GitRepository, file_path: str, commithash_to_compare: str
 ) -> str:
-    """Get git diff for a file from changes between two commits"""
+    """Get git diff for a file from changes between given commit and the working copy"""
     return repo.repo.git.diff("-U0", commithash_to_compare, "--", file_path)
 
 
