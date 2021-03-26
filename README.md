@@ -1,8 +1,8 @@
-<table border="0"><tr>
-  <td width="120px">
+<table border="0"><tr border="0">
+  <td width="120px" border="0">
     <img src="https://github.com/F-Secure/pytest-rts/raw/master/docs/imgs/pytest-rts-logo.png"/>
   </td>
-  <td><h1 style="padding: 0; margin: 0;">Coverage-based regression test selection (RTS) plugin for pytest</h1></td>
+  <td border="0"><h1 border="0">Coverage-based regression test selection (RTS) plugin for pytest</h1></td>
 </tr></table>
 
 - [Usage](#usage)
