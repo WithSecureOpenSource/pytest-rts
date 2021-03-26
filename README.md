@@ -47,10 +47,11 @@ As a result only tests related to changes in working directory and branch will b
 One of the ways to organize it in Makefile would be:
 
 ```make
+test: BRANCH_NAME = $(shell git branch | sed -n -e 's/^\* \(.*\)/\1/p')
 test:
 	@[ "$(BRANCH_NAME)" = "master" ] && $(MAKE) test-master || $(MAKE) test-pr
 
-test-master:
+test-master: 
 	pytest \
           --exitfirst \
           --cov \
@@ -61,7 +62,7 @@ test-master:
 	git commit -m "test: updated RTS mapping DB"
 	git push
 
-test-pr: MASTER_COMMIT=$(shell git merge-base remotes/origin/master HEAD)
+test-pr: MASTER_COMMIT = $(shell git merge-base remotes/origin/master HEAD)
 test-pr:
 	git checkout $(MASTER_COMMIT) mapping.db
 	pytest \
