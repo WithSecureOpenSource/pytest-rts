@@ -1,4 +1,4 @@
-<img src="https://github.com/F-Secure/pytest-rts/raw/master/docs/imgs/pytest-rts-logo.png" width="120px" height="120px"/>
+<center><img src="https://github.com/F-Secure/pytest-rts/raw/master/docs/imgs/pytest-rts-logo.png" width="120px" height="120px"/></center>
 
 # Coverage-based regression test selection (RTS) plugin for pytest
 
@@ -24,6 +24,8 @@ relative_files = True
 3. Execute `pytest --cov=[path to your package] --cov-context=test --cov-config=.coveragerc` which will run the entire test suite and build a mapping database in `.coverage` file
 4. Rename the coverage file `.coverage` produced by `pytest-cov` to your liking. Example: `mv .coverage pytest-rts-coverage`
 
+Note that `--cov-config=.coveragerc` is optional parameter here. For more info see [official docs](https://pytest-cov.readthedocs.io/en/latest/config.html#caveats).
+
 ### Local usage
 
 1. Install `pytest-rts` with `pip install pytest-rts`
@@ -41,6 +43,37 @@ As a result only tests related to changes in working directory and branch will b
 * In pull requests:
   * make sure you have coverage database from the main branch located next to the code
   * run `pytest --rts --rts-coverage-db=[path to database]`
+  
+One of the ways to organize it in Makefile would be:
+
+```make
+test: BRANCH_NAME = $(shell git branch | sed -n -e 's/^\* \(.*\)/\1/p')
+test:
+	@[ "$(BRANCH_NAME)" = "master" ] && $(MAKE) test-master || $(MAKE) test-pr
+
+test-master: 
+	pytest \
+          --exitfirst \
+          --cov \
+          --cov-context=test \
+          --cov-config=.coveragerc
+	mv .coverage mapping.db
+	git add mapping.db
+	git commit -m "test: updated RTS mapping DB"
+	git push
+
+test-pr: MASTER_COMMIT = $(shell git merge-base remotes/origin/master HEAD)
+test-pr:
+	git checkout $(MASTER_COMMIT) mapping.db
+	pytest \
+          --exitfirst \
+          --rts \
+          --rts-coverage-db=mapping.db \
+          --rts-from-commit=$(MASTER_COMMIT) && [ $$? -eq 0 ] || [ $$? -eq 5 ]
+```
+
+Exit code tests/overwrite `&& [ $$? -eq 0 ] || [ $$? -eq 5 ]` is needed in cases when no tests are found for execution.
+See Troubleshooting section for more information.
 
 ## <a name="troubleshooting"></a> Troubleshooting
 
