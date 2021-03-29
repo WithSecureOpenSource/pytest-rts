@@ -28,12 +28,23 @@ Note that `--cov-config=.coveragerc` is optional parameter here. For more info s
 
 ### Local usage
 
+#### Tests from changes in Git working directory
+
 1. Install `pytest-rts` with `pip install pytest-rts`
 2. Create a branch `git checkout -b feat/new-feature`
 3. Make changes in your code
 4. Run the tool with `pytest --rts --rts-coverage-db=[path to database]`
 
-As a result only tests related to changes in working directory and branch will be executed.
+As a result only tests related to changes in working directory will be executed.
+
+#### Tests from changes in Git working directory + committed changes
+
+1. Install `pytest-rts` with `pip install pytest-rts`
+2. Create a branch `git checkout -b feat/new-feature`
+3. Make changes in your code and commit them
+4. Run the tool with `pytest --rts --rts-coverage-db=[path to database] --rts-from-commit=[database initialization commithash]`
+
+The current git working directory copy will be compared to the given commithash. Tests for changes in commits and in the working directory will be executed.
 
 ### Usage in CI
 
@@ -42,7 +53,7 @@ As a result only tests related to changes in working directory and branch will b
   * or, if the database size is big, upload it to some storage
 * In pull requests:
   * make sure you have coverage database from the main branch located next to the code
-  * run `pytest --rts --rts-coverage-db=[path to database]`
+  * run `pytest --rts --rts-coverage-db=[path to database] --rts-from-commit=[database initialization commithash]`
   
 One of the ways to organize it in Makefile would be:
 

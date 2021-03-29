@@ -1,3 +1,6 @@
 .coverage
-rts-coverage.1234
+rts-coverage.db
 *__pycache__*
+runpytest-*
+stderr
+stdout
