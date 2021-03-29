@@ -35,7 +35,7 @@ relative_files = True
 
 As a result only tests related to changes in working directory will be executed.
 
-#### Tests from working directory + committed changes 
+#### Tests from changes in Git working directory + committed changes
 
 1. Install `pytest-rts` with `pip install pytest-rts`
 2. Create a branch `git checkout -b feat/new-feature`
