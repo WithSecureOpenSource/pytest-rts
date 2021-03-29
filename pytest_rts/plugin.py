@@ -1,4 +1,5 @@
 """Code for pytest-rts plugin logic"""
+import logging
 import os
 
 import pytest
@@ -44,6 +45,8 @@ def pytest_configure(config: Config) -> None:
 
     if not os.path.exists(config.option.rts_coverage_db):
         pytest.exit("pytest-rts: Provided coverage file does not exist", 2)
+
+    logging.basicConfig(format="%(message)s", level=logging.INFO)
 
     existing_tests = get_existing_tests(config.option.rts_coverage_db)
     tests_from_changes = get_tests_from_changes(

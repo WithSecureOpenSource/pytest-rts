@@ -1,8 +1,10 @@
 """This module contains code for git operations"""
+import logging
 import re
 import subprocess
 from typing import List, Set
 
+from gitdb.exc import BadName
 from pydriller import GitRepository
 
 
@@ -10,7 +12,12 @@ def commit_exists(commithash: str, repo: GitRepository) -> bool:
     """Check if a given commithash exists in the Git repository"""
     if not commithash:
         return False
-    return commithash in [commit.hash for commit in repo.get_list_commits()]
+    try:
+        repo.get_commit(commithash)
+        return True
+    except BadName:
+        logging.info("Git commithash was provided but it was not found in history.")
+        return False
 
 
 def get_changed_files_workdir(repo: GitRepository) -> List[str]:

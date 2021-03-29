@@ -49,17 +49,12 @@ def get_tests_from_changes(
     commithash_to_compare: str, coverage_file_path: str
 ) -> Set[str]:
     """Returns the test set from Git changes.
-    If the provided commithash does not exist in the repo,
-    then only changes in the git working directory are considered.
-    Otherwise the commithash is compared to the current working copy.
+    The given commithash is compared to the current working copy
+    to extract Git diffs, if the provided commithash exists in the repo.
+    Otherwise only changes in the git working directory are considered.
     """
     repo = get_git_repo()
-    if not commit_exists(commithash_to_compare, repo):
-        file_diffs = {
-            file_path: get_file_diff_data_workdir(repo, file_path)
-            for file_path in get_changed_files_workdir(repo)
-        }
-    else:
+    if commit_exists(commithash_to_compare, repo):
         file_diffs = {
             file_path: get_file_diff_data_committed_and_workdir(
                 repo, file_path, commithash_to_compare
@@ -67,6 +62,11 @@ def get_tests_from_changes(
             for file_path in get_changed_files_committed_and_workdir(
                 repo, commithash_to_compare
             )
+        }
+    else:
+        file_diffs = {
+            file_path: get_file_diff_data_workdir(repo, file_path)
+            for file_path in get_changed_files_workdir(repo)
         }
     coverage_data = CoverageData(coverage_file_path)
     coverage_data.read()
