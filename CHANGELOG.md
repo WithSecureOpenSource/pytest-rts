@@ -2,6 +2,20 @@
 
 <!--next-version-placeholder-->
 
+## v2.3.0 (2021-03-29)
+### Feature
+* Rts from changes between commits ([`13b490b`](https://github.com/F-Secure/pytest-rts/commit/13b490b957878412c8463650262e8f9784b624a4))
+
+### Documentation
+* Clarify change detection in readme ([`bb899cc`](https://github.com/F-Secure/pytest-rts/commit/bb899cc7f14cf21fb6702bdbb8249ced24d59958))
+* Added missing env variable definition ([`a395403`](https://github.com/F-Secure/pytest-rts/commit/a3954034a53ecbf0cae5a3c237798dde38c332c2))
+* Styling ([`323e19d`](https://github.com/F-Secure/pytest-rts/commit/323e19d14e7fc6f881ac4ed14c681767ff236e44))
+* Styling ([`dfcfbe7`](https://github.com/F-Secure/pytest-rts/commit/dfcfbe7103457baf0144d6f819c3a61819192d47))
+* Added example of Makefile ([`f2cd489`](https://github.com/F-Secure/pytest-rts/commit/f2cd489284ba951ab0206eadb67754e4f42db1a6))
+* Update functionality description ([`d65aa12`](https://github.com/F-Secure/pytest-rts/commit/d65aa1204c2e5cb2e45b81a21cf2806c14a4fb66))
+* Mention committed changes flag ([`a0c26cc`](https://github.com/F-Secure/pytest-rts/commit/a0c26cc96f9735f39cc846e7dafb043e48462259))
+* Added --cov-config flag to init section ([`3807a30`](https://github.com/F-Secure/pytest-rts/commit/3807a30a22f902cf48e0739456655021b2755d96))
+
 ## v2.2.0 (2021-03-24)
 ### Feature
 * Run tests from changes in workdir ([`5836afd`](https://github.com/F-Secure/pytest-rts/commit/5836afd07b04f005123c4d0d85c5920c7b61c7ea))
