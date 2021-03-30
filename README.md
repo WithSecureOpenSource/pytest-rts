@@ -86,6 +86,15 @@ test-pr:
 Exit code tests/overwrite `&& [ $$? -eq 0 ] || [ $$? -eq 5 ]` is needed in cases when no tests are found for execution.
 See Troubleshooting section for more information.
 
+### Usage with coverage threshold
+
+You might desire to use `pytest-cov` with the `--cov-fail-under=MIN` flag. When using `pytest-rts` this is somewhat possible but the reported coverage percentage will not represent actual coverage. If you wish to combine the usage of `--rts` and the coverage threshold, do the following:
+
+1. Initialize the coverage database as usual
+2. Leave the `.coverage` file untouched or rename it to start with `.coverage.`. For example `.coverage.rts.db`
+3. Do your changes and add `--cov=[path to code]` and `--cov-append` to the flags. For example `pytest --rts --rts-coverage-db=.coverage --cov=. --cov-append`
+4. `pytest-cov` will automatically combine the coverage file for the previous full run and the current RTS run. Bear in mind that the coverage file will now have added data. Create a backup of your full test run coverage file if you wish to keep it intact.
+
 ## <a name="troubleshooting"></a> Troubleshooting
 
 * **`pytest --rts` returns non-zero code:** command returns one of the
