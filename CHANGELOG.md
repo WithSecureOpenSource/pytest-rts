@@ -2,6 +2,17 @@
 
 <!--next-version-placeholder-->
 
+## v2.4.0 (2021-03-31)
+### Feature
+* Added handling of lines without mapping ([`d5dd6f5`](https://github.com/F-Secure/pytest-rts/commit/d5dd6f56eed03dcda03513e3c1210fdbc4b2932f))
+
+### Fix
+* Linter errors ([`bba133d`](https://github.com/F-Secure/pytest-rts/commit/bba133d1392e3b57cd3e530d5ee86ff25a219a6e))
+* Linter errors ([`030bc32`](https://github.com/F-Secure/pytest-rts/commit/030bc32ac0191a71aa8fdfe88abae5a77de24fc4))
+
+### Documentation
+* Note about intersection and surroundings algorithm ([`f303ef8`](https://github.com/F-Secure/pytest-rts/commit/f303ef8b68b4380877fe9089ce5e7f4c3aed6a5a))
+
 ## v2.3.0 (2021-03-29)
 ### Feature
 * Rts from changes between commits ([`13b490b`](https://github.com/F-Secure/pytest-rts/commit/13b490b957878412c8463650262e8f9784b624a4))
