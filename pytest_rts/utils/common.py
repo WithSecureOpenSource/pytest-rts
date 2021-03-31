@@ -104,7 +104,8 @@ def intersect_with_surroundings(changed_lines: Set[int], mapped_lines: Set[int])
         mapped_lines  |    2 3    10 11 12 20 21 22
         result        |    2 3    10          21 22
 
-    Algorithm could be improved. See conversation: https://github.com/F-Secure/pytest-rts/pull/103#pullrequestreview-625312058
+    Algorithm could be improved. See conversation:
+    https://github.com/F-Secure/pytest-rts/pull/103#pullrequestreview-625312058
     """
     mapped = changed_lines.intersection(mapped_lines)
     unmapped = changed_lines.difference(mapped)
