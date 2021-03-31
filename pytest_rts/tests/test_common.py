@@ -4,7 +4,9 @@ from typing import cast
 import pytest
 from _pytest.nodes import Item
 
-from pytest_rts.utils.common import filter_pytest_items, strip_pytest_cov_testname, intersect_with_surroundings
+from pytest_rts.utils.common import (
+    filter_pytest_items, strip_pytest_cov_testname, intersect_with_surroundings
+)
 
 
 @pytest.mark.parametrize(
@@ -75,5 +77,8 @@ def test_filter_pytest_items() -> None:
 
 
 def test_intersect_with_surroundings() -> None:
+    """
+    Tests that non mapped lines are handled properly
+    """
     res = intersect_with_surroundings({1, 5, 21, 30}, {2, 3, 10, 11, 12, 20, 21, 22})
     assert res == {2, 3, 10, 21, 22}

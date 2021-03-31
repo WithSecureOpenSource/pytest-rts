@@ -95,7 +95,8 @@ def get_tests_from_changes(
 def intersect_with_surroundings(changed_lines: Set[int], mapped_lines: Set[int]) -> Set[int]:
     """
     Finds lines existing in both changed_lines and mapped_lines.
-    For lines that exist in changed_lines but not in mapped_lines looks for the closest mapped lines from left and right
+    For lines that exist in changed_lines but not in mapped_lines
+    looks for the closest mapped lines from left and right
     hand sides - mapped lines which surround changed line.
 
     Example:
