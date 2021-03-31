@@ -78,9 +78,10 @@ def get_tests_from_changes(
         if not contexts:
             continue
 
-        changed_lines_with_tests = get_changed_lines(
-            file_diffs[changed_file]
-        ).intersection(contexts.keys())
+        changed_lines_with_tests = intersect_with_surroundings(
+            get_changed_lines(file_diffs[changed_file]),
+            contexts.keys()
+        )
 
         tests.update(
             strip_pytest_cov_testname(testname)
@@ -89,6 +90,41 @@ def get_tests_from_changes(
         )
 
     return tests
+
+
+def intersect_with_surroundings(changed_lines: Set[int], mapped_lines: Set[int]) -> Set[int]:
+    """
+    Finds lines existing in both changed_lines and mapped_lines.
+    For lines that exist in changed_lines but not in mapped_lines
+    looks for the closest mapped lines from left and right
+    hand sides - mapped lines which surround changed line.
+
+    Example:
+        changed_lines | 1       5             21    30
+        mapped_lines  |    2 3    10 11 12 20 21 22
+        result        |    2 3    10          21 22
+
+    Algorithm could be improved. See conversation:
+    https://github.com/F-Secure/pytest-rts/pull/103#pullrequestreview-625312058
+    """
+    mapped = changed_lines.intersection(mapped_lines)
+    unmapped = changed_lines.difference(mapped)
+
+    mapped_lines_sorted = sorted(mapped_lines)
+    for line in unmapped:
+        left = None
+        right = None
+        for mapped_line in mapped_lines_sorted:
+            if mapped_line < line:
+                left = mapped_line
+            if mapped_line > line:
+                right = mapped_line
+                break
+        if left is not None:
+            mapped.add(left)
+        if right is not None:
+            mapped.add(right)
+    return mapped
 
 
 def strip_pytest_cov_testname(testname: str) -> str:
