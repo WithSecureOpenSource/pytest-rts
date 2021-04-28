@@ -58,9 +58,12 @@ The current git working directory copy will be compared to the given commithash.
 One of the ways to organize it in Makefile would be:
 
 ```make
-test: BRANCH_NAME = $(shell git branch | sed -n -e 's/^\* \(.*\)/\1/p')
-test:
-	@[ "$(BRANCH_NAME)" = "master" ] && $(MAKE) test-master || $(MAKE) test-pr
+BRANCH_NAME = $(shell git branch | sed -n -e 's/^\* \(.*\)/\1/p')
+ifeq ($(BRANCH_NAME), master)
+test: test-master
+else
+test: test-pr
+endif
 
 test-master: 
 	pytest \
