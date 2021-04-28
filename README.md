@@ -60,7 +60,11 @@ One of the ways to organize it in Makefile would be:
 ```make
 test: BRANCH_NAME = $(shell git branch | sed -n -e 's/^\* \(.*\)/\1/p')
 test:
-	@[ "$(BRANCH_NAME)" = "master" ] && $(MAKE) test-master || $(MAKE) test-pr
+ifeq ($(BRANCH_NAME), master)
+	$(MAKE) test-master
+else
+	$(MAKE) test-pr
+endif
 
 test-master: 
 	pytest \
