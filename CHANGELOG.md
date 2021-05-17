@@ -2,6 +2,17 @@
 
 <!--next-version-placeholder-->
 
+## v2.5.0 (2021-05-17)
+### Feature
+* Migration to pydriller>=2.0 ([`a3b553f`](https://github.com/F-Secure/pytest-rts/commit/a3b553fcc9966c421fe8d3313fb2d41ec5230926))
+
+### Documentation
+* Rewrite tutorial ([`7c3e98d`](https://github.com/F-Secure/pytest-rts/commit/7c3e98dc2ffa5cb682be84ef3801bffa19f83f0e))
+* Add tutorial and images ([`eb2c717`](https://github.com/F-Secure/pytest-rts/commit/eb2c7170b362c25ebac64314ea985699e615e14d))
+* Switched to non-recursive test targets call ([`544f4ac`](https://github.com/F-Secure/pytest-rts/commit/544f4ac2729c073361b143b6db4938aaf950458c))
+* Fixed Makefile example ([`2753568`](https://github.com/F-Secure/pytest-rts/commit/27535689a66ac621ac40b494e572f0a88aa6b9f1))
+* Add cov-threshold tutorial ([`497ceb9`](https://github.com/F-Secure/pytest-rts/commit/497ceb951b72691bd210bfc6724c63889d88475f))
+
 ## v2.4.0 (2021-03-31)
 ### Feature
 * Added handling of lines without mapping ([`d5dd6f5`](https://github.com/F-Secure/pytest-rts/commit/d5dd6f56eed03dcda03513e3c1210fdbc4b2932f))
