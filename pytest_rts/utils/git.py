@@ -5,10 +5,10 @@ import subprocess
 from typing import List, Set
 
 from gitdb.exc import BadName
-from pydriller import GitRepository
+from pydriller import Git
 
 
-def commit_exists(commithash: str, repo: GitRepository) -> bool:
+def commit_exists(commithash: str, repo: Git) -> bool:
     """Check if a given commithash exists in the Git repository"""
     if not commithash:
         return False
@@ -20,25 +20,25 @@ def commit_exists(commithash: str, repo: GitRepository) -> bool:
         return False
 
 
-def get_changed_files_workdir(repo: GitRepository) -> List[str]:
+def get_changed_files_workdir(repo: Git) -> List[str]:
     """Get changed files in git working directory"""
     return repo.repo.git.diff("--name-only").split()
 
 
 def get_changed_files_committed_and_workdir(
-    repo: GitRepository, commithash_to_compare: str
+    repo: Git, commithash_to_compare: str
 ) -> List[str]:
     """Get changed files between given commit and the working copy"""
     return repo.repo.git.diff("--name-only", commithash_to_compare).split()
 
 
-def get_file_diff_data_workdir(repo: GitRepository, file_path: str) -> str:
+def get_file_diff_data_workdir(repo: Git, file_path: str) -> str:
     """Get git diff for a file in git working directory"""
     return repo.repo.git.diff("-U0", "--", file_path)
 
 
 def get_file_diff_data_committed_and_workdir(
-    repo: GitRepository, file_path: str, commithash_to_compare: str
+    repo: Git, file_path: str, commithash_to_compare: str
 ) -> str:
     """Get git diff for a file from changes between given commit and the working copy"""
     return repo.repo.git.diff("-U0", commithash_to_compare, "--", file_path)
@@ -73,14 +73,14 @@ def get_changed_lines(diff: str) -> Set[int]:
     return changed_lines
 
 
-def get_git_repo() -> GitRepository:
-    """Return a GitRepository"""
+def get_git_repo() -> Git:
+    """Return a Git"""
     res = subprocess.check_output(
         "git rev-parse --show-toplevel".split(),
         stderr=subprocess.DEVNULL,
     )
     project_folder = res.decode().strip()
-    return GitRepository(project_folder)
+    return Git(project_folder)
 
 
 def is_git_repo() -> bool:
